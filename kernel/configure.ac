@@ -44,7 +44,7 @@ TRIPLET="$ARCH"-elf "$SRCDIR/cross-detect/configure"
 
 AC_SUBST([CROSS_FILE], [cross-files/$ARCH-toolchain.mk])
 
-m4_define([DEFAULT_CROSS_CFLAGS], [-O2 -pipe -Wall -Wextra])
+m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
 AC_ARG_VAR(CROSS_CFLAGS, [cross C flags @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 
