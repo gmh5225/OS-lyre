@@ -38,7 +38,17 @@ test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
 
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative cross toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [cross C compiler command])
+AC_ARG_VAR(CROSS_ADDR2LINE, [cross addr2line command])
+AC_ARG_VAR(CROSS_AR, [cross archiver command])
+AC_ARG_VAR(CROSS_CXXFILT, [cross c++filt command])
 AC_ARG_VAR(CROSS_LD, [cross linker command])
+AC_ARG_VAR(CROSS_NM, [cross nm command])
+AC_ARG_VAR(CROSS_OBJCOPY, [cross objcopy command])
+AC_ARG_VAR(CROSS_OBJDUMP, [cross objdump command])
+AC_ARG_VAR(CROSS_RANLIB, [cross ranlib command])
+AC_ARG_VAR(CROSS_READELF, [cross readelf command])
+AC_ARG_VAR(CROSS_SIZE, [cross size command])
+AC_ARG_VAR(CROSS_STRINGS, [cross strings command])
 AC_ARG_VAR(CROSS_STRIP, [cross strip command])
 
 rm -rf "$BUILDDIR/cross-files"
