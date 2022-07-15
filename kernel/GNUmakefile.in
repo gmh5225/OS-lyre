@@ -1,0 +1,102 @@
+# Import some autoconf variables as make variables
+override ARCH := @ARCH@
+override SRCDIR := @SRCDIR@
+override CROSS_FILE := @CROSS_FILE@
+override INSTALL := @INSTALL@
+
+# This is the name that our final kernel executable will have.
+# Change as needed.
+override KERNEL := lyre.elf
+
+# Macros to make our build system still work from within paths with spaces
+# or other special characters.
+override SPACE := $(subst ,, )
+MKESCAPE = $(subst $(SPACE),\ ,$(1))
+SHESCAPE = $(subst ','\'',$(1))
+OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
+
+# Include cross file.
+include $(call MKESCAPE,$(CROSS_FILE))
+
+# User controllable CFLAGS.
+CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
+
+# User controllable linker flags.
+CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
+
+# Internal C flags that should not be changed by the user.
+override INTERNALCFLAGS := \
+    -I'$(call SHESCAPE,$(SRCDIR))' \
+    -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
+    -std=c11               \
+    -ffreestanding         \
+    -nostdinc              \
+    -fno-stack-protector   \
+    -fno-stack-check       \
+    -fno-pie               \
+    -fno-pic               \
+    -MMD
+
+# Internal linker flags that should not be changed by the user.
+override INTERNALLDFLAGS :=     \
+    -nostdlib                   \
+    -static                     \
+    -z max-page-size=0x1000     \
+    -T '$(call SHESCAPE,$(SRCDIR)/linker-$(ARCH).ld)'
+
+# Set archtecture specific variables (and check that the architecture is supported).
+ifeq ($(ARCH),x86_64)
+    override INTERNALCFLAGS += \
+        -m64                   \
+        -march=x86-64          \
+        -mabi=sysv             \
+        -mno-80387             \
+        -mno-mmx               \
+        -mno-sse               \
+        -mno-sse2              \
+        -mno-red-zone          \
+        -mcmodel=kernel
+    override INTERNALLDFLAGS += \
+        -m elf_x86_64
+    override LIBGCC := x86_64-no-red-zone
+    override EFI_ARCH := X64
+else
+    $(error Architecture $(ARCH) not supported)
+endif
+
+# Use find to glob all *.c files in the directory and extract the object names.
+override CFILES_BASENAMES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
+override CFILES := $(addprefix $(call MKESCAPE,$(SRCDIR))/, $(CFILES_BASENAMES))
+override OBJ := $(CFILES_BASENAMES:.c=.o)
+override HEADER_DEPS := $(CFILES_BASENAMES:.c=.d)
+
+# Default target.
+.PHONY: all
+all: $(KERNEL)
+
+# Link rules for the final kernel executable.
+$(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
+
+# Compilation rules for *.c files.
+-include $(HEADER_DEPS)
+%.o: $(call MKESCAPE,$(SRCDIR))/%.c
+	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+
+# Remove object files and the final executable.
+.PHONY: clean
+clean:
+	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS)
+
+.PHONY: distclean
+distclean: clean
+	rm -rf config.log config.status GNUmakefile cross-files
+
+.PHONY: maintainer-clean
+maintainer-clean: distclean
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries cross-detect limine.h configure build-aux *'~' autom4te.cache
+
+.PHONY: install
+install:
+	$(INSTALL) -d $(DESTDIR)/boot
+	$(INSTALL) $(KERNEL) $(DESTDIR)/boot/

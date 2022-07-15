@@ -1,0 +1,25 @@
+name=gcc-compiler
+from_source=gcc
+revision=1
+imagedeps="gcc"
+hostdeps="autoconf automake"
+hostrundeps="binutils"
+deps="mlibc-headers"
+
+configure() {
+    "${source_dir}"/configure \
+        --prefix="${prefix}" \
+        --target=x86_64-lyre \
+        --with-sysroot="${sysroot_dir}" \
+        --enable-languages=c,c++ \
+        --disable-multilib \
+        --enable-initfini-array
+}
+
+build() {
+    make -j${parallelism} all-gcc
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-gcc
+}

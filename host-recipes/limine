@@ -1,0 +1,21 @@
+name=limine
+from_source=limine
+revision=1
+hostdeps="gcc"
+imagedeps="nasm gcc mtools"
+
+configure() {
+    "${source_dir}"/configure \
+        --prefix="${prefix}" \
+        CROSS_TOOLCHAIN=x86_64-lyre \
+        LDFLAGS="-static" \
+        --enable-all
+}
+
+build() {
+    make -j${parallelism}
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip
+}

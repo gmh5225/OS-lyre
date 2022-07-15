@@ -1,0 +1,12 @@
+name=mlibc
+version=0.0
+source_method=git
+clone_url="https://github.com/vinix-os/mlibc.git"
+tag="master"
+
+regenerate() {
+    for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done
+    for file in $(find . -type f); do sed -i 's/VINIX/LYRE/g' "$file"; done
+    for file in $(find . -type f); do sed -i 's/Vinix/Lyre/g' "$file"; done
+    mv sysdeps/vinix sysdeps/lyre
+}

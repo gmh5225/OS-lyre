@@ -1,0 +1,40 @@
+name: Nightly Lyre rebuild
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  lyre-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install build-essential curl git mercurial xorriso -y
+
+      - name: Build distro
+        run: JINX_DOCKER_INTERACTIVE=no make distro-full
+
+      - name: Build ISO
+        run: JINX_DOCKER_INTERACTIVE=no make all
+
+      - name: Set TAG_DATE variable
+        run: echo "TAG_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Tag new nightly release
+        run: git tag nightly-$TAG_DATE && git push --tags
+
+      - name: Rename lyre.iso
+        run: mv lyre.iso lyre-nightly-$(date +'%Y%m%d').iso
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Nightly build ${{ env.TAG_DATE }}
+          tag_name: nightly-${{ env.TAG_DATE }}
+          body: Image of an up to date Lyre nightly build.
+          files: |
+            lyre-nightly-*.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

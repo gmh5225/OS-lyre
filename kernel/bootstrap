@@ -1,0 +1,20 @@
+#! /bin/sh
+
+set -ex
+
+srcdir="$(dirname "$0")"
+test -z "$srcdir" && srcdir=.
+
+cd "$srcdir"
+
+[ -d cross-detect ] || git clone https://github.com/mintsuki/cross-detect.git
+[ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
+[ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
+[ -f limine.h ] || curl -o limine.h https://raw.githubusercontent.com/limine-bootloader/limine/trunk/limine.h
+
+automake_libdir="$(automake --print-libdir)"
+
+mkdir -p build-aux
+cp "${automake_libdir}/install-sh" build-aux
+
+autoreconf -fvi

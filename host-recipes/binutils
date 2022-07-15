@@ -1,0 +1,21 @@
+name=binutils
+from_source=binutils
+revision=1
+imagedeps="gcc"
+hostdeps="autoconf automake"
+
+configure() {
+    "${source_dir}"/configure \
+        --prefix="${prefix}" \
+        --target=x86_64-lyre \
+        --with-sysroot="${sysroot_dir}" \
+        --disable-werror
+}
+
+build() {
+    make -j${parallelism} all-binutils all-gas all-ld
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip-binutils install-strip-gas install-strip-ld
+}

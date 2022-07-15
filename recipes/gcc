@@ -1,0 +1,34 @@
+name=gcc
+from_source=gcc
+revision=1
+hostdeps="gcc autoconf automake libtool pkg-config"
+deps="mlibc binutils zlib libgmp"
+imagedeps="gcc"
+
+configure() {
+    ${source_dir}/configure                 \
+        --host=x86_64-lyre                 \
+        --prefix=${prefix}                  \
+        --target=x86_64-lyre               \
+        --with-sysroot=/                    \
+        --with-build-sysroot=${sysroot_dir} \
+        --enable-languages=c,c++            \
+        --enable-initfini-array             \
+        --disable-multilib                  \
+        --disable-nls                       \
+        --with-system-zlib                  \
+        --with-gmp=${sysroot_dir}/usr       \
+        --enable-shared                     \
+        --enable-host-shared
+}
+
+build() {
+    make -j${parallelism} all-gcc all-target-libgcc all-target-libstdc++-v3
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip-gcc install-strip-target-libgcc install-strip-target-libstdc++-v3
+    ln -s gcc "${dest_dir}${prefix}"/bin/cc
+    # Remove static libraries
+    rm -rf "${dest_dir}${prefix}"/lib/*.a
+}
