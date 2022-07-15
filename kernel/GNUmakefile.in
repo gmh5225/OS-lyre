@@ -1,6 +1,7 @@
 # Import some autoconf variables as make variables
 override ARCH := @ARCH@
 override SRCDIR := @SRCDIR@
+override BUILDDIR := @BUILDDIR@
 override CROSS_FILE := @CROSS_FILE@
 override INSTALL := @INSTALL@
 override PREFIX := @prefix@
@@ -78,10 +79,10 @@ endif
 # Use find to glob all *.c, *.S, and *.asm files in the directory and extract the object names.
 override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
 override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.S')
-override OBJ := $(CFILES:.c=.o) $(ASFILES:.S=.o)
+override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(CFILES:.c=.o) $(ASFILES:.S=.o))
 ifeq ($(ARCH),x86_64)
 override NASMFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.asm')
-override OBJ += $(NASMFILES:.asm=.o)
+override OBJ += $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(NASMFILES:.asm=.o))
 endif
 override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
 
@@ -97,16 +98,19 @@ $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 -include $(HEADER_DEPS)
 
 # Compilation rules for *.c files.
-%.o: $(call MKESCAPE,$(SRCDIR))/%.c
+$(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.c
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 # Compilation rules for *.S files.
-%.o: $(call MKESCAPE,$(SRCDIR))/%.S
+$(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.S
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 ifeq ($(ARCH),x86_64)
 # Compilation rules for *.asm files.
-%.o: $(call MKESCAPE,$(SRCDIR))/%.asm
+$(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.asm
+	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
 	nasm $(CROSS_NASMFLAGS) $(INTERNALNASMFLAGS) '$(call SHESCAPE,$<)' -o $@
 endif
 
