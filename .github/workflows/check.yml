@@ -46,6 +46,7 @@ jobs:
           make maintainer-clean
 
       - name: Attempt to build the Lyre kernel (prod)
+        run: |
           cd kernel
           ./bootstrap
           ./configure --enable-werror CFLAGS="-g -O2 -pipe -Wall -Wextra -Werror -I`realpath ../mlibc-headers/include`"
