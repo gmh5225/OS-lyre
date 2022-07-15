@@ -125,3 +125,9 @@ maintainer-clean: distclean
 install:
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/boot
 	$(INSTALL) $(KERNEL) $(DESTDIR)$(PREFIX)/boot/
+
+.PHONY: install-strip
+install-strip:
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/boot
+	$(INSTALL) $(KERNEL) $(DESTDIR)$(PREFIX)/boot/
+	$(CROSS_STRIP) $(DESTDIR)$(PREFIX)/boot/$(KERNEL)

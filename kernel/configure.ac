@@ -27,6 +27,11 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
+AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
+if ! test "x$NASM_FOUND" = "xyes"; then
+    AC_MSG_ERROR([nasm not found, please install nasm before configuring])
+fi
+
 m4_define([DEFAULT_ARCH], [x86_64])
 AC_ARG_VAR(ARCH, [target architecture @<:@default: ]DEFAULT_ARCH[@:>@])
 test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
@@ -34,6 +39,7 @@ test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative cross toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [cross C compiler command])
 AC_ARG_VAR(CROSS_LD, [cross linker command])
+AC_ARG_VAR(CROSS_STRIP, [cross strip command])
 
 rm -rf "$BUILDDIR/cross-files"
 mkdir -p "$BUILDDIR/cross-files"
