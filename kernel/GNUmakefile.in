@@ -3,6 +3,7 @@ override ARCH := @ARCH@
 override SRCDIR := @SRCDIR@
 override CROSS_FILE := @CROSS_FILE@
 override INSTALL := @INSTALL@
+override PREFIX := @prefix@
 
 # This is the name that our final kernel executable will have.
 # Change as needed.
@@ -21,6 +22,11 @@ include $(call MKESCAPE,$(CROSS_FILE))
 # User controllable CFLAGS.
 CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
 
+ifeq ($(ARCH),x86_64)
+# User controllable NASMFLAGS.
+CROSS_NASMFLAGS ?= @CROSS_NASMFLAGS@ @WERROR@
+endif
+
 # User controllable linker flags.
 CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 
@@ -28,7 +34,9 @@ CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 override INTERNALCFLAGS := \
     -I'$(call SHESCAPE,$(SRCDIR))' \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
-    -std=c11               \
+    -std=gnu11             \
+    -fms-extensions        \
+    -Wno-microsoft-anon-tag \
     -ffreestanding         \
     -nostdinc              \
     -fno-stack-protector   \
@@ -58,17 +66,22 @@ ifeq ($(ARCH),x86_64)
         -mcmodel=kernel
     override INTERNALLDFLAGS += \
         -m elf_x86_64
+    override INTERNALNASMFLAGS := \
+        -f elf64
     override LIBGCC := x86_64-no-red-zone
-    override EFI_ARCH := X64
 else
     $(error Architecture $(ARCH) not supported)
 endif
 
-# Use find to glob all *.c files in the directory and extract the object names.
-override CFILES_BASENAMES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
-override CFILES := $(addprefix $(call MKESCAPE,$(SRCDIR))/, $(CFILES_BASENAMES))
-override OBJ := $(CFILES_BASENAMES:.c=.o)
-override HEADER_DEPS := $(CFILES_BASENAMES:.c=.d)
+# Use find to glob all *.c, *.S, and *.asm files in the directory and extract the object names.
+override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
+override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.S')
+override OBJ := $(CFILES:.c=.o) $(ASFILES:.S=.o)
+ifeq ($(ARCH),x86_64)
+override NASMFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.asm')
+override OBJ += $(NASMFILES:.asm=.o)
+endif
+override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
 
 # Default target.
 .PHONY: all
@@ -78,10 +91,22 @@ all: $(KERNEL)
 $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
-# Compilation rules for *.c files.
+# Include header dependencies.
 -include $(HEADER_DEPS)
+
+# Compilation rules for *.c files.
 %.o: $(call MKESCAPE,$(SRCDIR))/%.c
 	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+
+# Compilation rules for *.S files.
+%.o: $(call MKESCAPE,$(SRCDIR))/%.S
+	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+
+ifeq ($(ARCH),x86_64)
+# Compilation rules for *.asm files.
+%.o: $(call MKESCAPE,$(SRCDIR))/%.asm
+	nasm $(CROSS_NASMFLAGS) $(INTERNALNASMFLAGS) '$(call SHESCAPE,$<)' -o $@
+endif
 
 # Remove object files and the final executable.
 .PHONY: clean
@@ -98,5 +123,5 @@ maintainer-clean: distclean
 
 .PHONY: install
 install:
-	$(INSTALL) -d $(DESTDIR)/boot
-	$(INSTALL) $(KERNEL) $(DESTDIR)/boot/
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/boot
+	$(INSTALL) $(KERNEL) $(DESTDIR)$(PREFIX)/boot/

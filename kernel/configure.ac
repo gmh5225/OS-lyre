@@ -1,4 +1,4 @@
-AC_INIT([Limine Bare Bones], m4_esyscmd([./version.sh]), [https://github.com/limine-bootloader/limine-barebones/issues], [limine], [https://limine-bootloader.org/])
+AC_INIT([Lyre], m4_esyscmd([./version.sh]), [https://github.com/lyre-os/lyre/issues], [lyre])
 
 AC_PREREQ(2.69)
 
@@ -44,13 +44,19 @@ TRIPLET="$ARCH"-elf "$SRCDIR/cross-detect/configure"
 
 AC_SUBST([CROSS_FILE], [cross-files/$ARCH-toolchain.mk])
 
-m4_define([DEFAULT_CROSS_CFLAGS], [-O3 -pipe -Wall -Wextra])
+m4_define([DEFAULT_CROSS_CFLAGS], [-O2 -pipe -Wall -Wextra])
 AC_ARG_VAR(CROSS_CFLAGS, [cross C flags @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
+
+m4_define([DEFAULT_CROSS_NASMFLAGS], [-F dwarf -g])
+AC_ARG_VAR(CROSS_NASMFLAGS, [cross nasm flags @<:@default: ]DEFAULT_CROSS_NASMFLAGS[@:>@])
+test "x$CROSS_NASMFLAGS" = "x" && CROSS_NASMFLAGS="DEFAULT_CROSS_NASMFLAGS"
 
 m4_define([DEFAULT_CROSS_LDFLAGS], [])
 AC_ARG_VAR(CROSS_LDFLAGS, [cross linker flags @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
+
+AC_PREFIX_DEFAULT([])
 
 AC_CONFIG_FILES(GNUmakefile)
 AC_OUTPUT
