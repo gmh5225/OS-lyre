@@ -12,13 +12,13 @@ jobs:
   lyre-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install build-essential -y
 
       - name: Attempt to build the Lyre kernel (debug)
-        run: cd kernel && ./bootstrap && ./configure && make PROD=false && make maintainer-clean
+        run: cd kernel && ./bootstrap && ./configure --enable-werror && make PROD=false && make maintainer-clean
 
       - name: Attempt to build the Lyre kernel (prod)
-        run: cd kernel && ./bootstrap && ./configure && make PROD=true && make maintainer-clean
+        run: cd kernel && ./bootstrap && ./configure --enable-werror && make PROD=true && make maintainer-clean
