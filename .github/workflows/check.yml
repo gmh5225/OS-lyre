@@ -15,10 +15,39 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install build-essential -y
+        run: sudo apt-get update && sudo apt-get install build-essential meson nasm -y
+
+      - name: Clone current mlibc
+        run: git clone https://github.com/lyre-os/mlibc.git --depth=1
+
+      - name: Patch mlibc for Lyre
+        run: |
+          cd mlibc
+          for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done
+          for file in $(find . -type f); do sed -i 's/VINIX/LYRE/g' "$file"; done
+          for file in $(find . -type f); do sed -i 's/Vinix/Lyre/g' "$file"; done
+          mv sysdeps/vinix sysdeps/lyre
+
+      - name: Install mlibc headers
+        run: |
+          mkdir mlibc-build
+          cd mlibc-build
+          meson --cross-file ../build-support/cross_file.txt --prefix=/ -Dheaders_only=true ../mlibc
+          ninja
+          mkdir ../mlibc-headers
+          DESTDIR=`realpath ../mlibc-headers` ninja install
 
       - name: Attempt to build the Lyre kernel (debug)
-        run: cd kernel && ./bootstrap && ./configure --enable-werror && make PROD=false && make maintainer-clean
+        run: |
+          cd kernel
+          ./bootstrap
+          ./configure --enable-werror CFLAGS="-g -O2 -pipe -Wall -Wextra -Werror -I`realpath ../mlibc-headers/include`"
+          make PROD=false
+          make maintainer-clean
 
       - name: Attempt to build the Lyre kernel (prod)
-        run: cd kernel && ./bootstrap && ./configure --enable-werror && make PROD=true && make maintainer-clean
+          cd kernel
+          ./bootstrap
+          ./configure --enable-werror CFLAGS="-g -O2 -pipe -Wall -Wextra -Werror -I`realpath ../mlibc-headers/include`"
+          make PROD=true
+          make maintainer-clean
