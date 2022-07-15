@@ -54,6 +54,10 @@ m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
 AC_ARG_VAR(CROSS_CFLAGS, [cross C flags @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
 test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 
+m4_define([DEFAULT_CROSS_CPPFLAGS], [])
+AC_ARG_VAR(CROSS_CPPFLAGS, [cross C preprocessor flags @<:@default: ]DEFAULT_CROSS_CPPFLAGS[@:>@])
+test "x$CROSS_CPPFLAGS" = "x" && CROSS_CPPFLAGS="DEFAULT_CROSS_CPPFLAGS"
+
 m4_define([DEFAULT_CROSS_NASMFLAGS], [-F dwarf -g])
 AC_ARG_VAR(CROSS_NASMFLAGS, [cross nasm flags @<:@default: ]DEFAULT_CROSS_NASMFLAGS[@:>@])
 test "x$CROSS_NASMFLAGS" = "x" && CROSS_NASMFLAGS="DEFAULT_CROSS_NASMFLAGS"

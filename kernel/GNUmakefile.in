@@ -22,6 +22,9 @@ include $(call MKESCAPE,$(CROSS_FILE))
 # User controllable CFLAGS.
 CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
 
+# User controllable CPPFLAGS.
+CROSS_CPPFLAGS ?= @CROSS_CPPFLAGS@
+
 ifeq ($(ARCH),x86_64)
 # User controllable NASMFLAGS.
 CROSS_NASMFLAGS ?= @CROSS_NASMFLAGS@ @WERROR@
@@ -38,7 +41,6 @@ override INTERNALCFLAGS := \
     -fms-extensions        \
     -Wno-microsoft-anon-tag \
     -ffreestanding         \
-    -nostdinc              \
     -fno-stack-protector   \
     -fno-stack-check       \
     -fno-pie               \
@@ -96,11 +98,11 @@ $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 
 # Compilation rules for *.c files.
 %.o: $(call MKESCAPE,$(SRCDIR))/%.c
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 # Compilation rules for *.S files.
 %.o: $(call MKESCAPE,$(SRCDIR))/%.S
-	$(CROSS_CC) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 ifeq ($(ARCH),x86_64)
 # Compilation rules for *.asm files.
