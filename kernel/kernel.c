@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <sys/gdt.h>
 #include <limine.h>
 
 // The Limine requests can be placed anywhere, but it is important that
@@ -19,6 +20,8 @@ static void done(void) {
 
 // The following will be our kernel's entry point.
 void _start(void) {
+    gdt_init();
+
     // Ensure we got a terminal
     if (terminal_request.response == NULL
      || terminal_request.response->terminal_count < 1) {
