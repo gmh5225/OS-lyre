@@ -35,7 +35,7 @@ static void print_int(char *buffer, size_t size, size_t *offset, int64_t value) 
     }
 
     int i;
-    char temp_buffer[21];
+    char temp_buffer[21] = {0};
     bool sign = value < 0;
 
     if (sign) {
@@ -63,7 +63,7 @@ static void print_uint(char *buffer, size_t size, size_t *offset, uint64_t value
     }
 
     int i;
-    char temp_buffer[21];
+    char temp_buffer[21] = {0};
 
     for (i = 19; value; i--) {
         temp_buffer[i] = (value % 10) + '0';
@@ -81,7 +81,7 @@ static void print_hex(char *buffer, size_t size, size_t *offset, uint64_t value)
     }
 
     int i;
-    char temp_buffer[17];
+    char temp_buffer[17] = {0};
 
     for (i = 15; value; i--) {
         temp_buffer[i] = base_digits[value % 16];
