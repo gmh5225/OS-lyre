@@ -3,6 +3,7 @@
 #include <dev/char/serial.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
+#include <mm/slab.h>
 #include <sys/gdt.h>
 #include <limine.h>
 
@@ -31,6 +32,7 @@ void _start(void) {
     serial_init();
     gdt_init();
     pmm_init();
+    slab_init();
 
     print("Hello, %s!\n", "world");
 

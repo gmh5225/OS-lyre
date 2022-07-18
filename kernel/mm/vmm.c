@@ -1,3 +1,4 @@
+#include <limine.h>
 #include <mm/vmm.h>
 
 volatile struct limine_hhdm_request hhdm_request = {
