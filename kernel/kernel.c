@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <dev/char/serial.h>
+#include <lib/print.h>
 #include <sys/gdt.h>
 #include <limine.h>
 
@@ -10,6 +11,11 @@
 
 static volatile struct limine_terminal_request terminal_request = {
     .id = LIMINE_TERMINAL_REQUEST,
+    .revision = 0
+};
+
+static volatile struct limine_bootloader_info_request boot_info_request = {
+    .id = LIMINE_BOOTLOADER_INFO_REQUEST,
     .revision = 0
 };
 
@@ -23,6 +29,13 @@ static void done(void) {
 void _start(void) {
     serial_init();
     gdt_init();
+
+    print("Hello, %s!\n", "world");
+
+    if (boot_info_request.response) {
+        print("Booted by %s %s\n", boot_info_request.response->name,
+            boot_info_request.response->version);
+    }
 
     // Ensure we got a terminal
     if (terminal_request.response == NULL
