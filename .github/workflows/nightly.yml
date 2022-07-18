@@ -14,10 +14,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install make curl git mercurial bsdtar xorriso -y
 
       - name: Build distro
-        run: JINX_DOCKER_INTERACTIVE=no make distro-full
+        run: make distro-full
 
       - name: Build ISO
-        run: JINX_DOCKER_INTERACTIVE=no make all
+        run: make all
 
       - name: Set TAG_DATE variable
         run: echo "TAG_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
