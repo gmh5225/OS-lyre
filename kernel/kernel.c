@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <dev/char/serial.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 #include <sys/gdt.h>
 #include <limine.h>
 
@@ -29,6 +30,7 @@ static void done(void) {
 void _start(void) {
     serial_init();
     gdt_init();
+    pmm_init();
 
     print("Hello, %s!\n", "world");
 
