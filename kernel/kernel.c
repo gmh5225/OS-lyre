@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <dev/char/serial.h>
 #include <sys/gdt.h>
 #include <limine.h>
 
@@ -20,6 +21,7 @@ static void done(void) {
 
 // The following will be our kernel's entry point.
 void _start(void) {
+    serial_init();
     gdt_init();
 
     // Ensure we got a terminal
