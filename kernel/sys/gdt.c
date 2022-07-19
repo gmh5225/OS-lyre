@@ -148,7 +148,7 @@ void gdt_reload(void) {
 void gdt_load_tss(uintptr_t addr) {
     static spinlock_t lock = SPINLOCK_INIT;
 
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     gdt.tss.base_low16   = (uint16_t)addr;
     gdt.tss.base_mid8    = (uint8_t)(addr >> 16);
@@ -160,5 +160,5 @@ void gdt_load_tss(uintptr_t addr) {
 
     asm volatile ("ltr %0" : : "rm" ((uint16_t)0x48) : "memory");
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 }

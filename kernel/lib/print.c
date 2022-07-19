@@ -193,13 +193,13 @@ size_t snprint(char *buffer, size_t size, const char *fmt, ...) {
 void vprint(const char *fmt, va_list args) {
     static spinlock_t lock = SPINLOCK_INIT;
 
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     char buffer[1024];
     vsnprint(buffer, sizeof(buffer), fmt, args);
     serial_outstr(buffer);
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 }
 
 void print(const char *fmt, ...) {

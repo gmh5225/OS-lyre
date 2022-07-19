@@ -112,7 +112,7 @@ static void *inner_alloc(size_t pages, uint64_t limit) {
 }
 
 void *pmm_alloc(size_t pages) {
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     size_t last = last_used_index;
     void *ret = inner_alloc(pages, total_page_count);
@@ -125,17 +125,17 @@ void *pmm_alloc(size_t pages) {
     // TODO: Check if ret is null and panic
     free_pages -= pages;
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
     return ret;
 }
 
 void pmm_free(void *addr, size_t pages) {
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     size_t page = (uint64_t)addr / PAGE_SIZE;
     for (size_t i = page; i < page + pages; i++) {
         bitmap_reset(bitmap, i);
     }
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 }

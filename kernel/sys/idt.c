@@ -41,7 +41,7 @@ uint8_t idt_allocate_vector(void) {
     static spinlock_t lock = SPINLOCK_INIT;
     static uint8_t free_vector = 32;
 
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     if (free_vector == 0xf0) {
         // TODO panic
@@ -51,7 +51,7 @@ uint8_t idt_allocate_vector(void) {
 
     uint8_t ret = free_vector++;
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 
     return ret;
 }

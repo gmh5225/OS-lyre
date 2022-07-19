@@ -59,7 +59,7 @@ static void create_slab(struct slab *slab, size_t ent_size) {
 }
 
 static void *alloc_from_slab(struct slab *slab) {
-    SPINLOCK_ACQUIRE(slab->lock);
+    spinlock_acquire(&slab->lock);
 
     if (slab->first_free == NULL) {
         create_slab(slab, slab->ent_size);
@@ -69,12 +69,12 @@ static void *alloc_from_slab(struct slab *slab) {
     slab->first_free = *old_free;
     memset(old_free, 0, slab->ent_size);
 
-    SPINLOCK_RELEASE(slab->lock);
+    spinlock_release(&slab->lock);
     return old_free;
 }
 
 static void free_in_slab(struct slab *slab, void *addr) {
-    SPINLOCK_ACQUIRE(slab->lock);
+    spinlock_acquire(&slab->lock);
 
     if (addr == NULL) {
         goto cleanup;
@@ -85,7 +85,7 @@ static void free_in_slab(struct slab *slab, void *addr) {
     slab->first_free = new_head;
 
 cleanup:
-    SPINLOCK_RELEASE(slab->lock);
+    spinlock_release(&slab->lock);
 }
 
 void slab_init(void) {

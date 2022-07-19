@@ -5,13 +5,17 @@ typedef int spinlock_t;
 
 #define SPINLOCK_INIT 0
 
-#define SPINLOCK_ACQUIRE(LOCK) do {                     \
-    if (__sync_bool_compare_and_swap(&(LOCK), 0, 1)) {  \
-        break;                                          \
-    }                                                   \
-    asm volatile ("pause");                             \
-} while (1)
+static inline void spinlock_acquire(spinlock_t *lock) {
+    for (;;) {
+        if (__sync_bool_compare_and_swap(lock, 0, 1)) {
+            break;
+        }
+        asm volatile ("pause");
+    }
+}
 
-#define SPINLOCK_RELEASE(LOCK) __sync_bool_compare_and_swap(&(LOCK), 1, 0)
+static inline void spinlock_release(spinlock_t *lock) {
+    __sync_bool_compare_and_swap(lock, 1, 0);
+}
 
 #endif
