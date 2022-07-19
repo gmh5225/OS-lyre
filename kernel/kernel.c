@@ -5,6 +5,7 @@
 #include <mm/pmm.h>
 #include <mm/slab.h>
 #include <sys/gdt.h>
+#include <sys/idt.h>
 #include <limine.h>
 
 // The Limine requests can be placed anywhere, but it is important that
@@ -31,6 +32,7 @@ static void done(void) {
 void _start(void) {
     serial_init();
     gdt_init();
+    idt_init();
     pmm_init();
     slab_init();
 
