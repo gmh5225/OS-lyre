@@ -41,6 +41,8 @@ override INTERNALCFLAGS := \
     -std=gnu11             \
     -fms-extensions        \
     -Wno-microsoft-anon-tag \
+    -Wvla                  \
+    -Wshadow               \
     -ffreestanding         \
     -fno-stack-protector   \
     -fno-stack-check       \

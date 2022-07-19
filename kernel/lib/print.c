@@ -134,8 +134,8 @@ parse_flags:
                 break;
             }
             case 'c': {
-                char ch = (char)va_arg(args, int);
-                print_char(buffer, size, &offset, ch);
+                char c = (char)va_arg(args, int);
+                print_char(buffer, size, &offset, c);
                 break;
             }
             case 'i':
