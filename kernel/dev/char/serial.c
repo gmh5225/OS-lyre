@@ -50,20 +50,20 @@ void serial_init(void) {
 void serial_out(char ch) {
     static spinlock_t lock = SPINLOCK_INIT;
 
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     if (ch == '\n') {
         transmit_data(com1_port, '\r');
     }
     transmit_data(com1_port, ch);
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 }
 
 void serial_outstr(const char *str) {
     static spinlock_t lock = SPINLOCK_INIT;
 
-    SPINLOCK_ACQUIRE(lock);
+    spinlock_acquire(&lock);
 
     while (*str) {
         if (*str == '\n') {
@@ -72,5 +72,5 @@ void serial_outstr(const char *str) {
         transmit_data(com1_port, *str++);
     }
 
-    SPINLOCK_RELEASE(lock);
+    spinlock_release(&lock);
 }
