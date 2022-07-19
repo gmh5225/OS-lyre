@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 #include <sys/idt.h>
 #include <lib/lock.h>
 #include <lib/print.h>
