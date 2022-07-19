@@ -195,7 +195,7 @@ void vprint(const char *fmt, va_list args) {
 
     SPINLOCK_ACQUIRE(lock);
 
-    char buffer[256];
+    char buffer[1024];
     vsnprint(buffer, sizeof(buffer), fmt, args);
     serial_outstr(buffer);
 

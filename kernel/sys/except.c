@@ -4,6 +4,7 @@
 #include <sys/idt.h>
 #include <lib/misc.h>
 #include <lib/print.h>
+#include <lib/panic.h>
 
 static const char *exceptions[] = {
     "Division exception",
@@ -29,12 +30,10 @@ static const char *exceptions[] = {
     "Virtualisation"
 };
 
-static void exception_handler(uint8_t vector, void *ctx) {
-    // TODO this is a stub
-    (void)ctx;
+static void exception_handler(uint8_t vector, struct cpu_ctx *ctx) {
+    panic(ctx, "Exception %s triggered", exceptions[vector]);
 
-    print("Exception %s triggered\n", exceptions[vector]);
-    for (;;);
+    __builtin_unreachable();
 }
 
 void except_init(void) {
