@@ -42,6 +42,7 @@ noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
           ctx->rsi, ctx->rdi, ctx->rbp, ctx->rsp,
           ctx->r8, ctx->r9, ctx->r10, ctx->r11,
           ctx->r12, ctx->r13, ctx->r14, ctx->r15,
+          ctx->rip, ctx->rflags,
           ctx->cs, ctx->ds, ctx->es, ctx->ss,
           ctx->err);
 
