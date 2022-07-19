@@ -79,13 +79,14 @@ static void free_in_slab(struct slab *slab, void *addr) {
     SPINLOCK_ACQUIRE(slab->lock);
 
     if (addr == NULL) {
-        return;
+        goto cleanup;
     }
 
     uintptr_t *new_head = (uintptr_t *)addr;
     *new_head = (uintptr_t)slab->first_free;
     slab->first_free = new_head;
 
+cleanup:
     SPINLOCK_RELEASE(slab->lock);
 }
 
