@@ -11,7 +11,7 @@
 
 struct slab {
     spinlock_t lock;
-    void *first_free;
+    void **first_free;
     size_t ent_size;
 };
 
@@ -33,7 +33,6 @@ static inline struct slab *slab_for(size_t size) {
             return slab;
         }
     }
-
     return NULL;
 }
 
@@ -44,19 +43,19 @@ static void create_slab(struct slab *slab, size_t ent_size) {
 
     size_t header_offset = ALIGN_UP(sizeof(struct slab_header), ent_size);
     size_t available_size = PAGE_SIZE - header_offset;
+
     struct slab_header *slab_ptr = (struct slab_header *)slab->first_free;
-
     slab_ptr->slab = slab;
-    slab->first_free += header_offset;
+    slab->first_free = (void **)((void *)slab->first_free + header_offset);
 
-    uintptr_t *array = (uintptr_t *)slab->first_free;
+    void **arr = (void **)slab->first_free;
     size_t max = available_size / ent_size - 1;
-    size_t fact = ent_size / sizeof(uintptr_t);
+    size_t fact = ent_size / sizeof(void *);
 
     for (size_t i = 0; i < max; i++) {
-        array[i * fact] = (uintptr_t)&array[(i + 1) * fact];
+        arr[i * fact] = &arr[(i + 1) * fact];
     }
-    array[max * fact] = 0;
+    arr[max * fact] = NULL;
 }
 
 static void *alloc_from_slab(struct slab *slab) {
@@ -66,9 +65,8 @@ static void *alloc_from_slab(struct slab *slab) {
         create_slab(slab, slab->ent_size);
     }
 
-    uintptr_t *old_free = (uintptr_t*)&slab->first_free;
-    slab->first_free = (void *)*old_free;
-
+    void **old_free = slab->first_free;
+    slab->first_free = *old_free;
     memset(old_free, 0, slab->ent_size);
 
     SPINLOCK_RELEASE(slab->lock);
@@ -82,8 +80,8 @@ static void free_in_slab(struct slab *slab, void *addr) {
         goto cleanup;
     }
 
-    uintptr_t *new_head = (uintptr_t *)addr;
-    *new_head = (uintptr_t)slab->first_free;
+    void **new_head = addr;
+    *new_head = slab->first_free;
     slab->first_free = new_head;
 
 cleanup:
