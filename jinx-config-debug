@@ -1,2 +1,2 @@
 . ${base_dir}/jinx-config
-export LYRE_PROD=no
+export LYRE_DEBUG=true

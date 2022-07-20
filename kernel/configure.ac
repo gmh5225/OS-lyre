@@ -76,6 +76,9 @@ m4_define([DEFAULT_CROSS_LDFLAGS], [])
 AC_ARG_VAR(CROSS_LDFLAGS, [cross linker flags @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
 
+AC_ARG_VAR(LYRE_DEBUG, [debug mode])
+test "x$LYRE_DEBUG" = "x" && LYRE_DEBUG="false"
+
 AC_PREFIX_DEFAULT([])
 
 AC_CONFIG_FILES(GNUmakefile)

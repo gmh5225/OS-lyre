@@ -5,6 +5,7 @@ override BUILDDIR := @BUILDDIR@
 override CROSS_FILE := @CROSS_FILE@
 override INSTALL := @INSTALL@
 override PREFIX := @prefix@
+LYRE_DEBUG ?= @LYRE_DEBUG@
 
 # This is the name that our final kernel executable will have.
 # Change as needed.
@@ -36,6 +37,7 @@ CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 
 # Internal C flags that should not be changed by the user.
 override INTERNALCFLAGS := \
+    -Ddebug=$(LYRE_DEBUG)  \
     -I'$(call SHESCAPE,$(SRCDIR))' \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
     -std=gnu11             \

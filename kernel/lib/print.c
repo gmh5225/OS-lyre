@@ -288,7 +288,9 @@ void vprint(const char *fmt, va_list args) {
 
     char buffer[1024];
     vsnprint(buffer, sizeof(buffer), fmt, args);
-    serial_outstr(buffer);
+    if (debug) {
+        serial_outstr(buffer);
+    }
 
     spinlock_release(&lock);
 }
