@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <limine.h>
 #include <lib/lock.h>
+#include <lib/vector.h>
 
 #define PAGE_SIZE 4096
 
@@ -20,6 +21,7 @@
 struct pagemap {
     spinlock_t lock;
     uint64_t *top_level;
+    VECTOR_TYPE(struct mmap_range_local *) mmap_ranges;
 };
 
 extern volatile struct limine_hhdm_request hhdm_request;
@@ -28,14 +30,18 @@ extern struct pagemap *vmm_kernel_pagemap;
 extern bool vmm_initialised;
 
 #define VMM_HIGHER_HALF (hhdm_request.response->offset)
+#define INVALID_PHYS ((uint64_t)0xffffffffffffffff)
 
 void vmm_init(void);
 
 struct pagemap *vmm_new_pagemap(void);
+struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap);
 void vmm_destroy_pagemap(struct pagemap *pagemap);
 void vmm_switch_to(struct pagemap *pagemap);
 bool vmm_map_page(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys, uint64_t flags);
 bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags);
 bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt);
+uint64_t *vmm_virt2pte(struct pagemap *pagemap, uintptr_t virt, bool allocate);
+uintptr_t vmm_virt2phys(struct pagemap *pagemap, uintptr_t virt);
 
 #endif

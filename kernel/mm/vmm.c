@@ -6,7 +6,10 @@
 #include <lib/lock.h>
 #include <lib/misc.h>
 #include <lib/panic.h>
+#include <lib/resource.h>
+#include <lib/vector.h>
 #include <mm/pmm.h>
+#include <mm/mmap.h>
 #include <mm/vmm.h>
 
 volatile struct limine_hhdm_request hhdm_request = {
@@ -138,6 +141,108 @@ cleanup:
     return NULL;
 }
 
+struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
+    spinlock_acquire(&pagemap->lock);
+
+    struct pagemap *new_pagemap = vmm_new_pagemap();
+    if (new_pagemap == NULL) {
+        goto cleanup;
+    }
+
+    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+        struct mmap_range_local *local_range = *it;
+        struct mmap_range_global *global_range = local_range->global;
+
+        struct mmap_range_local *new_local_range = ALLOC(struct mmap_range_local);
+        if (new_local_range == NULL) {
+            goto cleanup;
+        }
+
+        *new_local_range = *local_range;
+        // NOTE: Not present in vinix, in case of weird VMM bugs keep this line in mind :^)
+        new_local_range->pagemap = new_pagemap;
+
+        if (global_range->res != NULL) {
+            global_range->res->refcount++;
+        }
+
+        if ((local_range->flags & MAP_SHARED) != 0) {
+            VECTOR_PUSH_BACK(global_range->locals, new_local_range);
+            for (uintptr_t i = local_range->base; i < local_range->base + local_range->length; i += PAGE_SIZE) {
+                uint64_t *old_pte = vmm_virt2pte(pagemap, i, false);
+                if (old_pte == NULL) {
+                    continue;
+                }
+
+                uint64_t *new_pte = vmm_virt2pte(new_pagemap, i, true);
+                if (new_pte == NULL) {
+                    goto cleanup;
+                }
+                *new_pte = *old_pte;
+            }
+        } else {
+            struct mmap_range_global *new_global_range = ALLOC(struct mmap_range_global);
+            if (new_global_range == NULL) {
+                goto cleanup;
+            }
+
+            new_global_range->shadow_pagemap = vmm_new_pagemap();
+            if (new_global_range->shadow_pagemap == NULL) {
+                goto cleanup;
+            }
+
+            new_global_range->base = global_range->base;
+            new_global_range->length = global_range->length;
+            new_global_range->res = global_range->res;
+            new_global_range->offset = global_range->offset;
+
+            VECTOR_PUSH_BACK(new_global_range->locals, new_local_range);
+
+            if ((local_range->flags & MAP_ANONYMOUS) != 0) {
+                for (uintptr_t i = local_range->base; i < local_range->base + local_range->length; i += PAGE_SIZE) {
+                    uint64_t *old_pte = vmm_virt2pte(pagemap, i, false);
+                    if (old_pte == NULL) {
+                        continue;
+                    }
+
+                    uint64_t *new_pte = vmm_virt2pte(new_pagemap, i, true);
+                    if (old_pte == NULL) {
+                        goto cleanup;
+                    }
+
+                    uint64_t *new_spte = vmm_virt2pte(new_global_range->shadow_pagemap, i, true);
+                    if (old_pte == NULL) {
+                        goto cleanup;
+                    }
+
+                    void *old_page = (void *)PTE_GET_ADDR(*old_pte);
+                    void *page = pmm_alloc_nozero(1);
+                    if (page == NULL) {
+                        goto cleanup;
+                    }
+
+                    memcpy(page + VMM_HIGHER_HALF, old_page + VMM_HIGHER_HALF, PAGE_SIZE);
+                    *new_pte = PTE_GET_FLAGS(*old_pte) | (uint64_t)page;
+                    *new_spte = *new_pte;
+                }
+            } else {
+                panic(NULL, "Non anon fork");
+            }
+        }
+
+        VECTOR_PUSH_BACK(new_pagemap->mmap_ranges, new_local_range);
+    }
+
+    return new_pagemap;
+
+cleanup:
+    spinlock_release(&pagemap->lock);
+    if (new_pagemap != NULL) {
+        vmm_destroy_pagemap(new_pagemap);
+    }
+    return NULL;
+}
+
 static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
     if (level == 0) {
         return;
@@ -157,6 +262,12 @@ static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
 
 void vmm_destroy_pagemap(struct pagemap *pagemap) {
     spinlock_acquire(&pagemap->lock);
+
+    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+        struct mmap_range_local *local_range = *it;
+        ASSERT(munmap(pagemap, local_range->base, local_range->length));
+    }
+
     destroy_level(pagemap->top_level, 0, 256, 4);
     free(pagemap);
 }
@@ -287,4 +398,36 @@ bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt) {
 cleanup:
     spinlock_release(&pagemap->lock);
     return ok;
+}
+
+uint64_t *vmm_virt2pte(struct pagemap *pagemap, uintptr_t virt, bool allocate) {
+    size_t pml4_entry = (virt & (0x1ffull << 39)) >> 39;
+    size_t pml3_entry = (virt & (0x1ffull << 30)) >> 30;
+    size_t pml2_entry = (virt & (0x1ffull << 21)) >> 21;
+    size_t pml1_entry = (virt & (0x1ffull << 12)) >> 12;
+
+    uint64_t *pml4 = pagemap->top_level;
+    uint64_t *pml3 = get_next_level(pml4, pml4_entry, allocate);
+    if (pml3 == NULL) {
+        return NULL;
+    }
+    uint64_t *pml2 = get_next_level(pml3, pml3_entry, allocate);
+    if (pml2 == NULL) {
+        return NULL;
+    }
+    uint64_t *pml1 = get_next_level(pml2, pml2_entry, allocate);
+    if (pml1 == NULL) {
+        return NULL;
+    }
+
+    return &pml1[pml1_entry];
+}
+
+uintptr_t vmm_virt2phys(struct pagemap *pagemap, uintptr_t virt) {
+    uint64_t *pte = vmm_virt2pte(pagemap, virt, false);
+    if (pte == NULL) {
+        return INVALID_PHYS;
+    }
+
+    return PTE_GET_ADDR(*pte);
 }
