@@ -4,6 +4,7 @@
 #include <lib/print.h>
 #include <mm/pmm.h>
 #include <mm/slab.h>
+#include <mm/vmm.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/except.h>
@@ -37,6 +38,7 @@ void _start(void) {
     except_init();
     pmm_init();
     slab_init();
+    vmm_init();
 
     print("Hello, %s!\n", "world");
 
