@@ -38,7 +38,7 @@ static inline struct slab *slab_for(size_t size) {
 
 static void create_slab(struct slab *slab, size_t ent_size) {
     slab->lock = SPINLOCK_INIT;
-    slab->first_free = pmm_alloc(1) + VMM_HIGHER_HALF;
+    slab->first_free = pmm_alloc_nozero(1) + VMM_HIGHER_HALF;
     slab->ent_size = ent_size;
 
     size_t header_offset = ALIGN_UP(sizeof(struct slab_header), ent_size);

@@ -112,6 +112,15 @@ static void *inner_alloc(size_t pages, uint64_t limit) {
 }
 
 void *pmm_alloc(size_t pages) {
+    void *ret = pmm_alloc_nozero(pages);
+    if (ret != NULL) {
+        memset(ret + VMM_HIGHER_HALF, 0, PAGE_SIZE);
+    }
+
+    return ret;
+}
+
+void *pmm_alloc_nozero(size_t pages) {
     spinlock_acquire(&lock);
 
     size_t last = last_used_index;
@@ -126,10 +135,6 @@ void *pmm_alloc(size_t pages) {
     free_pages -= pages;
 
     spinlock_release(&lock);
-
-    if (ret != NULL) {
-        memset(ret + VMM_HIGHER_HALF, 0, PAGE_SIZE);
-    }
     return ret;
 }
 
