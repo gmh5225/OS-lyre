@@ -1,7 +1,7 @@
 name=kernel
 from_source=kernel
 revision=1
-imagedeps="git"
+deps="mlibc"
 hostdeps="gcc binutils"
 imagedeps="nasm"
 
