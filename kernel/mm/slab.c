@@ -67,6 +67,7 @@ static void *alloc_from_slab(struct slab *slab) {
 
     void **old_free = slab->first_free;
     slab->first_free = *old_free;
+    memset(old_free, 0, slab->ent_size);
 
     spinlock_release(&slab->lock);
     return old_free;
