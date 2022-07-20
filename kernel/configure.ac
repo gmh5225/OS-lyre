@@ -77,7 +77,7 @@ AC_ARG_VAR(CROSS_LDFLAGS, [cross linker flags @<:@default: ]DEFAULT_CROSS_LDFLAG
 test "x$CROSS_LDFLAGS" = "x" && CROSS_LDFLAGS="DEFAULT_CROSS_LDFLAGS"
 
 AC_ARG_VAR(LYRE_DEBUG, [debug mode])
-test "x$LYRE_DEBUG" = "x" && LYRE_DEBUG="false"
+test "x$LYRE_DEBUG" = "x" && LYRE_DEBUG="0"
 
 AC_PREFIX_DEFAULT([])
 
