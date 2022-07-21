@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <abi-bits/vm-flags.h>
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/lock.h>
@@ -12,6 +13,7 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <sched/proc.h>
+#include <sys/cpu.h>
 
 struct addr2range {
     struct mmap_range_local *range;
@@ -41,6 +43,45 @@ void mmap_list_ranges(struct pagemap *pagemap) {
         struct mmap_range_local *local_range = *it;
         print("\tbase=%lx, length=%lx, offset=%lx\n", local_range->base, local_range->length, local_range->offset);
     }
+}
+
+bool mmap_handle_pf(struct cpu_ctx *ctx) {
+    if ((ctx->err & 0x1) != 0) {
+        return false;
+    }
+
+    // TODO: mmap can be expensive, consider enabling interrupts
+    // temporarily
+    uint64_t cr2 = 0;
+    asm volatile ("mov %%cr2, %0" : "=r" (cr2));
+
+    struct thread *thread = sched_current_thread();
+    struct process *process = thread->process;
+    struct pagemap *pagemap = process->pagemap;
+
+    spinlock_acquire(&pagemap->lock);
+
+    struct addr2range range = addr2range(pagemap, cr2);
+    struct mmap_range_local *local_range = range.range;
+
+    spinlock_release(&pagemap->lock);
+
+    if (local_range == NULL) {
+        return false;
+    }
+
+    void *page = NULL;
+    if ((local_range->flags & MAP_ANONYMOUS) != 0) {
+        page = pmm_alloc(1);
+    } else {
+        // TODO: Implement resource mmap
+    }
+
+    if (page == NULL) {
+        return false;
+    }
+
+    return mmap_page_in_range(local_range->global, range.memory_page * PAGE_SIZE, (uintptr_t)page, local_range->prot);
 }
 
 bool mmap_page_in_range(struct mmap_range_global *global, uintptr_t virt,

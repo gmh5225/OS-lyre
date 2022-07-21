@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <mm/mmap.h>
 #include <sys/except.h>
 #include <sys/idt.h>
 #include <lib/misc.h>
@@ -31,6 +32,10 @@ static const char *exceptions[] = {
 };
 
 static void exception_handler(uint8_t vector, struct cpu_ctx *ctx) {
+    if (vector == 0xe && mmap_handle_pf(ctx)) {
+        return;
+    }
+
     panic(ctx, "Exception %s triggered", exceptions[vector]);
 
     __builtin_unreachable();

@@ -6,20 +6,19 @@
 
 struct process {
     uintptr_t mmap_anon_base;
+    struct pagemap *pagemap;
 };
 
 struct thread {
     struct thread *self;
-    int errno;
     struct process *process;
+    int errno;
 };
 
-static inline struct thread *sched_current_thread(void) {
-	struct thread *ret = NULL;
-
-    asm volatile ("mov %%gs:0x8, %0" : "=r" (ret));
-
-	return ret;
-}
+struct thread *sched_current_thread(void); // {
+//     struct thread *ret = NULL;
+//     asm volatile ("mov %%gs:0x0, %0" : "=r" (ret));
+//     return ret;
+// }
 
 #endif
