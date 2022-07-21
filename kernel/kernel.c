@@ -11,6 +11,7 @@
 #include <sys/except.h>
 #include <fs/vfs/vfs.h>
 #include <limine.h>
+#include <initramfs.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -42,6 +43,7 @@ void _start(void) {
     slab_init();
     vmm_init();
     vfs_init();
+    initramfs_init();
 
     print("Hello, %s!\n", "world");
 
