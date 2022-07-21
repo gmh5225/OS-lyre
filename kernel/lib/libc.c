@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <lib/alloc.h>
 #include <lib/libc.h>
 
 void *memcpy(void *dest, const void *src, size_t n) {
@@ -51,6 +52,16 @@ int memcmp(const void *s1, const void *s2, size_t n) {
     }
 
     return 0;
+}
+
+char *strdup(const char *src) {
+    size_t len = strlen(src);
+    char *ret = alloc(len + 1);
+    if (ret != NULL) {
+        memcpy(ret, src, len);
+        ret[len] = 0;
+    }
+    return ret;
 }
 
 char *strcpy(char *dest, const char *src) {
