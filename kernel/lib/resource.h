@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <lib/lock.h>
-#include <sys/stat.h>
+#include <abi-bits/stat.h>
 
 struct resource {
     size_t actual_size;

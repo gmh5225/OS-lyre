@@ -77,8 +77,8 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
     if (path[index] == '/') {
         current_node = reduce_node(vfs_root, false);
         while (path[index] == '/') {
-            if (index == path_len - 2) {
-                return (struct path2node_res){current_node, current_node, ""};
+            if (index == path_len - 1) {
+                return (struct path2node_res){current_node, current_node, strdup("")};
             }
             index++;
         }
@@ -97,9 +97,7 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
         }
 
         bool last = index == path_len;
-
-        char *elem_str = alloc(elem_len + 1);
-        memcpy(elem_str, elem, elem_len);
+        char *elem_str = strdup(elem);
 
         current_node = reduce_node(current_node, false);
 
@@ -222,8 +220,6 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
         goto cleanup;
     }
 
-    fs = fs->instantiate();
-
     struct vfs_node *mount_node = fs->mount(r.target_parent, r.basename, source_node);
 
     r.target->mountpoint = mount_node;
@@ -263,8 +259,8 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
         goto cleanup;
     }
 
-    struct vfs_node *target_node =
-        r.target_parent->filesystem->symlink(r.target_parent, dest, r.basename);
+    struct vfs_filesystem *target_fs = r.target_parent->filesystem;
+    struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, dest, r.basename);
 
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, r.target);
 
@@ -294,8 +290,8 @@ struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode)
         goto cleanup;
     }
 
-    struct vfs_node *target_node =
-        r.target_parent->filesystem->create(r.target_parent, r.basename, mode);
+    struct vfs_filesystem *target_fs = r.target_parent->filesystem;
+    struct vfs_node *target_node = target_fs->create(target_fs, r.target_parent, r.basename, mode);
 
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, r.target);
 
