@@ -50,10 +50,12 @@ struct tss {
 
 struct cpu_local {
     int cpu_number;
-    bool online;
+    bool bsp;
     uint32_t lapic_id;
     struct tss tss;
 };
+
+void cpu_init(void);
 
 extern size_t fpu_storage_size;
 extern void (*fpu_save)(void *ctx);

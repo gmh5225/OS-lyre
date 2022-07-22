@@ -43,6 +43,7 @@ void _start(void) {
     pmm_init();
     slab_init();
     vmm_init();
+    cpu_init();
     vfs_init();
     tmpfs_init();
     vfs_mount(vfs_root, NULL, "/", "tmpfs");

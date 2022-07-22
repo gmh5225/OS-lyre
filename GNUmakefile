@@ -24,7 +24,7 @@ distro-base: jinx
 
 .PHONY: run-kvm
 run-kvm: lyre.iso
-	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS) -smp 1
+	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS) -smp 4
 
 .PHONY: run-hvf
 run-hvf: lyre.iso

@@ -9,6 +9,7 @@
 #include <mm/vmm.h>
 #include <lib/print.h>
 #include <lib/panic.h>
+#include <lib/misc.h>
 #include <sched/sched.h>
 #include <limine.h>
 
@@ -18,7 +19,6 @@ void (*fpu_restore)(void *ctx) = NULL;
 
 #define CPU_STACK_SIZE 0x10000
 
-/*
 static volatile struct limine_smp_request smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0
@@ -43,6 +43,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     }
     uint64_t *common_int_stack =
         (void *)common_int_stack_phys + CPU_STACK_SIZE + VMM_HIGHER_HALF;
+    cpu_local->tss.rsp0 = (uint64_t)common_int_stack;
 
     uint64_t *sched_stack_phys = pmm_alloc(CPU_STACK_SIZE / PAGE_SIZE);
     if (sched_stack_phys == NULL) {
@@ -50,6 +51,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     }
     uint64_t *sched_stack =
         (void *)sched_stack_phys + CPU_STACK_SIZE + VMM_HIGHER_HALF;
+    cpu_local->tss.ist1 = (uint64_t)sched_stack;
 
     // Enable PAT (write-combining/write-protect)
     uint64_t pat = rdmsr(0x277);
@@ -70,8 +72,8 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     uint32_t eax, ebx, ecx, edx;
 
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_XSAVE)) {
-        if (true) { // XXX fix later for SMP
-            print("fpu: xsave supported");
+        if (cpu_local->bsp) {
+            print("fpu: xsave supported\n");
         }
 
         // Enable XSAVE and x{get,set}bv
@@ -80,25 +82,25 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
         write_cr4(cr4);
 
         uint64_t xcr0 = 0;
-        if (true) { // XXX fix later for SMP
-            print("fpu: Saving x87 state using xsave");
+        if (cpu_local->bsp) {
+            print("fpu: Saving x87 state using xsave\n");
         }
         xcr0 |= (uint64_t)1 << 0;
-        if (true) { // XXX fix later for SMP
-            print("fpu: Saving SSE state using xsave");
+        if (cpu_local->bsp) {
+            print("fpu: Saving SSE state using xsave\n");
         }
         xcr0 |= (uint64_t)1 << 1;
 
         if (ecx & CPUID_AVX) {
-            if (true) { // XXX fix later for SMP
-                print("fpu: Saving AVX state using xsave");
+            if (cpu_local->bsp) {
+                print("fpu: Saving AVX state using xsave\n");
             }
             xcr0 |= (uint64_t)1 << 2;
         }
 
         if (cpuid(7, 0, &eax, &ebx, &ecx, &edx) && (ebx & CPUID_AVX512)) {
-            if (true) { // XXX fix later for SMP
-                print("fpu: Saving AVX-512 state using xsave");
+            if (cpu_local->bsp) {
+                print("fpu: Saving AVX-512 state using xsave\n");
             }
             xcr0 |= (uint64_t)1 << 5;
             xcr0 |= (uint64_t)1 << 6;
@@ -115,8 +117,8 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
         fpu_save = xsave;
         fpu_restore = xrstor;
     } else {
-        if (true) { // XXX fix later for SMP
-            print("fpu: Using legacy fxsave");
+        if (cpu_local->bsp) {
+            print("fpu: Using legacy fxsave\n");
         }
         fpu_storage_size = 512;
         fpu_save = fxsave;
@@ -129,11 +131,31 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     print("cpu: Processor #%u online!\n", cpu_number);
 
-    cpu_local->online = true;
-
-    if (false) { // XXX fix later for SMP
+    if (!cpu_local->bsp) {
         while (sched_ready() == false);
         sched_await();
     }
 }
-*/
+
+void cpu_init(void) {
+    struct limine_smp_response *smpresp = smp_request.response;
+
+    ASSERT(smpresp != NULL);
+
+    print("cpu: %u processors detected\n", smpresp->cpu_count);
+
+    for (size_t i = 0; i < smpresp->cpu_count; i++) {
+        struct limine_smp_info *cpu = smpresp->cpus[i];
+
+        struct cpu_local *cpu_local = ALLOC(struct cpu_local);
+        cpu->extra_argument = (uint64_t)cpu_local;
+        cpu_local->cpu_number = i;
+
+        if (cpu->lapic_id != smpresp->bsp_lapic_id) {
+            cpu->goto_address = single_cpu_init;
+        } else {
+            cpu_local->bsp = true;
+            single_cpu_init(cpu);
+        }
+    }
+}
