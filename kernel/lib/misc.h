@@ -3,6 +3,18 @@
 
 #include <lib/panic.h>
 
+#define MIN(A, B) ({ \
+    typeof(A) MIN_a = A; \
+    typeof(B) MIN_b = B; \
+    MIN_a < MIN_b ? MIN_a : MIN_b; \
+})
+
+#define MAX(A, B) ({ \
+    typeof(A) MAX_a = A; \
+    typeof(B) MAX_b = B; \
+    MAX_a > MAX_b ? MAX_a : MAX_b; \
+})
+
 #define DIV_ROUNDUP(VALUE, DIV) ({ \
     typeof(VALUE) DIV_ROUNDUP_value = VALUE; \
     typeof(DIV) DIV_ROUNDUP_div = DIV; \
