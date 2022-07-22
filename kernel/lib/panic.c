@@ -53,7 +53,7 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
 halt:
     if (trace) {
         print("Stacktrace follows:\n");
-        trace_printstack(0);
+        trace_printstack(ctx == NULL ? 0 : ctx->rbp);
         print("\n");
     }
 
