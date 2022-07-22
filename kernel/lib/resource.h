@@ -1,6 +1,7 @@
 #ifndef _LIB__RESOURCE_H
 #define _LIB__RESOURCE_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/lock.h>
@@ -11,6 +12,7 @@ struct resource {
     size_t refcount;
     spinlock_t lock;
     struct stat stat;
+    bool can_mmap;
 
     ssize_t (*read)(struct resource *this, void *buf, off_t offset, size_t count);
     ssize_t (*write)(struct resource *this, const void *buf, off_t offset, size_t count);

@@ -87,8 +87,7 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
     if (S_ISREG(mode)) {
         resource->capacity = 4096;
         resource->data = alloc(resource->capacity);
-        // TODO: Finish up the resource API
-        // resource->can_mmap = true;
+        resource->can_mmap = true;
     }
 
     resource->refcount = 1;

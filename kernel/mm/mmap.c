@@ -179,17 +179,16 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
     struct mmap_range_global *global_range = NULL;
     struct mmap_range_local *local_range = NULL;
 
-    // TODO: Implement resources
-    if (length == 0 || res != NULL) {
+    if (length == 0) {
         errno = EINVAL;
         goto cleanup;
     }
     length = ALIGN_UP(length, PAGE_SIZE);
 
-    // if ((flags & MAP_ANONYMOUS) == 0 && res != NULL && !res->can_mmap) {
-    //     errno = ENODEV;
-    //     return NULL;
-    // }
+    if ((flags & MAP_ANONYMOUS) == 0 && res != NULL && !res->can_mmap) {
+        errno = ENODEV;
+        return NULL;
+    }
 
     struct process *process = sched_current_thread()->process;
 
