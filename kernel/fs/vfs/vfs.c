@@ -92,12 +92,14 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
             elem_len++, index++;
         }
 
-        while (index < path_len && path[index] != '/') {
+        while (index < path_len && path[index] == '/') {
             index++;
         }
 
         bool last = index == path_len;
-        char *elem_str = strdup(elem);
+
+        char *elem_str = alloc(elem_len + 1);
+        memcpy(elem_str, elem, elem_len);
 
         current_node = reduce_node(current_node, false);
 
