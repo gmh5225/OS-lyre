@@ -58,4 +58,4 @@ clean: kernel-clean base-files-clean
 distclean: jinx
 	cd kernel && ./bootstrap && ./configure && make maintainer-clean
 	./jinx clean
-	rm -rf iso_root sysroot lyre.iso initramfs.tar jinx
+	rm -rf iso_root sysroot lyre.iso initramfs.tar jinx ovmf
