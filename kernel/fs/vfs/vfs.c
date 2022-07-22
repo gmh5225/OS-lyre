@@ -264,7 +264,7 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
     struct vfs_filesystem *target_fs = r.target_parent->filesystem;
     struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, dest, r.basename);
 
-    HASHMAP_SINSERT(&r.target_parent->children, r.basename, r.target);
+    HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
 
     ret = target_node;
 
@@ -295,7 +295,7 @@ struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode)
     struct vfs_filesystem *target_fs = r.target_parent->filesystem;
     struct vfs_node *target_node = target_fs->create(target_fs, r.target_parent, r.basename, mode);
 
-    HASHMAP_SINSERT(&r.target_parent->children, r.basename, r.target);
+    HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
 
     if (S_ISDIR(target_node->resource->stat.st_mode)) {
         create_dotentries(target_node, r.target_parent);

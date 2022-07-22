@@ -66,7 +66,7 @@ void initramfs_init(void) {
 
     while (strncmp(current_file->magic, "ustar", 5) == 0) {
         char *name = current_file->name;
-        // char *link_name = current_file->link_name;
+        char *link_name = current_file->link_name;
         if (name_override != NULL) {
             name = name_override;
             name_override = NULL;
@@ -90,6 +90,14 @@ void initramfs_init(void) {
 
                 struct resource *resource = node->resource;
                 ASSERT(resource->write(resource, (void *)current_file + 512, 0, size) == (ssize_t)size);
+                break;
+            }
+            case TAR_FILE_TYPE_SYMLINK: {
+                struct vfs_node *node = vfs_symlink(vfs_root, link_name, name);
+                if (node == NULL) {
+                    panic(NULL, true, "Failed to allocate an initramfs node");
+                }
+
                 break;
             }
             case TAR_FILE_TYPE_DIRECTORY: {
