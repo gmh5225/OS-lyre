@@ -66,7 +66,7 @@ void initramfs_init(void) {
 
     while (strncmp(current_file->magic, "ustar", 5) == 0) {
         char *name = current_file->name;
-        char *link_name = current_file->link_name;
+        // char *link_name = current_file->link_name;
         if (name_override != NULL) {
             name = name_override;
             name_override = NULL;
@@ -78,8 +78,8 @@ void initramfs_init(void) {
 
         uint64_t mode = oct2int(current_file->mode, sizeof(current_file->mode));
         uint64_t size = oct2int(current_file->size, sizeof(current_file->size));
-        uint64_t uid = oct2int(current_file->uid, sizeof(current_file->uid));
-        uint64_t gid = oct2int(current_file->gid, sizeof(current_file->gid));
+        // uint64_t uid = oct2int(current_file->uid, sizeof(current_file->uid));
+        // uint64_t gid = oct2int(current_file->gid, sizeof(current_file->gid));
 
         switch (current_file->type) {
             case TAR_FILE_TYPE_NORMAL: {

@@ -5,6 +5,7 @@
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/lock.h>
+#include <lib/misc.h>
 #include <lib/panic.h>
 #include <lib/print.h>
 #include <lib/resource.h>
@@ -24,30 +25,46 @@ struct tmpfs {
     uint64_t inode_counter;
 };
 
-static inline struct vfs_filesystem *tmpfs_instantiate(void);
+static ssize_t tmpfs_resource_write(struct resource *_this, void *buf, off_t offset, size_t count) {
+    ssize_t ret = -1;
+    struct tmpfs_resource *this = (struct tmpfs_resource *)_this;
 
-struct vfs_node *tmpfs_mount(struct vfs_node *parent, const char *name, struct vfs_node *source) {
-    (void)source;
+    spinlock_acquire(&this->lock);
 
-    struct vfs_filesystem *new_fs = tmpfs_instantiate();
-    struct vfs_node *ret = new_fs->create(new_fs, parent, name, 0644 | S_IFDIR);
+    if (offset + count >= this->capacity) {
+        size_t new_capacity = this->capacity;
+        while (offset + count >= new_capacity) {
+            new_capacity *= 2;
+        }
+
+        void *new_data = realloc(this->data, new_capacity);
+        if (new_data == NULL) {
+            errno = ENOMEM;
+            goto fail;
+        }
+
+        this->data = new_data;
+        this->capacity = new_capacity;
+    }
+
+    memcpy(this->data + offset, buf, count);
+
+    if ((off_t)(offset + count) >= this->stat.st_size) {
+        this->stat.st_size = (off_t)(offset + count);
+        this->stat.st_blocks = DIV_ROUNDUP(this->stat.st_size, this->stat.st_blksize);
+    }
+
+    ret = count;
+
+fail:
+    spinlock_release(&this->lock);
     return ret;
 }
 
-struct vfs_node *tmpfs_create(struct vfs_filesystem *_this, struct vfs_node *parent,
-                              const char *name, int mode) {
-    struct tmpfs *this = (struct tmpfs *)_this;
-    struct vfs_node *new_node = NULL;
-    struct tmpfs_resource *resource = NULL;
-
-    new_node = vfs_create_node(_this, parent, name, S_ISDIR(mode));
-    if (new_node == NULL) {
-        goto fail;
-    }
-
-    resource = ALLOC(struct tmpfs_resource);
+static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, int mode) {
+    struct tmpfs_resource *resource = ALLOC(struct tmpfs_resource);
     if (resource == NULL) {
-        goto fail;
+        return resource;
     }
 
     if (S_ISREG(mode)) {
@@ -58,6 +75,8 @@ struct vfs_node *tmpfs_create(struct vfs_filesystem *_this, struct vfs_node *par
     }
 
     resource->refcount = 1;
+    resource->write = tmpfs_resource_write;
+
     resource->stat.st_size = 0;
     resource->stat.st_blocks = 0;
     resource->stat.st_blksize = 512;
@@ -71,6 +90,35 @@ struct vfs_node *tmpfs_create(struct vfs_filesystem *_this, struct vfs_node *par
 	// resource->stat.st_ctim = realtime_clock;
 	// resource->stat.st_mtim = realtime_clock;
 
+    return resource;
+}
+
+static inline struct vfs_filesystem *tmpfs_instantiate(void);
+
+static struct vfs_node *tmpfs_mount(struct vfs_node *parent, const char *name, struct vfs_node *source) {
+    (void)source;
+
+    struct vfs_filesystem *new_fs = tmpfs_instantiate();
+    struct vfs_node *ret = new_fs->create(new_fs, parent, name, 0644 | S_IFDIR);
+    return ret;
+}
+
+static struct vfs_node *tmpfs_create(struct vfs_filesystem *_this, struct vfs_node *parent,
+                                     const char *name, int mode) {
+    struct tmpfs *this = (struct tmpfs *)_this;
+    struct vfs_node *new_node = NULL;
+    struct tmpfs_resource *resource = NULL;
+
+    new_node = vfs_create_node(_this, parent, name, S_ISDIR(mode));
+    if (new_node == NULL) {
+        goto fail;
+    }
+
+    resource = create_tmpfs_resource(this, mode);
+    if (resource == NULL) {
+        goto fail;
+    }
+
 	new_node->resource = (struct resource *)resource;
     return new_node;
 
@@ -85,8 +133,8 @@ fail:
     return NULL;
 }
 
-struct vfs_node *tmpfs_symlink(struct vfs_filesystem *_this, struct vfs_node *parent,
-                               const char *name, const char *target) {
+static struct vfs_node *tmpfs_symlink(struct vfs_filesystem *_this, struct vfs_node *parent,
+                                      const char *name, const char *target) {
     struct tmpfs *this = (struct tmpfs *)_this;
     struct vfs_node *new_node = NULL;
     struct tmpfs_resource *resource = NULL;
@@ -96,27 +144,13 @@ struct vfs_node *tmpfs_symlink(struct vfs_filesystem *_this, struct vfs_node *pa
         goto fail;
     }
 
-    resource = ALLOC(struct tmpfs_resource);
+    resource = create_tmpfs_resource(this, 0777 | S_IFLNK);
     if (resource == NULL) {
         goto fail;
     }
 
-    resource->refcount = 1;
-    resource->stat.st_size = strlen(target);
-    resource->stat.st_blocks = 0;
-    resource->stat.st_blksize = 512;
-    resource->stat.st_dev = this->dev_id;
-    resource->stat.st_ino = this->inode_counter++;
-    resource->stat.st_mode = 0777 | S_IFLNK;
-    resource->stat.st_nlink = 1;
-
-    // TODO: Port time stuff in
-	// resource->stat.st_atim = realtime_clock;
-	// resource->stat.st_ctim = realtime_clock;
-	// resource->stat.st_mtim = realtime_clock;
-
 	new_node->resource = (struct resource *)resource;
-    new_node->symlink_target = strdup(name);
+    new_node->symlink_target = strdup(target);
     return new_node;
 
 fail:
@@ -130,7 +164,7 @@ fail:
     return NULL;
 }
 
-struct vfs_node *tmpfs_link(struct vfs_filesystem *_this, struct vfs_node *parent,
+static struct vfs_node *tmpfs_link(struct vfs_filesystem *_this, struct vfs_node *parent,
                             const char *name, struct vfs_node *node) {
     if (S_ISDIR(node->resource->stat.st_mode)) {
         errno = EISDIR;
@@ -163,7 +197,7 @@ static inline struct vfs_filesystem *tmpfs_instantiate(void) {
 void tmpfs_init(void) {
     struct vfs_filesystem *tmpfs = tmpfs_instantiate();
     if (tmpfs == NULL) {
-        panic(NULL, "Failed to instantiate tmpfs");
+        panic(NULL, true, "Failed to instantiate tmpfs");
     }
 
     vfs_add_filesystem(tmpfs, "tmpfs");
