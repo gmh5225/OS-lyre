@@ -53,7 +53,7 @@ static inline uint64_t oct2int(const char *str, size_t len) {
 void initramfs_init(void) {
     struct limine_module_response *modules = module_request.response;
     if (modules == NULL || modules->module_count == 0) {
-        panic(NULL, "No initramfs");
+        panic(NULL, true, "No initramfs");
     }
 
     struct limine_file *module = modules->modules[0];
@@ -81,10 +81,32 @@ void initramfs_init(void) {
         uint64_t uid = oct2int(current_file->uid, sizeof(current_file->uid));
         uint64_t gid = oct2int(current_file->gid, sizeof(current_file->gid));
 
+        switch (current_file->type) {
+            case TAR_FILE_TYPE_NORMAL: {
+                struct vfs_node *node = vfs_create(vfs_root, name, mode | S_IFREG);
+                if (node == NULL) {
+                    panic(NULL, true, "Failed to allocate an initramfs node");
+                }
+
+                struct resource *resource = node->resource;
+                ASSERT(resource->write(resource, (void *)current_file + 512, 0, size) == (ssize_t)size);
+                break;
+            }
+            case TAR_FILE_TYPE_DIRECTORY: {
+                struct vfs_node *node = vfs_create(vfs_root, name, mode | S_IFDIR);
+                if (node == NULL) {
+                    panic(NULL, true, "Failed to allocate an initramfs node");
+                }
+
+                break;
+            }
+            case TAR_FILE_TYPE_GNU_LONG_PATH:
+                name_override = (void *)current_file + 512;
+                name_override[size] = 0;
+                break;
+        }
+
         // switch (current_file->type) {
-        //     case TAR_FILE_TYPE_NORMAL:
-        //         print("initramfs: Regular file '%s', mode=%04o, size=%lu, uid=%lu, gid=%lu\n", name, mode, size, uid, gid);
-        //         break;
         //     case TAR_FILE_TYPE_HARD_LINK:
         //         print("initramfs: Hard link '%s' to '%s', mode=%04o, uid=%lu, gid=%lu\n", name, link_name, mode, uid, gid);
         //         break;
@@ -103,19 +125,12 @@ void initramfs_init(void) {
         //         print("initramfs: Block device '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
         //         break;
         //     }
-        //     case TAR_FILE_TYPE_DIRECTORY:
-        //         print("initramfs: Directory '%s', mode=%04o, uid=%lu, gid=%lu\n", name, mode, uid, gid);
-        //         break;
         //     case TAR_FILE_TYPE_FIFO: {
         //         uint64_t dev_major = oct2int(current_file->dev_major, sizeof(current_file->dev_major));
         //         uint64_t dev_minor = oct2int(current_file->dev_minor, sizeof(current_file->dev_minor));
         //         print("initramfs: FIFO '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
         //         break;
         //     }
-        //     case TAR_FILE_TYPE_GNU_LONG_PATH:
-        //         name_override = (void *)current_file + 512;
-        //         name_override[size] = 0;
-        //         break;
         // }
 
         current_file = (void *)current_file + 512 + ALIGN_UP(size, 512);
