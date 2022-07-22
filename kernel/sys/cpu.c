@@ -37,6 +37,16 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     vmm_switch_to(vmm_kernel_pagemap);
 
+    struct thread *idle_thread = ALLOC(struct thread);
+
+    idle_thread->self = idle_thread;
+    idle_thread->this_cpu = cpu_local;
+    idle_thread->process = kernel_process;
+
+    cpu_local->idle_thread = idle_thread;
+
+    set_gs_base(idle_thread);
+
     uint64_t *common_int_stack_phys = pmm_alloc(CPU_STACK_SIZE / PAGE_SIZE);
     if (common_int_stack_phys == NULL) {
         panic(NULL, true, "Allocation failure");

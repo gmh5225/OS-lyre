@@ -14,6 +14,7 @@
 #include <fs/initramfs.h>
 #include <fs/tmpfs.h>
 #include <fs/devtmpfs.h>
+#include <sched/sched.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -44,7 +45,13 @@ void _start(void) {
     pmm_init();
     slab_init();
     vmm_init();
+
+    kernel_process = ALLOC(struct process);
+    kernel_process->mmap_anon_base = 0x80000000000;
+    kernel_process->pagemap = vmm_kernel_pagemap;
+
     cpu_init();
+    sched_init();
     vfs_init();
     tmpfs_init();
     devtmpfs_init();

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <sched/proc.h>
 
 struct cpu_ctx {
     uint64_t ds;
@@ -53,6 +54,7 @@ struct cpu_local {
     bool bsp;
     uint32_t lapic_id;
     struct tss tss;
+    struct thread *idle_thread;
 };
 
 void cpu_init(void);
@@ -160,6 +162,10 @@ static inline uint64_t wrmsr(uint32_t msr, uint64_t val) {
         : "memory"
     );
     return ((uint64_t)edx << 32) | eax;
+}
+
+static inline void set_gs_base(void *addr) {
+    wrmsr(0xc0000101, (uint64_t)addr);
 }
 
 #define CPUID_XSAVE ((uint32_t)1 << 26)
