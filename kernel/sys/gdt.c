@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <sys/gdt.h>
+#include <sys/cpu.h>
 #include <lib/lock.h>
 
 struct gdt_descriptor {
@@ -145,7 +146,9 @@ void gdt_reload(void) {
     );
 }
 
-void gdt_load_tss(uintptr_t addr) {
+void gdt_load_tss(struct tss *tss) {
+    uintptr_t addr = (uintptr_t)tss;
+
     static spinlock_t lock = SPINLOCK_INIT;
 
     spinlock_acquire(&lock);

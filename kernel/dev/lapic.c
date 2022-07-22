@@ -19,7 +19,7 @@
 
 static void *lapic_base;
 static uint8_t spurious_vec;
-static uint8_t timer_vec;
+static uint8_t timer_vec = 0;
 
 // TODO: make global cpu context?
 static uint32_t lapic_freq;
@@ -52,9 +52,13 @@ void lapic_init(void) {
     lapic_write(LAPIC_REG_SPURIOUS, lapic_read(LAPIC_REG_SPURIOUS) | (1 << 8) | spurious_vec);
 
     // Timer interrupt
-    timer_vec = idt_allocate_vector();
+    if (timer_vec == 0) {
+        timer_vec = idt_allocate_vector();
+    }
     isr[timer_vec] = &lapic_handler;
     lapic_write(LAPIC_REG_LVT_TIMER, lapic_read(LAPIC_REG_LVT_TIMER) | (1 << 8) | timer_vec);
+
+    lapic_timer_calibrate();
 
     print("lapic: Initialized, base=%lx, timer=%i, spurious irq=%i\n",
         lapic_base, timer_vec, spurious_vec);
