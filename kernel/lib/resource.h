@@ -16,6 +16,9 @@ struct resource {
 
     ssize_t (*read)(struct resource *this, void *buf, off_t offset, size_t count);
     ssize_t (*write)(struct resource *this, const void *buf, off_t offset, size_t count);
+    void *(*mmap)(struct resource *this, size_t file_page, int flags);
 };
+
+void *resource_create(size_t size);
 
 #endif

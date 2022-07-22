@@ -9,6 +9,9 @@
 #include <lib/panic.h>
 #include <lib/print.h>
 #include <lib/resource.h>
+#include <mm/mmap.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
 #include <bits/posix/stat.h>
 
 struct tmpfs_resource {
@@ -78,8 +81,30 @@ fail:
     return ret;
 }
 
+static void *tmpfs_resource_mmap(struct resource *_this, size_t file_page, int flags) {
+    struct tmpfs_resource *this = (struct tmpfs_resource *)_this;
+
+    spinlock_acquire(&this->lock);
+
+    void *ret = NULL;
+    if ((flags & MAP_SHARED) != 0) {
+        ret = (this->data + file_page * PAGE_SIZE) - VMM_HIGHER_HALF;
+    } else {
+        ret = pmm_alloc_nozero(1);
+        if (ret == NULL) {
+            goto cleanup;
+        }
+
+        memcpy(ret + VMM_HIGHER_HALF, this->data + file_page * PAGE_SIZE, PAGE_SIZE);
+    }
+
+cleanup:
+    spinlock_release(&this->lock);
+    return ret;
+}
+
 static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, int mode) {
-    struct tmpfs_resource *resource = ALLOC(struct tmpfs_resource);
+    struct tmpfs_resource *resource = resource_create(sizeof(struct tmpfs_resource));
     if (resource == NULL) {
         return resource;
     }
@@ -90,9 +115,9 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
         resource->can_mmap = true;
     }
 
-    resource->refcount = 1;
     resource->read = tmpfs_resource_read;
     resource->write = tmpfs_resource_write;
+    resource->mmap = tmpfs_resource_mmap;
 
     resource->stat.st_size = 0;
     resource->stat.st_blocks = 0;

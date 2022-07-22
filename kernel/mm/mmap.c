@@ -74,7 +74,8 @@ bool mmap_handle_pf(struct cpu_ctx *ctx) {
     if ((local_range->flags & MAP_ANONYMOUS) != 0) {
         page = pmm_alloc(1);
     } else {
-        // TODO: Implement resource mmap
+        struct resource *res = page = local_range->global->res;
+        page = res->mmap(res, range.file_page, local_range->flags);
     }
 
     if (page == NULL) {
