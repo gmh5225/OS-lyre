@@ -52,21 +52,16 @@ static inline uint32_t hash(const void *data, size_t length) {
     typeof(HASHMAP_GET_hashmap->buckets) HASHMAP_GET_bucket = \
         &HASHMAP_GET_hashmap->buckets[HASHMAP_GET_index]; \
     \
-    if (HASHMAP_GET_bucket->filled == 1) { \
-        RET = HASHMAP_GET_bucket->items[0].item; \
-        HASHMAP_GET_ok = true; \
-    } else { \
-        for (size_t HASHMAP_GET_i = 0; HASHMAP_GET_i < HASHMAP_GET_bucket->filled; HASHMAP_GET_i++) { \
-            if (HASHMAP_GET_key_length != HASHMAP_GET_bucket->items[HASHMAP_GET_i].key_length) { \
-                continue; \
-            } \
-            if (memcmp(HASHMAP_GET_key_data, \
-                       HASHMAP_GET_bucket->items[HASHMAP_GET_i].key_data, \
-                       HASHMAP_GET_key_length) == 0) { \
-                RET = HASHMAP_GET_bucket->items[HASHMAP_GET_i].item; \
-                HASHMAP_GET_ok = true; \
-                break; \
-            } \
+    for (size_t HASHMAP_GET_i = 0; HASHMAP_GET_i < HASHMAP_GET_bucket->filled; HASHMAP_GET_i++) { \
+        if (HASHMAP_GET_key_length != HASHMAP_GET_bucket->items[HASHMAP_GET_i].key_length) { \
+            continue; \
+        } \
+        if (memcmp(HASHMAP_GET_key_data, \
+                    HASHMAP_GET_bucket->items[HASHMAP_GET_i].key_data, \
+                    HASHMAP_GET_key_length) == 0) { \
+            RET = HASHMAP_GET_bucket->items[HASHMAP_GET_i].item; \
+            HASHMAP_GET_ok = true; \
+            break; \
         } \
     } \
     \
