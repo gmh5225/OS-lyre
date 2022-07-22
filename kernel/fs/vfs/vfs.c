@@ -262,7 +262,7 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
     }
 
     struct vfs_filesystem *target_fs = r.target_parent->filesystem;
-    struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, dest, r.basename);
+    struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, r.basename, dest);
 
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
 
