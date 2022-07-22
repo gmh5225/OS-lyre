@@ -13,6 +13,7 @@
 #include <limine.h>
 #include <fs/initramfs.h>
 #include <fs/tmpfs.h>
+#include <fs/devtmpfs.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -46,7 +47,10 @@ void _start(void) {
     cpu_init();
     vfs_init();
     tmpfs_init();
+    devtmpfs_init();
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
+    vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
+    vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
     initramfs_init();
 
     print("Hello, %s!\n", "world");
