@@ -104,9 +104,9 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
     resource->stat.st_nlink = 1;
 
     // TODO: Port time stuff in
-	// resource->stat.st_atim = realtime_clock;
-	// resource->stat.st_ctim = realtime_clock;
-	// resource->stat.st_mtim = realtime_clock;
+    // resource->stat.st_atim = realtime_clock;
+    // resource->stat.st_ctim = realtime_clock;
+    // resource->stat.st_mtim = realtime_clock;
 
     return resource;
 }
@@ -137,7 +137,7 @@ static struct vfs_node *tmpfs_create(struct vfs_filesystem *_this, struct vfs_no
         goto fail;
     }
 
-	new_node->resource = (struct resource *)resource;
+    new_node->resource = (struct resource *)resource;
     return new_node;
 
 fail:
@@ -167,7 +167,7 @@ static struct vfs_node *tmpfs_symlink(struct vfs_filesystem *_this, struct vfs_n
         goto fail;
     }
 
-	new_node->resource = (struct resource *)resource;
+    new_node->resource = (struct resource *)resource;
     new_node->symlink_target = strdup(target);
     return new_node;
 

@@ -6,8 +6,8 @@
 #include <stdbool.h>
 
 struct symbol {
-	uintptr_t address;
-	char *name;
+    uintptr_t address;
+    char *name;
 };
 
 extern struct symbol symbol_table[];
