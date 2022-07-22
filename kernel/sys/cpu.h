@@ -2,6 +2,7 @@
 #define _SYS__CPU_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 struct cpu_ctx {
     uint64_t ds;
@@ -50,6 +51,26 @@ static inline uint64_t wrmsr(uint32_t msr, uint64_t val) {
         : "memory"
     );
     return ((uint64_t)edx << 32) | eax;
+}
+
+static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
+                         uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
+    uint32_t cpuid_max;
+    asm volatile (
+        "cpuid"
+        : "=a"(cpuid_max)
+        : "a"(leaf & 0x80000000)
+        : "rbx", "rcx", "rdx"
+    );
+    if (leaf > cpuid_max) {
+        return false;
+    }
+    asm volatile (
+        "cpuid"
+        : "=a"(*eax), "=b"(*ebx), "=c"(*ecx), "=d"(*edx)
+        : "a"(leaf), "c"(subleaf)
+    );
+    return true;
 }
 
 #endif
