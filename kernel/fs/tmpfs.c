@@ -25,7 +25,24 @@ struct tmpfs {
     uint64_t inode_counter;
 };
 
-static ssize_t tmpfs_resource_write(struct resource *_this, void *buf, off_t offset, size_t count) {
+static ssize_t tmpfs_resource_read(struct resource *_this, void *buf, off_t offset, size_t count) {
+    struct tmpfs_resource *this = (struct tmpfs_resource *)_this;
+
+    spinlock_acquire(&this->lock);
+
+    size_t actual_count = count;
+
+    if ((off_t)(offset + count) >= this->stat.st_size) {
+        actual_count = count - ((offset + count) - this->stat.st_size);
+    }
+
+    memcpy(buf, this->data + offset, actual_count);
+    spinlock_release(&this->lock);
+
+    return actual_count;
+}
+
+static ssize_t tmpfs_resource_write(struct resource *_this, const void *buf, off_t offset, size_t count) {
     ssize_t ret = -1;
     struct tmpfs_resource *this = (struct tmpfs_resource *)_this;
 
@@ -75,6 +92,7 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
     }
 
     resource->refcount = 1;
+    resource->read = tmpfs_resource_read;
     resource->write = tmpfs_resource_write;
 
     resource->stat.st_size = 0;

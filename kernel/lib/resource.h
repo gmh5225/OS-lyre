@@ -12,7 +12,8 @@ struct resource {
     spinlock_t lock;
     struct stat stat;
 
-    ssize_t (*write)(struct resource *this, void *buf, off_t offset, size_t count);
+    ssize_t (*read)(struct resource *this, void *buf, off_t offset, size_t count);
+    ssize_t (*write)(struct resource *this, const void *buf, off_t offset, size_t count);
 };
 
 #endif
