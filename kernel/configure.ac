@@ -21,6 +21,9 @@ if test "$werror_state" = "yes"; then
 fi
 
 AC_PROG_INSTALL
+AC_PROG_GREP
+AC_PROG_SED
+AC_PROG_AWK
 
 AC_CHECK_PROG([FIND_FOUND], [find], [yes])
 if ! test "x$FIND_FOUND" = "xyes"; then

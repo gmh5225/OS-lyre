@@ -1,12 +1,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdnoreturn.h>
 #include <lib/panic.h>
 #include <lib/print.h>
+#include <lib/trace.h>
 #include <sys/cpu.h>
 
-noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
+noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     // TODO replace with some abort IPI and whatnot
     asm volatile ("cli");
 
@@ -49,6 +51,12 @@ noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
     print("\n\n");
 
 halt:
+    if (trace) {
+        print("Stacktrace follows:\n");
+        trace_printstack(0);
+        print("\n");
+    }
+
     print("System halted.");
 
     for (;;) {

@@ -35,6 +35,8 @@ SECTIONS
 
     rodata_start_addr = .;
 
+    PROVIDE(symbol_table = 1);
+
     .rodata : {
         *(.rodata .rodata.*)
     } :rodata

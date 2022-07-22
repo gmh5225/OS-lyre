@@ -7,6 +7,13 @@ override INSTALL := @INSTALL@
 override PREFIX := @prefix@
 LYRE_DEBUG ?= @LYRE_DEBUG@
 
+override GREP := @GREP@
+export GREP
+override SED := @SED@
+export SED
+override AWK := @AWK@
+export AWK
+
 # This is the name that our final kernel executable will have.
 # Change as needed.
 override KERNEL := lyre.elf
@@ -42,6 +49,7 @@ override INTERNALCFLAGS := \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
     -std=gnu11             \
     -fms-extensions        \
+    -fno-omit-frame-pointer \
     -Wno-microsoft-anon-tag \
     -Wvla                  \
     -Wshadow               \
@@ -97,6 +105,9 @@ all: $(KERNEL)
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
+	'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' $@ > symtab.c
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c symtab.c -o symtab.o
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' symtab.o $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 # Include header dependencies.
 -include $(HEADER_DEPS)
