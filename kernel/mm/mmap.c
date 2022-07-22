@@ -52,8 +52,7 @@ bool mmap_handle_pf(struct cpu_ctx *ctx) {
 
     // TODO: mmap can be expensive, consider enabling interrupts
     // temporarily
-    uint64_t cr2 = 0;
-    asm volatile ("mov %%cr2, %0" : "=r" (cr2));
+    uint64_t cr2 = read_cr2();
 
     struct thread *thread = sched_current_thread();
     struct process *process = thread->process;

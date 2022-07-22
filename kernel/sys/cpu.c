@@ -169,3 +169,11 @@ void cpu_init(void) {
         }
     }
 }
+
+struct cpu_local *this_cpu(void) {
+    if (interrupt_state()) {
+        panic(NULL, true, "Calling this_cpu() with interrupts on is a bug");
+    }
+
+    return sched_current_thread()->this_cpu;
+}

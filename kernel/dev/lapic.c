@@ -4,6 +4,7 @@
 #include <sys/idt.h>
 #include <sys/cpu.h>
 #include <lib/print.h>
+#include <lib/misc.h>
 #include <dev/pit.h>
 
 #define LAPIC_REG_EOI 0x0b0 // End of interrupt
@@ -17,19 +18,14 @@
 #define LAPIC_REG_TIMER_DIV 0x3e0
 #define LAPIC_EOI_ACK 0x00
 
-static void *lapic_base;
-static uint8_t spurious_vec;
 static uint8_t timer_vec = 0;
 
-// TODO: make global cpu context?
-static uint32_t lapic_freq;
-
 static inline uint32_t lapic_read(uint32_t reg) {
-    return *((volatile uint32_t *)(lapic_base + reg));
+    return *((volatile uint32_t *)((uintptr_t)0xfee00000 + reg));
 }
 
 static inline void lapic_write(uint32_t reg, uint32_t val) {
-    *((volatile uint32_t *)(lapic_base + reg)) = val;
+    *((volatile uint32_t *)((uintptr_t)0xfee00000 + reg)) = val;
 }
 
 static inline void lapic_timer_stop(void) {
@@ -37,42 +33,43 @@ static inline void lapic_timer_stop(void) {
     lapic_write(LAPIC_REG_LVT_TIMER, 1 << 16);
 }
 
-static void lapic_handler(void) {
-    print("lapic: Hello interrupt\n");
+static void (*timer_function)(int, struct cpu_ctx *) = NULL;
+
+static void lapic_timer_handler(int vector, struct cpu_ctx *ctx) {
     lapic_eoi();
+    if (timer_function != NULL) {
+        timer_function(vector, ctx);
+    }
 }
 
 // Enable for all cores
 void lapic_init(void) {
-    lapic_base = (void *)((uintptr_t)rdmsr(0x1b) & 0xfffff000);
+    ASSERT((rdmsr(0x1b) & 0xfffff000) == 0xfee00000);
 
     // Configure spurious IRQ
-    spurious_vec = 0xff;
-    isr[spurious_vec] = &lapic_handler;
-    lapic_write(LAPIC_REG_SPURIOUS, lapic_read(LAPIC_REG_SPURIOUS) | (1 << 8) | spurious_vec);
+    lapic_write(LAPIC_REG_SPURIOUS, lapic_read(LAPIC_REG_SPURIOUS) | (1 << 8) | 0xff);
 
     // Timer interrupt
     if (timer_vec == 0) {
         timer_vec = idt_allocate_vector();
     }
-    isr[timer_vec] = &lapic_handler;
+    isr[timer_vec] = lapic_timer_handler;
     lapic_write(LAPIC_REG_LVT_TIMER, lapic_read(LAPIC_REG_LVT_TIMER) | (1 << 8) | timer_vec);
 
     lapic_timer_calibrate();
-
-    print("lapic: Initialized, base=%lx, timer=%i, spurious irq=%i\n",
-        lapic_base, timer_vec, spurious_vec);
 }
 
 void lapic_eoi(void) {
     lapic_write(LAPIC_REG_EOI, LAPIC_EOI_ACK);
 }
 
-void lapic_timer_oneshot(uint32_t us, uint32_t vec) {
+void lapic_timer_oneshot(uint32_t us, void *function) {
     lapic_timer_stop();
 
-    uint32_t ticks = us * (lapic_freq / 1000000);
-    lapic_write(LAPIC_REG_LVT_TIMER, vec);
+    timer_function = function;
+
+    uint32_t ticks = us * (this_cpu()->lapic_freq / 1000000);
+    lapic_write(LAPIC_REG_LVT_TIMER, timer_vec);
     lapic_write(LAPIC_REG_TIMER_DIV, 0);
     lapic_write(LAPIC_REG_TIMER_INITCNT, ticks);
 }
@@ -96,6 +93,6 @@ void lapic_timer_calibrate(void) {
     while (lapic_read(LAPIC_REG_TIMER_CURCNT) != 0);
     int final_tick = pit_get_current_count();
     int total_ticks = init_tick - final_tick;
-    lapic_freq = (samples / total_ticks) * PIT_DIVIDEND;
+    this_cpu()->lapic_freq = (samples / total_ticks) * PIT_DIVIDEND;
     lapic_timer_stop();
 }

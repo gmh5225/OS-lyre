@@ -53,6 +53,7 @@ struct cpu_local {
     int cpu_number;
     bool bsp;
     uint32_t lapic_id;
+    uint32_t lapic_freq;
     struct tss tss;
     struct thread *idle_thread;
 };
@@ -191,5 +192,23 @@ static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
     );
     return true;
 }
+
+static inline bool interrupt_state(void) {
+    uint64_t flags;
+    asm volatile ("pushfq; pop %0" : "=rm"(flags));
+    return flags & (1 << 9);
+}
+
+static inline bool interrupt_toggle(bool state) {
+    bool ret = interrupt_state();
+    if (state) {
+        asm ("sti");
+    } else {
+        asm ("cli");
+    }
+    return ret;
+}
+
+struct cpu_local *this_cpu(void);
 
 #endif
