@@ -105,8 +105,8 @@ all: $(KERNEL)
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
-	'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' $@ > symtab.c
-	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c symtab.c -o symtab.o
+	'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' $@ > symtab.map
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -x c -c symtab.map -o symtab.o
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' symtab.o $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
 
 # Include header dependencies.
