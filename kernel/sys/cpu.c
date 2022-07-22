@@ -18,12 +18,12 @@ void (*fpu_restore)(void *ctx) = NULL;
 
 #define CPU_STACK_SIZE 0x10000
 
+/*
 static volatile struct limine_smp_request smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0
 };
 
-/*
 static void single_cpu_init(struct limine_smp_info *smp_info) {
     struct cpu_local *cpu_local = (void *)smp_info->extra_argument;
     int cpu_number = cpu_local->cpu_number;
