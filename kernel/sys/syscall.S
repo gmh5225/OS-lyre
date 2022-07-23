@@ -78,4 +78,4 @@ syscall_sysenter_entry:
 
     swapgs
 
-    rex.w sysexit
+    sysexitq
