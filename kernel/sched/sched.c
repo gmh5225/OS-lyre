@@ -129,12 +129,14 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
 #if defined (__x86_64__)
     set_gs_base(current_thread);
-    if (current_thread->ctx.cs == 0x43) {
+    if (current_thread->ctx.cs == 0x3b) {
         set_kernel_gs_base(current_thread->gs_base);
     } else {
         set_kernel_gs_base(current_thread);
     }
     set_fs_base(current_thread->fs_base);
+
+    wrmsr(0x175, (uint64_t)current_thread->kernel_stack);
 
     cpu->tss.ist2 = (uint64_t)current_thread->pf_stack;
 
@@ -295,29 +297,29 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
         stack_vma = sp;
     }
 
-    // void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    // VECTOR_PUSH_BACK(thread->stacks, kernel_stack_phys);
+    void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+    VECTOR_PUSH_BACK(thread->stacks, kernel_stack_phys);
+    thread->kernel_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
     void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
     VECTOR_PUSH_BACK(thread->stacks, pf_stack_phys);
+    thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
 #if defined (__x86_64__)
-    thread->ctx.cs = 0x38 | 3;
-    thread->ctx.ds = thread->ctx.es = thread->ctx.ss = 0x40 | 3;
+    thread->ctx.cs = 0x3b;
+    thread->ctx.ds = thread->ctx.es = thread->ctx.ss = 0x43;
     thread->ctx.rflags = 0x202;
     thread->ctx.rip = (uint64_t)pc;
     thread->ctx.rdi = (uint64_t)arg;
     thread->ctx.rsp = (uint64_t)stack_vma;
 
     thread->cr3 = (uint64_t)proc->pagemap->top_level;
-    thread->gs_base = thread;
 #endif
 
     thread->self = thread;
     thread->process = proc;
     thread->timeslice = 5000;
     thread->running_on = -1;
-    thread->pf_stack = pf_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
     thread->fpu_storage = pmm_alloc(DIV_ROUNDUP(fpu_storage_size, PAGE_SIZE))
                           + VMM_HIGHER_HALF;
 

@@ -40,7 +40,7 @@ run-uefi: ovmf
 
 .PHONY: run
 run: lyre.iso
-	qemu-system-x86_64 $(QEMUFLAGS) -no-shutdown -no-reboot -d int -smp 1
+	qemu-system-x86_64 $(QEMUFLAGS) -cpu qemu64,level=11,+sep  -no-shutdown -no-reboot -d int -smp 1
 
 .PHONY: kernel-clean
 kernel-clean:

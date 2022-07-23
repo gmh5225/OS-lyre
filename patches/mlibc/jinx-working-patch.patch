@@ -1,0 +1,18 @@
+diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
+index f421220..2a4a577 100644
+--- mlibc-clean/sysdeps/vinix/generic/syscall.h
++++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
+@@ -8,8 +8,11 @@ struct __syscall_ret {
+ __attribute__((naked))
+ static __syscall_ret __syscall(int number, ...) {
+ 	asm (
+-		"mov %rcx, %r10\n\t"
+-		"syscall\n\t"
++		"mov %rsp, %r10\n\t"
++		"lea 1f(%rip), %r11\n\t"
++		"sysenter\n\t"
++		"1:\n\t"
++		"mov %r8, %rdx\n\t"
+ 		"ret"
+ 	);
+ 	(void)number;

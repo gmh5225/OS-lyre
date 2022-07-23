@@ -302,3 +302,11 @@ void print(const char *fmt, ...) {
     vprint(fmt, args);
     va_end(args);
 }
+
+int syscall_debug(void *_, const char *str) {
+    (void)_;
+    if (debug) {
+        serial_outstr(str);
+    }
+    return 0;
+}

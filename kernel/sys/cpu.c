@@ -4,6 +4,7 @@
 #include <sys/cpu.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
+#include <sys/syscall.h>
 #include <dev/lapic.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
@@ -80,6 +81,16 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     write_cr4(cr4);
 
     uint32_t eax, ebx, ecx, edx;
+
+    // SYSENTER
+    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
+        if (cpu_local->bsp) {
+            print("cpu: Using SYSENTER\n");
+        }
+
+        wrmsr(0x174, 0x28); // CS
+        wrmsr(0x176, (uint64_t)syscall_sysenter_entry);
+    }
 
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_XSAVE)) {
         if (cpu_local->bsp) {

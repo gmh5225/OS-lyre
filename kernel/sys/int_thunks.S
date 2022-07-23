@@ -6,6 +6,11 @@ interrupt_thunk_\num:
     push $0
 .endif
 
+    cmpq $0x3b, 16(%rsp) // if user
+    jne 1f
+    swapgs
+
+1:
     push %r15
     push %r14
     push %r13
@@ -62,6 +67,11 @@ interrupt_thunk_\num:
     pop %r15
     add $8, %rsp
 
+    cmpq $0x3b, 8(%rsp) // if user
+    jne 1f
+    swapgs
+
+1:
     iretq
 .endm
 

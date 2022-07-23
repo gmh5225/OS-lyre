@@ -195,6 +195,7 @@ static inline void *get_fs_base(void) {
 #define CPUID_XSAVE ((uint32_t)1 << 26)
 #define CPUID_AVX ((uint32_t)1 << 28)
 #define CPUID_AVX512 ((uint32_t)1 << 16)
+#define CPUID_SEP ((uint32_t)1 << 11)
 
 static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
                          uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {

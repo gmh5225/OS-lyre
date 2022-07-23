@@ -15,14 +15,17 @@ struct process {
 };
 
 struct thread {
+    /// dont move ///
     struct thread *self;
+    int errno;
+    /////////////////
+
     spinlock_t lock;
     struct cpu_local *this_cpu;
     int running_on;
     bool enqueued;
     bool enqueued_by_signal;
     struct process *process;
-    int errno;
     int timeslice;
     spinlock_t yield_await;
     struct cpu_ctx ctx;
@@ -32,6 +35,7 @@ struct thread {
     void *fpu_storage;
     VECTOR_TYPE(void *) stacks;
     void *pf_stack;
+    void *kernel_stack;
 };
 
 static inline struct thread *sched_current_thread(void) {
