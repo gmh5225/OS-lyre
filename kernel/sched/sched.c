@@ -106,7 +106,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 #if defined (__x86_64__)
         current_thread->gs_base = get_kernel_gs_base();
         current_thread->fs_base = get_fs_base();
-        current_thread->cr3 = read_cr3();
+        current_thread->cr3 = read_cr3() + VMM_HIGHER_HALF;
         fpu_save(current_thread->fpu_storage);
 #endif
 
@@ -324,18 +324,20 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
                           + VMM_HIGHER_HALF;
 
     if (proc->threads.length == 0) {
-        void *stack_top = stack, *orig_stack_vma = stack_vma;
-
-        int argv_len;
-        for (argv_len = 0; argv[argv_len] != NULL; argv_len++) {
-            size_t length = strlen(argv[argv_len]);
-            stack = memcpy((void *)stack - length - 1, argv[argv_len], length);
-        }
+        void *stack_top = stack;
 
         int envp_len;
         for (envp_len = 0; envp[envp_len] != NULL; envp_len++) {
             size_t length = strlen(envp[envp_len]);
-            stack = memcpy((void *)stack - length - 1, envp[envp_len], length);
+            stack = (void *)stack - length - 1;
+            memcpy(stack, envp[envp_len], length);
+        }
+
+        int argv_len;
+        for (argv_len = 0; argv[argv_len] != NULL; argv_len++) {
+            size_t length = strlen(argv[argv_len]);
+            stack = (void *)stack - length - 1;
+            memcpy(stack, argv[argv_len], length);
         }
 
         stack = (uintptr_t *)ALIGN_DOWN((uintptr_t)stack, 16);
@@ -350,18 +352,22 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
         stack -= 2; stack[0] = AT_PHENT, stack[1] = auxval->at_phent;
         stack -= 2; stack[0] = AT_PHNUM, stack[1] = auxval->at_phnum;
 
+        uintptr_t old_rsp = thread->ctx.rsp;
+
         // Environment variables
         *(--stack) = 0;
+        stack -= envp_len;
         for (int i = 0; i < envp_len; i++) {
-            orig_stack_vma -= strlen(envp[envp_len - i - 1]) + 1;
-            *(--stack) = (uintptr_t)orig_stack_vma;
+            old_rsp -= strlen(envp[i]) + 1;
+            stack[i] = old_rsp;
         }
 
         // Arguments
         *(--stack) = 0;
+        stack -= argv_len;
         for (int i = 0; i < argv_len; i++) {
-            orig_stack_vma -= strlen(argv[argv_len - i - 1]) + 1;
-            *(--stack) = (uintptr_t)orig_stack_vma;
+            old_rsp -= strlen(argv[i]) + 1;
+            stack[i] = old_rsp;
         }
 
         *(--stack) = argv_len;
