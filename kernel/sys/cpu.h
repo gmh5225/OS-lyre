@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sched/proc.h>
+
+struct thread;
 
 struct cpu_ctx {
     uint64_t ds;
@@ -52,6 +53,8 @@ struct tss {
 struct cpu_local {
     int cpu_number;
     bool bsp;
+    bool active;
+    int last_run_queue_index;
     uint32_t lapic_id;
     uint32_t lapic_freq;
     struct tss tss;
@@ -165,8 +168,28 @@ static inline uint64_t wrmsr(uint32_t msr, uint64_t val) {
     return ((uint64_t)edx << 32) | eax;
 }
 
+static inline void set_kernel_gs_base(void *addr) {
+    wrmsr(0xc0000102, (uint64_t)addr);
+}
+
 static inline void set_gs_base(void *addr) {
     wrmsr(0xc0000101, (uint64_t)addr);
+}
+
+static inline void set_fs_base(void *addr) {
+    wrmsr(0xc0000100, (uint64_t)addr);
+}
+
+static inline void *get_kernel_gs_base(void) {
+    return (void *)rdmsr(0xc0000102);
+}
+
+static inline void *get_gs_base(void) {
+    return (void *)rdmsr(0xc0000101);
+}
+
+static inline void *get_fs_base(void) {
+    return (void *)rdmsr(0xc0000100);
 }
 
 #define CPUID_XSAVE ((uint32_t)1 << 26)
@@ -210,5 +233,9 @@ static inline bool interrupt_toggle(bool state) {
 }
 
 struct cpu_local *this_cpu(void);
+
+static inline void halt(void) {
+    asm ("hlt");
+}
 
 #endif

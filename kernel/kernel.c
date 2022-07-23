@@ -36,6 +36,8 @@ static void done(void) {
     }
 }
 
+void kmain_thread(void);
+
 // The following will be our kernel's entry point.
 void _start(void) {
     serial_init();
@@ -51,7 +53,12 @@ void _start(void) {
     kernel_process->pagemap = vmm_kernel_pagemap;
 
     cpu_init();
-    sched_init();
+
+    sched_new_kernel_thread(kmain_thread, NULL, true);
+    sched_await();
+}
+
+void kmain_thread(void) {
     vfs_init();
     tmpfs_init();
     devtmpfs_init();

@@ -6,6 +6,7 @@
 #include <lib/print.h>
 #include <lib/misc.h>
 #include <dev/pit.h>
+#include <mm/vmm.h>
 
 #define LAPIC_REG_EOI 0x0b0 // End of interrupt
 #define LAPIC_REG_SPURIOUS 0x0f0
@@ -21,11 +22,11 @@
 static uint8_t timer_vec = 0;
 
 static inline uint32_t lapic_read(uint32_t reg) {
-    return *((volatile uint32_t *)((uintptr_t)0xfee00000 + reg));
+    return *((volatile uint32_t *)((uintptr_t)0xfee00000 + VMM_HIGHER_HALF + reg));
 }
 
 static inline void lapic_write(uint32_t reg, uint32_t val) {
-    *((volatile uint32_t *)((uintptr_t)0xfee00000 + reg)) = val;
+    *((volatile uint32_t *)((uintptr_t)0xfee00000 + VMM_HIGHER_HALF + reg)) = val;
 }
 
 static inline void lapic_timer_stop(void) {
@@ -52,6 +53,7 @@ void lapic_init(void) {
     // Timer interrupt
     if (timer_vec == 0) {
         timer_vec = idt_allocate_vector();
+        idt_set_ist(timer_vec, 1);
     }
     isr[timer_vec] = lapic_timer_handler;
     lapic_write(LAPIC_REG_LVT_TIMER, lapic_read(LAPIC_REG_LVT_TIMER) | (1 << 8) | timer_vec);

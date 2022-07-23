@@ -142,7 +142,6 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     print("cpu: Processor #%u online!\n", cpu_number);
 
     if (!cpu_local->bsp) {
-        while (sched_ready() == false);
         sched_await();
     }
 }

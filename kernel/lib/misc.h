@@ -47,6 +47,8 @@
     } \
 } while (0)
 
+#define CAS __sync_bool_compare_and_swap
+
 typedef char symbol[];
 
 #endif
