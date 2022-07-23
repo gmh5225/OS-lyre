@@ -7,8 +7,6 @@
 #include <lib/print.h>
 #include <lib/resource.h>
 #include <sched/proc.h>
-#include <abi-bits/fcntl.h>
-#include <abi-bits/seek-whence.h>
 #include <bits/posix/stat.h>
 
 static spinlock_t vfs_lock = SPINLOCK_INIT;
@@ -396,99 +394,4 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
 
     fd->description->node = node;
     return fdnum_create_from_fd(proc, fd, 0, false);
-}
-
-int syscall_close(void *_, int fdnum) {
-    (void)_;
-
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-
-    return fdnum_close(proc, fdnum) ? 0 : -1;
-}
-
-int syscall_read(void *_, int fdnum, void *buf, size_t count) {
-    (void)_;
-
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
-    if (fd == NULL) {
-        return -1;
-    }
-
-    struct resource *res = fd->description->res;
-
-    ssize_t read = res->read(res, buf, fd->description->offset, count);
-    if (read < 0) {
-        return -1;
-    }
-
-    fd->description->offset += read;
-    return read;
-}
-
-int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
-    (void)_;
-
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
-    if (fd == NULL) {
-        return -1;
-    }
-
-    struct resource *res = fd->description->res;
-
-    ssize_t written = res->write(res, buf, fd->description->offset, count);
-    if (written < 0) {
-        return -1;
-    }
-
-    fd->description->offset += written;
-    return written;
-}
-
-int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
-    (void)_;
-
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
-    struct f_description *description = fd->description;
-
-    if (fd == NULL) {
-        return -1;
-    }
-
-    off_t curr_offset = description->offset;
-    off_t new_offset = 0;
-
-    switch (whence) {
-        case SEEK_CUR:
-            new_offset = curr_offset + offset;
-            break;
-        case SEEK_END:
-            new_offset = curr_offset + description->res->stat.st_size;
-            break;
-        case SEEK_SET:
-            new_offset = offset;
-            break;
-        default:
-            errno = EINVAL;
-            return -1;
-    }
-
-    if (new_offset < 0) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    // TODO: Implement res->grow
-    // if (new_offset >= fd->description->res->stat.st_size) {
-    //     description->res->grow(description->res, new_offset);
-    // }
-
-    description->offset = new_offset;
-    return new_offset;
 }
