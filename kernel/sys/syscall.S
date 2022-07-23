@@ -6,10 +6,10 @@
 syscall_sysenter_entry:
     swapgs
 
-    push $0x43
+    push $0x53
     push %r10
     pushfq
-    push $0x3b
+    push $0x4b
     push %r11
 
     push $0

@@ -129,7 +129,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
 #if defined (__x86_64__)
     set_gs_base(current_thread);
-    if (current_thread->ctx.cs == 0x3b) {
+    if (current_thread->ctx.cs == 0x4b) {
         set_kernel_gs_base(current_thread->gs_base);
     } else {
         set_kernel_gs_base(current_thread);
@@ -306,8 +306,8 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
 #if defined (__x86_64__)
-    thread->ctx.cs = 0x3b;
-    thread->ctx.ds = thread->ctx.es = thread->ctx.ss = 0x43;
+    thread->ctx.cs = 0x4b;
+    thread->ctx.ds = thread->ctx.es = thread->ctx.ss = 0x53;
     thread->ctx.rflags = 0x202;
     thread->ctx.rip = (uint64_t)pc;
     thread->ctx.rdi = (uint64_t)arg;

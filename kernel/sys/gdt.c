@@ -24,7 +24,7 @@ struct tss_descriptor {
 };
 
 struct gdt {
-    struct gdt_descriptor descriptors[9];
+    struct gdt_descriptor descriptors[11];
     struct tss_descriptor tss;
 };
 
@@ -93,21 +93,25 @@ void gdt_init(void) {
     gdt.descriptors[6].granularity = 0;
     gdt.descriptors[6].base_high8  = 0;
 
+    // SYSENTER related dummy entries
+    gdt.descriptors[7] = (struct gdt_descriptor){0};
+    gdt.descriptors[8] = (struct gdt_descriptor){0};
+
     // User code 64.
-    gdt.descriptors[7].limit       = 0;
-    gdt.descriptors[7].base_low16  = 0;
-    gdt.descriptors[7].base_mid8   = 0;
-    gdt.descriptors[7].access      = 0b11111010;
-    gdt.descriptors[7].granularity = 0b00100000;
-    gdt.descriptors[7].base_high8  = 0;
+    gdt.descriptors[9].limit       = 0;
+    gdt.descriptors[9].base_low16  = 0;
+    gdt.descriptors[9].base_mid8   = 0;
+    gdt.descriptors[9].access      = 0b11111010;
+    gdt.descriptors[9].granularity = 0b00100000;
+    gdt.descriptors[9].base_high8  = 0;
 
     // User data 64.
-    gdt.descriptors[8].limit       = 0;
-    gdt.descriptors[8].base_low16  = 0;
-    gdt.descriptors[8].base_mid8   = 0;
-    gdt.descriptors[8].access      = 0b11110010;
-    gdt.descriptors[8].granularity = 0;
-    gdt.descriptors[8].base_high8  = 0;
+    gdt.descriptors[10].limit       = 0;
+    gdt.descriptors[10].base_low16  = 0;
+    gdt.descriptors[10].base_mid8   = 0;
+    gdt.descriptors[10].access      = 0b11110010;
+    gdt.descriptors[10].granularity = 0;
+    gdt.descriptors[10].base_high8  = 0;
 
     // TSS.
     gdt.tss.length       = 104;
@@ -161,7 +165,7 @@ void gdt_load_tss(struct tss *tss) {
     gdt.tss.base_upper32 = (uint32_t)(addr >> 32);
     gdt.tss.reserved     = 0;
 
-    asm volatile ("ltr %0" : : "rm" ((uint16_t)0x48) : "memory");
+    asm volatile ("ltr %0" : : "rm" ((uint16_t)0x58) : "memory");
 
     spinlock_release(&lock);
 }
