@@ -194,7 +194,7 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
 
     if ((flags & MAP_ANONYMOUS) == 0 && res != NULL && !res->can_mmap) {
         errno = ENODEV;
-        return NULL;
+        return MAP_FAILED;
     }
 
     struct process *process = sched_current_thread()->process;
@@ -264,7 +264,7 @@ cleanup:
 
         free(global_range);
     }
-    return NULL;
+    return MAP_FAILED;
 }
 
 bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
@@ -354,4 +354,20 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         }
     }
     return true;
+}
+
+void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fd, off_t offset) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct resource *res = NULL;
+
+    if (fd != -1) {
+        panic(NULL, true, "Implement resource mappings");
+    } else if (offset != 0) {
+        errno = EINVAL;
+        return MAP_FAILED;
+    }
+    return mmap(proc->pagemap, hint, length, (int)(flags >> 32), (int)flags, res, offset);
 }

@@ -17,7 +17,7 @@ struct process {
 struct thread {
     /// dont move ///
     struct thread *self;
-    int errno;
+    uint64_t errno;
     /////////////////
 
     spinlock_t lock;

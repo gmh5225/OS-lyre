@@ -3,6 +3,7 @@
 .global syscall_table
 syscall_table:
     .quad syscall_debug     // 0
+    .quad syscall_mmap      // 1
 syscall_table_end:
 
 .global syscall_count
