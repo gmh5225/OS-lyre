@@ -106,7 +106,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 #if defined (__x86_64__)
         current_thread->gs_base = get_kernel_gs_base();
         current_thread->fs_base = get_fs_base();
-        current_thread->cr3 = read_cr3() + VMM_HIGHER_HALF;
+        current_thread->cr3 = read_cr3();
         fpu_save(current_thread->fpu_storage);
 #endif
 
@@ -141,7 +141,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
     cpu->tss.ist2 = (uint64_t)current_thread->pf_stack;
 
     if (read_cr3() != current_thread->cr3) {
-        write_cr3(current_thread->cr3 - VMM_HIGHER_HALF);
+        write_cr3(current_thread->cr3);
     }
 
     fpu_restore(current_thread->fpu_storage);
@@ -244,7 +244,7 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     thread->ctx.rdi = (uint64_t)arg;
     thread->ctx.rsp = (uint64_t)stack;
 
-    thread->cr3 = (uint64_t)kernel_process->pagemap->top_level;
+    thread->cr3 = (uint64_t)kernel_process->pagemap->top_level - VMM_HIGHER_HALF;
     thread->gs_base = thread;
 #endif
 
@@ -312,8 +312,7 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     thread->ctx.rip = (uint64_t)pc;
     thread->ctx.rdi = (uint64_t)arg;
     thread->ctx.rsp = (uint64_t)stack_vma;
-
-    thread->cr3 = (uint64_t)proc->pagemap->top_level;
+    thread->cr3 = (uint64_t)proc->pagemap->top_level - VMM_HIGHER_HALF;
 #endif
 
     thread->self = thread;
