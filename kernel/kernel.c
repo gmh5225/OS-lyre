@@ -78,9 +78,12 @@ void kmain_thread(void) {
     struct vfs_node *ld = vfs_get_node(vfs_root, ld_path, true);
     elf_load(bash_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
 
+    const char *argv[] = {"/bin/bash", "-l", NULL};
+    const char *envp[] = {"USER=lyre", "HOME=/", "TERM=linux", NULL};
+
     struct process *bash_proc = sched_new_process(NULL, bash_vm);
     sched_new_user_thread(bash_proc, (void *)ld_auxv.at_entry,
-                          NULL, NULL, NULL, NULL, &bash_auxv, true);
+                          NULL, NULL, argv, envp, &bash_auxv, true);
 
     print("Hello, %s!\n", "world");
 

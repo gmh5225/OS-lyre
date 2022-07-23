@@ -261,7 +261,7 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
 }
 
 struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, void *sp,
-                                     char **argv, char **envp, struct auxval *auxval, bool enqueue) {
+                                     const char **argv, const char **envp, struct auxval *auxval, bool enqueue) {
     struct thread *thread = ALLOC(struct thread);
     if (thread == NULL) {
         errno = ENOMEM;
@@ -273,7 +273,7 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     thread->enqueued = false;
     thread->stacks = (typeof(thread->stacks))VECTOR_INIT;
 
-    void *stack, *stack_vma;
+    uintptr_t *stack, *stack_vma;
     if (sp == NULL) {
         void *stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
         if (stack_phys == NULL) {
@@ -322,7 +322,50 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
                           + VMM_HIGHER_HALF;
 
     if (proc->threads.length == 0) {
-        // TODO: setup elf stack
+        void *stack_top = stack, *orig_stack_vma = stack_vma;
+
+        int argv_len;
+        for (argv_len = 0; argv[argv_len] != NULL; argv_len++) {
+            size_t length = strlen(argv[argv_len]);
+            stack = memcpy(stack - length + 1, argv[argv_len], length);
+        }
+
+        int envp_len;
+        for (envp_len = 0; envp[envp_len] != NULL; envp_len++) {
+            size_t length = strlen(envp[envp_len]);
+            stack = memcpy(stack - length + 1, envp[envp_len], length);
+        }
+
+        stack = (uintptr_t *)ALIGN_DOWN((uintptr_t)stack, 16);
+
+        if (((argv_len + envp_len + 1) & 1) != 0) {
+            stack--;
+        }
+
+        // Auxilary vector
+        *(--stack) = 0, *(--stack) = 0;
+        stack -= 2; stack[0] = auxval->at_entry, stack[1] = AT_ENTRY;
+        stack -= 2; stack[0] = auxval->at_phdr,  stack[1] = AT_PHDR;
+        stack -= 2; stack[0] = auxval->at_phent, stack[1] = AT_PHENT;
+        stack -= 2; stack[0] = auxval->at_phnum, stack[1] = AT_PHNUM;
+
+        // Environment variables
+        *(--stack) = 0;
+        for (int i = 0; i < envp_len; i++) {
+            orig_stack_vma -= strlen(envp[envp_len - i - 1]) + 1;
+            *(--stack) = (uintptr_t)orig_stack_vma;
+        }
+
+        // Arguments
+        *(--stack) = 0;
+        for (int i = 0; i < argv_len; i++) {
+            orig_stack_vma -= strlen(argv[argv_len - i - 1]) + 1;
+            *(--stack) = (uintptr_t)orig_stack_vma;
+        }
+
+        *(--stack) = argv_len;
+
+        thread->ctx.rsp -= stack_top - (void *)stack;
     }
 
     VECTOR_PUSH_BACK(proc->threads, thread);
