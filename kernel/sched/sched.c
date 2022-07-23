@@ -389,3 +389,13 @@ fail:
     }
     return NULL;
 }
+
+void syscall_set_fs_base(void *_, void *base) {
+    (void)_;
+    set_fs_base(base);
+}
+
+void syscall_set_gs_base(void *_, void *base) {
+    (void)_;
+    set_gs_base(base);
+}

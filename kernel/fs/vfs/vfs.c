@@ -5,6 +5,10 @@
 #include <lib/lock.h>
 #include <lib/errno.h>
 #include <lib/print.h>
+#include <lib/resource.h>
+#include <sched/proc.h>
+#include <abi-bits/fcntl.h>
+#include <abi-bits/seek-whence.h>
 #include <bits/posix/stat.h>
 
 static spinlock_t vfs_lock = SPINLOCK_INIT;
@@ -136,6 +140,31 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
 
     errno = ENOENT;
     return (struct path2node_res){NULL, NULL, NULL};
+}
+
+static struct vfs_node *get_parent_dir(int dir_fdnum, const char *path) {
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    // struct vfs_node *parent = NULL;
+
+    if (*path == '/') {
+        return vfs_root;
+    } else if (dir_fdnum == AT_FDCWD) {
+        return proc->cwd;
+    }
+
+    struct f_descriptor *fd = fd_from_fdnum(proc, dir_fdnum);
+    if (fd == NULL) {
+        return NULL;
+    }
+
+    struct f_description *description = fd->description;
+    if (!S_ISDIR(description->res->stat.st_mode)) {
+        errno = ENOTDIR;
+        return NULL;
+    }
+
+    return description->node;
 }
 
 static struct vfs_node *reduce_node(struct vfs_node *node, bool follow_symlinks) {
@@ -309,4 +338,157 @@ cleanup:
     }
     spinlock_release(&vfs_lock);
     return ret;
+}
+
+int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
+    (void)_;
+    (void)mode;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    if (path == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (strlen(path) == 0) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
+    if (parent == NULL) {
+        return -1;
+    }
+
+    int create_flags = flags & FILE_CREATION_FLAGS_MASK;
+    int follow_links = (flags & O_NOFOLLOW) == 0;
+
+    struct vfs_node *node = vfs_get_node(parent, path, follow_links);
+    if (node == NULL && (create_flags & O_CREAT) != 0) {
+        node = vfs_create(parent, path, 0644 | S_IFREG);
+    }
+
+    if (node == NULL) {
+        return -1;
+    }
+
+    if (S_ISLNK(node->resource->stat.st_mode)) {
+        errno = ELOOP;
+        return -1;
+    }
+
+    node = reduce_node(node, true);
+    if (node == NULL) {
+        return -1;
+    }
+
+    if (!S_ISDIR(node->resource->stat.st_mode) && (flags & O_DIRECTORY) != 0) {
+        errno = ENOTDIR;
+        return -1;
+    }
+
+    struct f_descriptor *fd = fd_create_from_resource(node->resource, flags);
+    if (fd == NULL) {
+        return -1;
+    }
+
+    fd->description->node = node;
+    return fdnum_create_from_fd(proc, fd, 0, false);
+}
+
+int syscall_close(void *_, int fdnum) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    return fdnum_close(proc, fdnum) ? 0 : -1;
+}
+
+int syscall_read(void *_, int fdnum, void *buf, size_t count) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+    if (fd == NULL) {
+        return -1;
+    }
+
+    struct resource *res = fd->description->res;
+
+    ssize_t read = res->read(res, buf, fd->description->offset, count);
+    if (read < 0) {
+        return -1;
+    }
+
+    fd->description->offset += read;
+    return read;
+}
+
+int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+    if (fd == NULL) {
+        return -1;
+    }
+
+    struct resource *res = fd->description->res;
+
+    ssize_t written = res->write(res, buf, fd->description->offset, count);
+    if (written < 0) {
+        return -1;
+    }
+
+    fd->description->offset += written;
+    return written;
+}
+
+int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+    struct f_description *description = fd->description;
+
+    if (fd == NULL) {
+        return -1;
+    }
+
+    off_t curr_offset = description->offset;
+    off_t new_offset = 0;
+
+    switch (whence) {
+        case SEEK_CUR:
+            new_offset = curr_offset + offset;
+            break;
+        case SEEK_END:
+            new_offset = curr_offset + description->res->stat.st_size;
+            break;
+        case SEEK_SET:
+            new_offset = offset;
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
+
+    if (new_offset < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // TODO: Implement res->grow
+    // if (new_offset >= fd->description->res->stat.st_size) {
+    //     description->res->grow(description->res, new_offset);
+    // }
+
+    description->offset = new_offset;
+    return new_offset;
 }

@@ -6,12 +6,18 @@
 #include <sys/cpu.h>
 #include <lib/lock.h>
 #include <lib/vector.h>
+#include <lib/resource.h>
+
+#define MAX_FDS 256
 
 struct process {
     struct pagemap *pagemap;
     uintptr_t mmap_anon_base;
     uintptr_t thread_stack_top;
     VECTOR_TYPE(struct thread *) threads;
+    struct vfs_node *cwd;
+    spinlock_t fds_lock;
+    struct f_descriptor *fds[MAX_FDS];
 };
 
 struct thread {

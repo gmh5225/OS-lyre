@@ -356,15 +356,20 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
     return true;
 }
 
-void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fd, off_t offset) {
+void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fdnum, off_t offset) {
     (void)_;
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct resource *res = NULL;
 
-    if (fd != -1) {
-        panic(NULL, true, "Implement resource mappings");
+    if (fdnum != -1) {
+        struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+        if (fd == NULL) {
+            return MAP_FAILED;
+        }
+
+        res = fd->description->res;
     } else if (offset != 0) {
         errno = EINVAL;
         return MAP_FAILED;
