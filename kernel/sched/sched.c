@@ -329,27 +329,26 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
         int argv_len;
         for (argv_len = 0; argv[argv_len] != NULL; argv_len++) {
             size_t length = strlen(argv[argv_len]);
-            stack = memcpy(stack - length + 1, argv[argv_len], length);
+            stack = memcpy((void *)stack - length - 1, argv[argv_len], length);
         }
 
         int envp_len;
         for (envp_len = 0; envp[envp_len] != NULL; envp_len++) {
             size_t length = strlen(envp[envp_len]);
-            stack = memcpy(stack - length + 1, envp[envp_len], length);
+            stack = memcpy((void *)stack - length - 1, envp[envp_len], length);
         }
 
         stack = (uintptr_t *)ALIGN_DOWN((uintptr_t)stack, 16);
-
         if (((argv_len + envp_len + 1) & 1) != 0) {
             stack--;
         }
 
         // Auxilary vector
         *(--stack) = 0, *(--stack) = 0;
-        stack -= 2; stack[0] = auxval->at_entry, stack[1] = AT_ENTRY;
-        stack -= 2; stack[0] = auxval->at_phdr,  stack[1] = AT_PHDR;
-        stack -= 2; stack[0] = auxval->at_phent, stack[1] = AT_PHENT;
-        stack -= 2; stack[0] = auxval->at_phnum, stack[1] = AT_PHNUM;
+        stack -= 2; stack[0] = AT_ENTRY, stack[1] = auxval->at_entry;
+        stack -= 2; stack[0] = AT_PHDR,  stack[1] = auxval->at_phdr;
+        stack -= 2; stack[0] = AT_PHENT, stack[1] = auxval->at_phent;
+        stack -= 2; stack[0] = AT_PHNUM, stack[1] = auxval->at_phnum;
 
         // Environment variables
         *(--stack) = 0;
