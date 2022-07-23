@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
+#include <lib/errno.h>
 #include <lib/print.h>
 #include <lib/misc.h>
 #include <lib/alloc.h>
@@ -7,6 +8,7 @@
 #include <sched/sched.h>
 #include <sys/timer.h>
 #include <sys/cpu.h>
+#include <mm/mmap.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 
@@ -187,6 +189,38 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
     return false;
 }
 
+struct process *sched_new_process(struct process *old_proc, struct pagemap *pagemap) {
+    struct process *new_proc = ALLOC(struct process);
+    if (new_proc == NULL) {
+        errno = ENOMEM;
+        goto cleanup;
+    }
+
+    new_proc->threads = (typeof(new_proc->threads))VECTOR_INIT;
+
+    if (old_proc != NULL) {
+        new_proc->pagemap = vmm_fork_pagemap(old_proc->pagemap);
+        if (new_proc->pagemap == NULL) {
+            goto cleanup;
+        }
+
+        new_proc->thread_stack_top = old_proc->thread_stack_top;
+        new_proc->mmap_anon_base = old_proc->mmap_anon_base;
+    } else {
+        new_proc->pagemap = pagemap;
+        new_proc->thread_stack_top = 0x70000000000;
+        new_proc->mmap_anon_base = 0x80000000000;
+    }
+
+    return new_proc;
+
+cleanup:
+    if (new_proc != NULL) {
+        free(new_proc);
+    }
+    return NULL;
+}
+
 #define STACK_SIZE 0x10000
 
 struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
@@ -224,4 +258,84 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     }
 
     return thread;
+}
+
+struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, void *sp,
+                                     char **argv, char **envp, struct auxval *auxval, bool enqueue) {
+    struct thread *thread = ALLOC(struct thread);
+    if (thread == NULL) {
+        errno = ENOMEM;
+        goto fail;
+    }
+
+    thread->lock = SPINLOCK_INIT;
+    thread->yield_await = SPINLOCK_INIT;
+    thread->enqueued = false;
+    thread->stacks = (typeof(thread->stacks))VECTOR_INIT;
+
+    void *stack, *stack_vma;
+    if (sp == NULL) {
+        void *stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+        if (stack_phys == NULL) {
+            errno = ENOMEM;
+            goto fail;
+        }
+
+        stack = stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
+        stack_vma = (void *)proc->thread_stack_top;
+        if (!mmap_range(proc->pagemap, proc->thread_stack_top - STACK_SIZE, (uintptr_t)stack_phys,
+                        STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS)) {
+            pmm_free(stack_phys, STACK_SIZE / PAGE_SIZE);
+            goto fail;
+        }
+
+        proc->thread_stack_top -= STACK_SIZE - PAGE_SIZE;
+    } else {
+        stack = sp;
+        stack_vma = sp;
+    }
+
+    // void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+    // VECTOR_PUSH_BACK(thread->stacks, kernel_stack_phys);
+
+    void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+    VECTOR_PUSH_BACK(thread->stacks, pf_stack_phys);
+
+#if defined (__x86_64__)
+    thread->ctx.cs = 0x38 | 3;
+    thread->ctx.ds = thread->ctx.es = thread->ctx.ss = 0x40 | 3;
+    thread->ctx.rflags = 0x202;
+    thread->ctx.rip = (uint64_t)pc;
+    thread->ctx.rdi = (uint64_t)arg;
+    thread->ctx.rsp = (uint64_t)stack_vma;
+
+    thread->cr3 = (uint64_t)proc->pagemap->top_level;
+    thread->gs_base = thread;
+#endif
+
+    thread->self = thread;
+    thread->process = proc;
+    thread->timeslice = 5000;
+    thread->running_on = -1;
+    thread->pf_stack = pf_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
+    thread->fpu_storage = pmm_alloc(DIV_ROUNDUP(fpu_storage_size, PAGE_SIZE))
+                          + VMM_HIGHER_HALF;
+
+    if (proc->threads.length == 0) {
+        // TODO: setup elf stack
+    }
+
+    VECTOR_PUSH_BACK(proc->threads, thread);
+
+    if (enqueue) {
+        sched_enqueue_thread(thread, false);
+    }
+
+    return thread;
+
+fail:
+    if (thread != NULL) {
+        free(thread);
+    }
+    return NULL;
 }

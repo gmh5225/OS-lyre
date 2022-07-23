@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <dev/char/serial.h>
 #include <dev/lapic.h>
+#include <lib/elf.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
 #include <mm/slab.h>
@@ -66,6 +67,20 @@ void kmain_thread(void) {
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
     initramfs_init();
+
+    struct pagemap *bash_vm = vmm_new_pagemap();
+    struct auxval bash_auxv, ld_auxv;
+    const char *ld_path;
+
+    struct vfs_node *bin_bash = vfs_get_node(vfs_root, "/bin/bash", true);
+    elf_load(bash_vm, bin_bash->resource, 0x0, &bash_auxv, &ld_path);
+
+    struct vfs_node *ld = vfs_get_node(vfs_root, ld_path, true);
+    elf_load(bash_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
+
+    struct process *bash_proc = sched_new_process(NULL, bash_vm);
+    sched_new_user_thread(bash_proc, (void *)ld_auxv.at_entry,
+                          NULL, NULL, NULL, NULL, &bash_auxv, true);
 
     print("Hello, %s!\n", "world");
 

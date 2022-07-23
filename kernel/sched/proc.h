@@ -8,8 +8,10 @@
 #include <lib/vector.h>
 
 struct process {
-    uintptr_t mmap_anon_base;
     struct pagemap *pagemap;
+    uintptr_t mmap_anon_base;
+    uintptr_t thread_stack_top;
+    VECTOR_TYPE(struct thread *) threads;
 };
 
 struct thread {
