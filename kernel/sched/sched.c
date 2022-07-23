@@ -177,7 +177,7 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
             // TODO cpu wakey wakey thing
 
             if (i >= running_queue_i) {
-                running_queue_i = i;
+                running_queue_i = i + 1;
             }
 
             return true;
