@@ -8,6 +8,7 @@
 #include <lib/misc.h>
 #include <lib/print.h>
 #include <mm/mmap.h>
+#include <mm/pmm.h>
 #include <mm/vmm.h>
 
 bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
@@ -36,12 +37,6 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
 
         switch (phdr.p_type) {
             case PT_LOAD: {
-                uintptr_t aligned_virt = ALIGN_DOWN(phdr.p_vaddr, PAGE_SIZE);
-
-                size_t misalignment = phdr.p_vaddr - aligned_virt;
-                size_t length = MAX(phdr.p_memsz, phdr.p_filesz) + misalignment;
-                size_t file_offset = phdr.p_offset + misalignment;
-
                 int prot = PROT_READ;
                 if (phdr.p_flags & PF_W) {
                     prot |= PROT_WRITE;
@@ -50,9 +45,43 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
                     prot |= PROT_EXEC;
                 }
 
-                if (mmap(pagemap, aligned_virt + load_base, length, prot, MAP_FIXED, res, file_offset) == NULL) {
+                size_t misalign = phdr.p_vaddr & (PAGE_SIZE - 1);
+                size_t page_count = DIV_ROUNDUP(phdr.p_memsz + misalign, PAGE_SIZE);
+
+                void *phys = pmm_alloc(page_count);
+                if (phys == NULL) {
                     goto fail;
                 }
+
+                if (!mmap_range(pagemap, phdr.p_vaddr + load_base, (uintptr_t)phys,
+                                page_count * PAGE_SIZE, prot, MAP_ANONYMOUS)) {
+                    pmm_free(phys, page_count);
+                    goto fail;
+                }
+
+                if (res->read(res, phys + misalign + VMM_HIGHER_HALF, phdr.p_offset, phdr.p_filesz) < 0) {
+                    goto fail;
+                }
+
+                // TODO: Figure out why mmap-ing the file breaks stuff
+                // uintptr_t virt_start = ALIGN_DOWN(phdr.p_vaddr, PAGE_SIZE);
+                // uintptr_t virt_end = ALIGN_UP(phdr.p_vaddr + phdr.p_memsz, PAGE_SIZE);
+                // uintptr_t virt_file_end = ALIGN_UP(phdr.p_vaddr + phdr.p_filesz, PAGE_SIZE);
+
+                // size_t misalign = phdr.p_vaddr - virt_start;
+
+                // if (mmap(pagemap, virt_start + load_base, phdr.p_filesz + misalign, prot,
+                //          MAP_PRIVATE | MAP_FIXED, res, phdr.p_offset + misalign) == NULL) {
+                //     goto fail;
+                // }
+
+                // if (virt_end > virt_file_end) {
+                //     if (mmap(pagemap, virt_file_end, virt_end - virt_file_end, prot,
+                //              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, NULL, 0) == NULL) {
+                //         goto fail;
+                //     }
+                // }
+
                 break;
             }
             case PT_PHDR:

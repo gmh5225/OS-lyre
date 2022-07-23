@@ -91,6 +91,9 @@ bool mmap_page_in_range(struct mmap_range_global *global, uintptr_t virt,
     if ((prot & PROT_WRITE) != 0) {
         pt_flags |= PTE_WRITABLE;
     }
+    if ((prot & PROT_EXEC) == 0) {
+        pt_flags |= PTE_NX;
+    }
 
     if (!vmm_map_page(global->shadow_pagemap, virt, phys, pt_flags)) {
         return false;
