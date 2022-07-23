@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <limine.h>
 #include <lib/alloc.h>
+#include <lib/errno.h>
 #include <lib/lock.h>
 #include <lib/misc.h>
 #include <lib/panic.h>
@@ -40,10 +41,11 @@ static uint64_t *get_next_level(uint64_t *top_level, size_t idx, bool allocate) 
 
     void *next_level = pmm_alloc(1);
     if (next_level == NULL) {
+        errno = ENOMEM;
         return NULL;
     }
 
-    top_level[idx] = (uint64_t)next_level | PTE_PRESENT | PTE_WRITABLE;
+    top_level[idx] = (uint64_t)next_level | PTE_PRESENT | PTE_WRITABLE | PTE_USER;
     return next_level + VMM_HIGHER_HALF;
 }
 
@@ -117,12 +119,14 @@ void vmm_init(void) {
 struct pagemap *vmm_new_pagemap(void) {
     struct pagemap *pagemap = ALLOC(struct pagemap);
     if (pagemap == NULL) {
+        errno = ENOMEM;
         goto cleanup;
     }
 
     pagemap->lock = SPINLOCK_INIT;
     pagemap->top_level = pmm_alloc(1);
     if (pagemap->top_level == NULL) {
+        errno = ENOMEM;
         goto cleanup;
     }
 
@@ -305,6 +309,7 @@ bool vmm_map_page(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys, uint6
     }
 
     if ((pml1[pml1_entry] & PTE_PRESENT) != 0) {
+        errno = EINVAL;
         goto cleanup;
     }
 
@@ -340,6 +345,7 @@ bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags) {
     }
 
     if ((pml1[pml1_entry] & PTE_PRESENT) == 0) {
+        errno = EINVAL;
         goto cleanup;
     }
 
@@ -382,6 +388,7 @@ bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt) {
     }
 
     if ((pml1[pml1_entry] & PTE_PRESENT) == 0) {
+        errno = EINVAL;
         goto cleanup;
     }
 

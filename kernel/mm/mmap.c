@@ -122,6 +122,7 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
 
     global_range = ALLOC(struct mmap_range_global);
     if (global_range == NULL) {
+        errno = ENOMEM;
         goto cleanup;
     }
 
@@ -135,6 +136,7 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
 
     local_range = ALLOC(struct mmap_range_local);
     if (local_range == NULL) {
+        errno = ENOMEM;
         goto cleanup;
     }
 
@@ -159,6 +161,8 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
             goto cleanup;
         }
     }
+
+    return true;
 
 cleanup:
     if (local_range != NULL) {
