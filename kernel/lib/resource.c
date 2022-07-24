@@ -93,7 +93,7 @@ int fdnum_create_from_fd(struct process *proc, struct f_descriptor *fd, int old_
         goto cleanup;
     }
 
-    if (specific) {
+    if (!specific) {
         for (int i = old_fdnum; i < MAX_FDS; i++) {
             if (proc->fds[i] == NULL) {
                 proc->fds[i] = fd;

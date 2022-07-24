@@ -5,12 +5,14 @@
 #include <lib/misc.h>
 #include <lib/alloc.h>
 #include <lib/vector.h>
+#include <lib/resource.h>
 #include <sched/sched.h>
 #include <sys/timer.h>
 #include <sys/cpu.h>
 #include <mm/mmap.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
+#include <fs/vfs/vfs.h>
 
 struct process *kernel_process;
 
@@ -213,6 +215,12 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
         new_proc->thread_stack_top = 0x70000000000;
         new_proc->mmap_anon_base = 0x80000000000;
     }
+
+    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/tty1", true);
+
+    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 0, true);
+    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 1, true);
+    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 2, true);
 
     return new_proc;
 

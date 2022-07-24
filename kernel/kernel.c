@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <dev/char/serial.h>
+#include <dev/char/console.h>
 #include <dev/lapic.h>
 #include <lib/elf.h>
 #include <lib/print.h>
@@ -20,11 +21,6 @@
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
 // be made volatile or equivalent.
-
-static volatile struct limine_terminal_request terminal_request = {
-    .id = LIMINE_TERMINAL_REQUEST,
-    .revision = 0
-};
 
 static volatile struct limine_bootloader_info_request boot_info_request = {
     .id = LIMINE_BOOTLOADER_INFO_REQUEST,
@@ -66,6 +62,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
+    console_init();
     initramfs_init();
 
     struct pagemap *bash_vm = vmm_new_pagemap();
@@ -92,17 +89,5 @@ void kmain_thread(void) {
             boot_info_request.response->version);
     }
 
-    // Ensure we got a terminal
-    if (terminal_request.response == NULL
-     || terminal_request.response->terminal_count < 1) {
-        done();
-    }
-
-    // We should now be able to call the Limine terminal to print out
-    // a simple "Hello World" to screen.
-    struct limine_terminal *terminal = terminal_request.response->terminals[0];
-    terminal_request.response->write(terminal, "Hello World", 11);
-
-    // We're done, just hang...
     done();
 }
