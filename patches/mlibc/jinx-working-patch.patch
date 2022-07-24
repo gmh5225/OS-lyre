@@ -1015,10 +1015,10 @@ index 1722935..ee15023 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..b6da824 100644
+index f421220..86c9c68 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,5 +1,18 @@
+@@ -1,16 +1,70 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1037,17 +1037,63 @@ index f421220..b6da824 100644
  struct __syscall_ret {
  	uint64_t ret;
  	uint64_t errno;
-@@ -8,8 +21,11 @@ struct __syscall_ret {
- __attribute__((naked))
- static __syscall_ret __syscall(int number, ...) {
- 	asm (
+ };
+ 
+-__attribute__((naked))
+-static __syscall_ret __syscall(int number, ...) {
+-	asm (
 -		"mov %rcx, %r10\n\t"
 -		"syscall\n\t"
-+		"mov %rsp, %r10\n\t"
-+		"lea 1f(%rip), %r11\n\t"
-+		"sysenter\n\t"
-+		"1:\n\t"
-+		"mov %r8, %rdx\n\t"
- 		"ret"
- 	);
- 	(void)number;
+-		"ret"
+-	);
+-	(void)number;
++#define __SYSCALL_EXPAND(...) \
++    struct __syscall_ret ret; \
++	asm volatile ( \
++		"mov %%rsp, %%r10\n\t" \
++		"lea 1f(%%rip), %%r11\n\t" \
++		"sysenter\n\t" \
++		"1:" \
++		: "=a"(ret.ret), "=b"(ret.errno) __VA_ARGS__ \
++		: "r10", "r11", "memory" \
++	); \
++	return ret
++
++static inline struct __syscall_ret __syscall5(int number, uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e) {
++    register uint64_t r8 asm("%r8") = d;
++    register uint64_t r9 asm("%r9") = e;
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8), "r"(r9));
++}
++
++static inline struct __syscall_ret __syscall4(int number, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
++    register uint64_t r8 asm("%r8") = d;
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8));
++}
++
++static inline struct __syscall_ret __syscall3(int number, uint64_t a, uint64_t b, uint64_t c) {
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a));
++}
++
++static inline struct __syscall_ret __syscall2(int number, uint64_t a, uint64_t b) {
++    __SYSCALL_EXPAND(, "+d"(b) : "D"(number), "S"(a));
+ }
++
++static inline struct __syscall_ret __syscall1(int number, uint64_t a) {
++    __SYSCALL_EXPAND( : "D"(number), "S"(a));
++}
++
++static inline struct __syscall_ret __syscall0(int number) {
++    __SYSCALL_EXPAND( : "D"(number));
++}
++
++#define __SYSCALL_NARGS_SEQ(_0,_1,_2,_3,_4,_5,_6,_7,N,...) N
++#define __SYSCALL_NARGS(...) __SYSCALL_NARGS_SEQ(__VA_ARGS__, 7, 6, 5, 4, 3, 2, 1, 0)
++
++#define __SYSCALL_CONCAT1(X, Y) X##Y
++#define __SYSCALL_CONCAT(X, Y) __SYSCALL_CONCAT1(X, Y)
++
++#define __syscall(...) ({ \
++    struct __syscall_ret (*__SYSCALL_f)(int, ...); \
++    __SYSCALL_f = (struct __syscall_ret (*)(int, ...))__SYSCALL_CONCAT(__syscall, __SYSCALL_NARGS(__VA_ARGS__)); \
++    __SYSCALL_f(__VA_ARGS__); \
++})

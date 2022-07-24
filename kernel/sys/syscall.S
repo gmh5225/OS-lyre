@@ -41,7 +41,7 @@ syscall_sysenter_entry:
     mov %rsp, %rdi
 
     movq $-1, 16(%rsp)
-    movq $EINVAL, 72(%rsp)
+    movq $EINVAL, 24(%rsp)
 
     cmp syscall_count, %rbx
     jae 1f
@@ -52,7 +52,7 @@ syscall_sysenter_entry:
 
     mov %rax, 16(%rsp)
     mov %gs:0x8, %rax
-    mov %rax, 72(%rsp)
+    mov %rax, 24(%rsp)
 
 1:
     pop %rax
