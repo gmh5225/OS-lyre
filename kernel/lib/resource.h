@@ -43,7 +43,8 @@ bool fdnum_close(struct process *proc, int fdnum);
 int fdnum_create_from_fd(struct process *proc, struct f_descriptor *fd, int old_fdnum, bool specific);
 int fdnum_create_from_resource(struct process *proc, struct resource *res, int flags,
                                int old_fdnum, bool specific);
-
+int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc, int new_fdnum,
+              int flags, bool specific, bool cloexec);
 struct f_descriptor *fd_create_from_resource(struct resource *res, int flags);
 struct f_descriptor *fd_from_fdnum(struct process *proc, int fdnum);
 

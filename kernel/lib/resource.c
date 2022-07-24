@@ -4,6 +4,7 @@
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/resource.h>
+#include <lib/print.h>
 #include <sched/proc.h>
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
@@ -122,6 +123,51 @@ int fdnum_create_from_resource(struct process *proc, struct resource *res, int f
     return fdnum_create_from_fd(proc, fd, old_fdnum, specific);
 }
 
+int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc, int new_fdnum,
+              int flags, bool specific, bool cloexec) {
+    if (old_proc == NULL) {
+        old_proc = sched_current_thread()->process;
+    }
+
+    if (new_proc == NULL) {
+        new_proc = sched_current_thread()->process;
+    }
+
+    if (specific && old_fdnum == new_fdnum && old_proc == new_proc) {
+		errno = EINVAL;
+		return -1;
+	}
+
+    struct f_descriptor *old_fd = fd_from_fdnum(old_proc, old_fdnum);
+    if (old_fd == NULL) {
+        return -1;
+    }
+
+    struct f_descriptor *new_fd = ALLOC(struct f_descriptor);
+    if (new_fd == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
+
+    memcpy(new_fd, old_fd, sizeof(struct f_descriptor));
+
+    new_fdnum = fdnum_create_from_fd(new_proc, new_fd, new_fdnum, specific);
+    if (new_fdnum < 0) {
+        free(new_fd);
+        return -1;
+    }
+
+    new_fd->flags = flags & FILE_DESCRIPTOR_FLAGS_MASK;
+    if (cloexec) {
+        new_fd->flags &= O_CLOEXEC;
+    }
+
+    old_fd->description->refcount++;
+    old_fd->description->res->refcount++;
+
+    return new_fdnum;
+}
+
 struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
     res->refcount++;
 
@@ -235,11 +281,12 @@ int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
-    struct f_description *description = fd->description;
 
     if (fd == NULL) {
         return -1;
     }
+
+    struct f_description *description = fd->description;
 
     off_t curr_offset = description->offset;
     off_t new_offset = 0;
@@ -271,4 +318,54 @@ int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
 
     description->offset = new_offset;
     return new_offset;
+}
+
+int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+
+    if (fd == NULL) {
+        return -1;
+    }
+
+    switch (request) {
+        case F_DUPFD:
+            return fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, false);
+        case F_DUPFD_CLOEXEC:
+            return fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, true);
+        case F_GETFD:
+            if ((fd->flags & O_CLOEXEC) != 0) {
+                return O_CLOEXEC;
+            } else {
+                return 0;
+            }
+        case F_SETFD:
+            if ((arg & O_CLOEXEC) != 0) {
+                fd->flags = O_CLOEXEC;
+            } else {
+                fd->flags = 0;
+            }
+            return 0;
+        case F_GETFL:
+            return fd->description->flags;
+        case F_SETFL:
+            fd->description->flags = (int)arg;
+            return 0;
+        default:
+            print("fcntl: Unhandled request %lx\n", request);
+            errno = EINVAL;
+            return -1;
+    }
+}
+
+int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    return fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
 }

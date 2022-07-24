@@ -8,6 +8,7 @@
 #include <lib/resource.h>
 #include <sched/proc.h>
 #include <bits/posix/stat.h>
+#include <abi-bits/fcntl.h>
 
 static spinlock_t vfs_lock = SPINLOCK_INIT;
 
@@ -394,4 +395,50 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
 
     fd->description->node = node;
     return fdnum_create_from_fd(proc, fd, 0, false);
+}
+
+int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct stat *stat_buf) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct stat *stat_src = NULL;
+
+    if (stat_buf == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (strlen(path) == 0) {
+        if ((flags & AT_EMPTY_PATH) == 0) {
+            errno = ENOENT;
+            return -1;
+        }
+
+        if (dir_fdnum == AT_FDCWD) {
+            stat_src = &proc->cwd->resource->stat;
+        } else {
+            struct f_descriptor *fd = fd_from_fdnum(proc, dir_fdnum);
+            if (fd == NULL) {
+                return -1;
+            }
+
+            stat_src = &fd->description->res->stat;
+        }
+    } else {
+        struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
+        if (parent == NULL) {
+            return -1;
+        }
+
+        struct vfs_node *node = vfs_get_node(parent, path, (flags & AT_SYMLINK_NOFOLLOW) == 0);
+        if (node == NULL) {
+            return -1;
+        }
+
+        stat_src = &node->resource->stat;
+    }
+
+    memcpy(stat_buf, stat_src, sizeof(struct stat));
+    return 0;
 }
