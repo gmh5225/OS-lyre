@@ -7,8 +7,10 @@
 #include <lib/lock.h>
 #include <lib/vector.h>
 #include <lib/resource.h>
+#include <lib/event.h>
 
 #define MAX_FDS 256
+#define MAX_EVENTS 32
 
 struct process {
     struct pagemap *pagemap;
@@ -42,6 +44,9 @@ struct thread {
     VECTOR_TYPE(void *) stacks;
     void *pf_stack;
     void *kernel_stack;
+    size_t which_event;
+    size_t attached_events_i;
+    struct event *attached_events[MAX_EVENTS];
 };
 
 static inline struct thread *sched_current_thread(void) {
