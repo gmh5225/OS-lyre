@@ -23,6 +23,10 @@ void ps2_write_config(uint8_t value) {
 }
 
 void ps2_init(void) {
+    // Disable primary and secondary PS/2 ports
+    ps2_write(0x64, 0xad);
+    ps2_write(0x64, 0xa7);
+
     uint8_t ps2_config = ps2_read_config();
     // Enable keyboard interrupt and keyboard scancode translation
     ps2_config |= (1 << 0) | (1 << 6);
