@@ -3,6 +3,7 @@
 #include <dev/char/serial.h>
 #include <dev/char/console.h>
 #include <dev/lapic.h>
+#include <dev/ps2.h>
 #include <lib/elf.h>
 #include <lib/print.h>
 #include <mm/pmm.h>
@@ -62,6 +63,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
+    ps2_init();
     console_init();
     initramfs_init();
 
