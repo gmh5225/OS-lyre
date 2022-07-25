@@ -148,7 +148,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     lapic_init();
 
-    asm ("sti");
+    interrupt_toggle(true);
 
     print("cpu: Processor #%u online!\n", cpu_number);
 

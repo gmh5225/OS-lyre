@@ -29,7 +29,7 @@ static volatile struct limine_bootloader_info_request boot_info_request = {
 
 static void done(void) {
     for (;;) {
-        __asm__("hlt");
+        halt();
     }
 }
 

@@ -223,12 +223,20 @@ static inline bool interrupt_state(void) {
     return flags & (1 << 9);
 }
 
+static inline void enable_interrupts(void) {
+    asm ("sti");
+}
+
+static inline void disable_interrupts(void) {
+    asm ("cli");
+}
+
 static inline bool interrupt_toggle(bool state) {
     bool ret = interrupt_state();
     if (state) {
-        asm ("sti");
+        enable_interrupts();
     } else {
-        asm ("cli");
+        disable_interrupts();
     }
     return ret;
 }

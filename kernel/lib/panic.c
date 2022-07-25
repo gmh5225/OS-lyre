@@ -10,7 +10,7 @@
 
 noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     // TODO replace with some abort IPI and whatnot
-    asm volatile ("cli");
+    interrupt_toggle(false);
 
     print("\n\n*** LYRE PANIC ***\n\n");
 
@@ -60,6 +60,6 @@ halt:
     print("System halted.");
 
     for (;;) {
-        asm volatile ("hlt");
+        halt();
     }
 }
