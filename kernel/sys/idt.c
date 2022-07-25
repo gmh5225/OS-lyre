@@ -75,9 +75,15 @@ void idt_reload(void) {
 
 extern void *isr_thunks[];
 
+extern void syscall_ud_entry(void);
+
 void idt_init(void) {
     for (size_t i = 0; i < 256; i++) {
-        register_handler(i, isr_thunks[i], 0x8e);
+        if (i == 0x6) {
+            register_handler(i, syscall_ud_entry, 0x8e);
+        } else {
+            register_handler(i, isr_thunks[i], 0x8e);
+        }
     }
 
     idt_reload();

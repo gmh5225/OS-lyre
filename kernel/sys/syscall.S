@@ -1,17 +1,7 @@
 #include <abi-bits/errno.h>
 
-.section .text
-
-.global syscall_sysenter_entry
-syscall_sysenter_entry:
+.macro THUNK
     swapgs
-
-    push $0x53
-    push %r10
-    pushfq
-    push $0x4b
-    push %r11
-
     push $0
 
     push %r15
@@ -77,5 +67,32 @@ syscall_sysenter_entry:
     pop %r15
 
     swapgs
+.endm
+
+.section .text
+
+.global syscall_ud_entry
+syscall_ud_entry:
+    push %rax
+    mov 0x8(%rsp), %rax
+    cmpw $0x340f, (%rax)
+    pop %rax
+    jne 2f
+    THUNK
+    add $8, %rsp
+    add $2, (%rsp)
+    iretq
+2:
+    jmp *(isr_thunks + 0x6 * 0x8)
+
+.global syscall_sysenter_entry
+syscall_sysenter_entry:
+    push $0x53
+    push %r10
+    pushfq
+    push $0x4b
+    push %r11
+
+    THUNK
 
     sysexitq
