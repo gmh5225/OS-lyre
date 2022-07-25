@@ -12,6 +12,7 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/except.h>
+#include <sys/int_events.h>
 #include <fs/vfs/vfs.h>
 #include <limine.h>
 #include <fs/initramfs.h>
@@ -42,6 +43,7 @@ void _start(void) {
     gdt_init();
     idt_init();
     except_init();
+    int_events_init();
     pmm_init();
     slab_init();
     vmm_init();
