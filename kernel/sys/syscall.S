@@ -80,7 +80,7 @@ syscall_ud_entry:
     jne 2f
     THUNK
     add $8, %rsp
-    add $2, (%rsp)
+    addq $2, (%rsp)
     iretq
 2:
     jmp *(isr_thunks + 0x6 * 0x8)
