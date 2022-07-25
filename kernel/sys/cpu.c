@@ -20,6 +20,8 @@ void (*fpu_restore)(void *ctx) = NULL;
 
 #define CPU_STACK_SIZE 0x10000
 
+static size_t cpus_started_i = 0;
+
 static volatile struct limine_smp_request smp_request = {
     .id = LIMINE_SMP_REQUEST,
     .revision = 0
@@ -152,31 +154,37 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     print("cpu: Processor #%u online!\n", cpu_number);
 
+    cpus_started_i++;
+
     if (!cpu_local->bsp) {
         sched_await();
     }
 }
 
 void cpu_init(void) {
-    struct limine_smp_response *smpresp = smp_request.response;
+    struct limine_smp_response *smp_resp = smp_request.response;
 
-    ASSERT(smpresp != NULL);
+    ASSERT(smp_resp != NULL);
 
-    print("cpu: %u processors detected\n", smpresp->cpu_count);
+    print("cpu: %u processors detected\n", smp_resp->cpu_count);
 
-    for (size_t i = 0; i < smpresp->cpu_count; i++) {
-        struct limine_smp_info *cpu = smpresp->cpus[i];
+    for (size_t i = 0; i < smp_resp->cpu_count; i++) {
+        struct limine_smp_info *cpu = smp_resp->cpus[i];
 
         struct cpu_local *cpu_local = ALLOC(struct cpu_local);
         cpu->extra_argument = (uint64_t)cpu_local;
         cpu_local->cpu_number = i;
 
-        if (cpu->lapic_id != smpresp->bsp_lapic_id) {
+        if (cpu->lapic_id != smp_resp->bsp_lapic_id) {
             cpu->goto_address = single_cpu_init;
         } else {
             cpu_local->bsp = true;
             single_cpu_init(cpu);
         }
+    }
+
+    while (cpus_started_i != smp_resp->cpu_count) {
+        asm ("pause");
     }
 }
 
