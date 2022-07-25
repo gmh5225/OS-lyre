@@ -9,6 +9,7 @@
 #include <lib/print.h>
 #include <lib/lock.h>
 #include <lib/event.h>
+#include <lib/errno.h>
 #include <mm/vmm.h>
 #include <dev/char/console.h>
 #include <dev/ps2.h>
@@ -69,9 +70,75 @@ static const char convtab_nomod[] = {
     'b', 'n', 'm', ',', '.', '/', '\0', '\0', '\0', ' '
 };
 
-static ssize_t tty_read(struct resource *_this, void *buf, off_t offset, size_t count) {
-    (void)_this; (void)buf; (void)offset;
+#define SCANCODE_MAX 0x57
+#define SCANCODE_CTRL 0x1d
+#define SCANCODE_CTRL_REL 0x9d
+#define SCANCODE_SHIFT_RIGHT 0x36
+#define SCANCODE_SHIFT_RIGHT_REL 0xb6
+#define SCANCODE_SHIFT_LEFT 0x2a
+#define SCANCODE_SHIFT_LEFT_REL 0xaa
+#define SCANCODE_ALT_LEFT 0x38
+#define SCANCODE_ALT_LEFT_REL 0xb8
+#define SCANCODE_CAPSLOCK 0x3a
+#define SCANCODE_NUMLOCK 0x45
 
+#define KBD_BUFFER_SIZE 1024
+#define KBD_BIGBUF_SIZE 4096
+
+static char kbd_buffer[KBD_BUFFER_SIZE];
+static size_t kbd_buffer_i = 0;
+static char kbd_bigbuf[KBD_BIGBUF_SIZE];
+static size_t kbd_bigbuf_i = 0;
+
+static ssize_t tty_read(struct resource *_this, void *_buf, off_t offset, size_t count) {
+    (void)_this; (void)offset;
+
+    char *buf = _buf;
+
+    while (spinlock_test_and_acq(&read_lock) == false) {
+        struct event *events[] = { &console_event };
+        if (!event_await(events, 1, true)) {
+            errno = EINTR;
+            return -1;
+        }
+    }
+
+    bool wait = true;
+
+    for (size_t i = 0; i < count; ) {
+        if (kbd_bigbuf_i != 0) {
+            buf[i] = kbd_bigbuf[0];
+            i++;
+            kbd_bigbuf_i--;
+            for (size_t j = 0; j < kbd_bigbuf_i; j++) {
+                kbd_bigbuf[j] = kbd_bigbuf[j + 1];
+            }
+            if (kbd_bigbuf_i == 0 && (console_res->status & POLLIN) != 0) {
+                console_res->status &= ~POLLIN;
+                event_trigger(&console_res->event, false);
+            }
+            wait = false;
+        } else {
+            if (wait == true) {
+                spinlock_release(&read_lock);
+                for (;;) {
+                    struct event *events[] = { &console_event };
+                    if (!event_await(events, 1, true)) {
+                        errno = EINTR;
+                        return -1;
+                    }
+                    if (spinlock_test_and_acq(&read_lock) == true) {
+                        break;
+                    }
+                }
+            } else {
+                spinlock_release(&read_lock);
+                return i;
+            }
+        }
+    }
+
+    spinlock_release(&read_lock);
     return count;
 }
 
@@ -97,26 +164,6 @@ static ssize_t tty_write(struct resource *_this, const void *buf, off_t offset, 
 
     return count;
 }
-
-#define SCANCODE_MAX 0x57
-#define SCANCODE_CTRL 0x1d
-#define SCANCODE_CTRL_REL 0x9d
-#define SCANCODE_SHIFT_RIGHT 0x36
-#define SCANCODE_SHIFT_RIGHT_REL 0xb6
-#define SCANCODE_SHIFT_LEFT 0x2a
-#define SCANCODE_SHIFT_LEFT_REL 0xaa
-#define SCANCODE_ALT_LEFT 0x38
-#define SCANCODE_ALT_LEFT_REL 0xb8
-#define SCANCODE_CAPSLOCK 0x3a
-#define SCANCODE_NUMLOCK 0x45
-
-#define KBD_BUFFER_SIZE 1024
-#define KBD_BIGBUF_SIZE 4096
-
-static char kbd_buffer[KBD_BUFFER_SIZE];
-static size_t kbd_buffer_i = 0;
-static char kbd_bigbuf[KBD_BIGBUF_SIZE];
-static size_t kbd_bigbuf_i = 0;
 
 static void add_to_buf_char(char c, bool echo) {
     if (c == '\n' && (console_res->termios.c_iflag & ICRNL) == 0) {
@@ -196,7 +243,6 @@ static void add_to_buf_char(char c, bool echo) {
 
 static void add_to_buf(char *ptr, size_t count, bool echo) {
     spinlock_acquire(&read_lock);
-
 
     for (size_t i = 0; i < count; i++) {
         char c = ptr[i];
