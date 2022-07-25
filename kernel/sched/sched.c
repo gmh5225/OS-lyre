@@ -169,6 +169,28 @@ noreturn void sched_await(void) {
     __builtin_unreachable();
 }
 
+void sched_yield(bool save_ctx) {
+    interrupt_toggle(false);
+
+    struct thread *thread = sched_current_thread();
+
+    if (save_ctx) {
+        spinlock_acquire(&thread->yield_await);
+    }
+
+    sys_timer_oneshot(1, sched_entry);
+    interrupt_toggle(true);
+
+    if (save_ctx) {
+        spinlock_acquire(&thread->yield_await);
+        spinlock_release(&thread->yield_await);
+    } else {
+        for (;;) {
+            halt();
+        }
+    }
+}
+
 bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
     if (thread->enqueued == true) {
         return true;
@@ -190,6 +212,20 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
         }
     }
 
+    return false;
+}
+
+bool sched_dequeue_thread(struct thread *thread) {
+    if (!thread->enqueued) {
+        return true;
+    }
+
+    for (size_t i = 0; i < running_queue_i; i++) {
+        if (CAS(&running_queue[i], thread, NULL)) {
+            thread->enqueued = false;
+            return true;
+        }
+    }
     return false;
 }
 
