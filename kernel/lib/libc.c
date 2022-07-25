@@ -3,6 +3,13 @@
 #include <lib/alloc.h>
 #include <lib/libc.h>
 
+int toupper(int c) {
+    if (c >= 'a' && c <= 'z') {
+        c -= 0x20;
+    }
+    return c;
+}
+
 void *memcpy(void *dest, const void *src, size_t n) {
     uint8_t *pdest = (uint8_t *)dest;
     const uint8_t *psrc = (const uint8_t *)src;

@@ -8,6 +8,7 @@
 #include <sched/proc.h>
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
+#include <abi-bits/stat.h>
 
 static ssize_t stub_read(struct resource *this, void *buf, off_t offset, size_t count) {
     (void)this;
@@ -45,6 +46,15 @@ void *resource_create(size_t size) {
     res->write = stub_write;
     res->mmap = stub_mmap;
     return res;
+}
+
+dev_t resource_create_dev_id(void) {
+    static dev_t dev_id_counter = 1;
+    static spinlock_t lock = SPINLOCK_INIT;
+    spinlock_acquire(&lock);
+    dev_t ret = dev_id_counter++;
+    spinlock_release(&lock);
+    return ret;
 }
 
 bool fdnum_close(struct process *proc, int fdnum) {

@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/lock.h>
+#include <lib/event.h>
 #include <abi-bits/fcntl.h>
 #include <abi-bits/stat.h>
 #include <sys/types.h>
@@ -12,6 +13,8 @@
 struct process;
 
 struct resource {
+    int status;
+    struct event event;
     size_t refcount;
     spinlock_t lock;
     struct stat stat;
@@ -38,6 +41,7 @@ struct f_descriptor {
 };
 
 void *resource_create(size_t size);
+dev_t resource_create_dev_id(void);
 
 bool fdnum_close(struct process *proc, int fdnum);
 int fdnum_create_from_fd(struct process *proc, struct f_descriptor *fd, int old_fdnum, bool specific);
