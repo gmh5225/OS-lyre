@@ -20,6 +20,7 @@
 #include <fs/devtmpfs.h>
 #include <sched/sched.h>
 #include <acpi/acpi.h>
+#include <time/time.h>
 
 // The Limine requests can be placed anywhere, but it is important that
 // the compiler does not optimise them away, so, usually, they should
@@ -53,8 +54,9 @@ void _start(void) {
     kernel_process->mmap_anon_base = 0x80000000000;
     kernel_process->pagemap = vmm_kernel_pagemap;
 
-    acpi_init();
     cpu_init();
+    acpi_init();
+    time_init();
 
     sched_new_kernel_thread(kmain_thread, NULL, true);
     sched_await();

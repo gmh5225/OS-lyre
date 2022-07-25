@@ -8,5 +8,6 @@
 uint16_t pit_get_current_count(void);
 void pit_set_reload_value(uint16_t new_count);
 void pit_set_frequency(uint64_t frequency);
+void pit_init(void);
 
 #endif
