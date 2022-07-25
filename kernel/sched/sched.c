@@ -267,7 +267,7 @@ cleanup:
     return NULL;
 }
 
-#define STACK_SIZE 0x10000
+#define STACK_SIZE 0x40000
 
 struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     struct thread *thread = ALLOC(struct thread);
