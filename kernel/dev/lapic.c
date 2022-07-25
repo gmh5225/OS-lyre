@@ -8,6 +8,7 @@
 #include <dev/pit.h>
 #include <mm/vmm.h>
 
+#define LAPIC_REG_ID 0x20 // LAPIC ID
 #define LAPIC_REG_EOI 0x0b0 // End of interrupt
 #define LAPIC_REG_SPURIOUS 0x0f0
 #define LAPIC_REG_CMCI 0x2f0 // LVT Corrected machine check interrupt
@@ -97,4 +98,8 @@ void lapic_timer_calibrate(void) {
     int total_ticks = init_tick - final_tick;
     this_cpu()->lapic_freq = (samples / total_ticks) * PIT_DIVIDEND;
     lapic_timer_stop();
+}
+
+uint32_t lapic_get_id(void) {
+    return lapic_read(LAPIC_REG_ID);
 }

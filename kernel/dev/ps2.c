@@ -1,6 +1,11 @@
 #include <stdint.h>
 #include <dev/ps2.h>
+#include <dev/lapic.h>
+#include <dev/ioapic.h>
+#include <sys/idt.h>
 #include <sys/port.h>
+
+uint8_t ps2_keyboard_vector = 0;
 
 uint8_t ps2_read(void) {
     while ((inb(0x64) & 1) == 0);
@@ -42,4 +47,7 @@ void ps2_init(void) {
     if ((ps2_config & (1 << 5)) != 0) {
         ps2_write(0x64, 0xa8);
     }
+
+    ps2_keyboard_vector = idt_allocate_vector();
+    io_apic_set_irq_redirect(lapic_get_id(), ps2_keyboard_vector, 1, true);
 }
