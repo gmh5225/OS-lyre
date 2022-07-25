@@ -9,6 +9,24 @@
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
 #include <abi-bits/stat.h>
+#include <sys/ioctl.h>
+
+int resource_default_ioctl(struct resource *this, uint64_t request, uint64_t arg) {
+    (void)this;
+    (void)arg;
+
+    switch (request) {
+        case TCGETS:
+        case TCSETS:
+        case TIOCSCTTY:
+        case TIOCGWINSZ:
+            errno = ENOTTY;
+            return -1;
+    }
+
+    errno = EINVAL;
+    return -1;
+}
 
 static ssize_t stub_read(struct resource *this, void *buf, off_t offset, size_t count) {
     (void)this;
@@ -44,6 +62,7 @@ void *resource_create(size_t size) {
     res->refcount = 1;
     res->read = stub_read;
     res->write = stub_write;
+    res->ioctl = resource_default_ioctl;
     res->mmap = stub_mmap;
     return res;
 }
@@ -369,6 +388,21 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
             errno = EINVAL;
             return -1;
     }
+}
+
+int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+
+    if (fd == NULL) {
+        return -1;
+    }
+
+    struct resource *res = fd->description->res;
+    return res->ioctl(res, request, arg);
 }
 
 int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {

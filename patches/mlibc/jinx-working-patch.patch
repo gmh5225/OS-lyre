@@ -12,7 +12,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 1722935..70dfc2b 100644
+index 1722935..6fe0f05 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -41,7 +41,7 @@ index 1722935..70dfc2b 100644
  }
  
  void sys_libc_panic() {
-@@ -28,238 +31,66 @@ void sys_libc_panic() {
+@@ -28,238 +31,71 @@ void sys_libc_panic() {
  }
  
  void sys_exit(int status) {
@@ -259,11 +259,13 @@ index 1722935..70dfc2b 100644
 -	__syscall_ret ret = __syscall(9, fd, request, arg);
 -
 -	if (ret.errno != 0)
--		return ret.errno;
++	__syscall_ret ret = __syscall(SYS_ioctl, fd, request, arg);
++	if (ret.ret == -1) {
+ 		return ret.errno;
 -
--	*result = (int)ret.ret;
--	return 0;
-+    return ENOSYS;
++	}
+ 	*result = (int)ret.ret;
+ 	return 0;
  }
  
  int sys_isatty(int fd) {
@@ -301,19 +303,19 @@ index 1722935..70dfc2b 100644
  	return 0;
  }
  
-@@ -267,622 +98,248 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
+@@ -267,622 +103,248 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
  	return sys_openat(AT_FDCWD, path, flags, fd);
  }
  
 -int sys_open_dir(const char *path, int *handle) {
 -	return sys_open(path, O_DIRECTORY, 0, handle);
 -}
-+int sys_open_dir(const char *path, int *handle) STUB_ONLY
- 
+-
 -int sys_read_entries(int fd, void *buffer, size_t max_size, size_t *bytes_read) {
 -	(void)max_size;
 -	__syscall_ret ret = __syscall(19, fd, buffer);
--
++int sys_open_dir(const char *path, int *handle) STUB_ONLY
+ 
 -	if (ret.ret == (uint64_t)-1 && ret.errno == 0) {
 -		// End of directory.
 -		*bytes_read = 0;
@@ -380,7 +382,8 @@ index 1722935..70dfc2b 100644
  
 -int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) {
 -	__syscall_ret ret = __syscall(33, AT_FDCWD, path, data, max_size);
--
++int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -399,32 +402,31 @@ index 1722935..70dfc2b 100644
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
--	return 0;
--}
--
--int sys_unlinkat(int fd, const char *path, int flags) {
--	__syscall_ret ret = __syscall(35, fd, path, flags);
-+int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) STUB_ONLY
- 
--	if (ret.errno != 0) {
--		return ret.errno;
--	}
 +int sys_link(const char *old_path, const char *new_path) STUB_ONLY
  
 -	return 0;
 -}
 +int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) STUB_ONLY
  
--int sys_fchmod(int fd, mode_t mode) {
--	__syscall_ret ret = __syscall(57, fd, mode);
+-int sys_unlinkat(int fd, const char *path, int flags) {
+-	__syscall_ret ret = __syscall(35, fd, path, flags);
 +int sys_unlinkat(int fd, const char *path, int flags) STUB_ONLY
  
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
+-
+-	return 0;
+-}
 +int sys_fchmod(int fd, mode_t mode) STUB_ONLY
  
+-int sys_fchmod(int fd, mode_t mode) {
+-	__syscall_ret ret = __syscall(57, fd, mode);
+-
+-	if (ret.errno != 0) {
+-		return ret.errno;
+-	}
+-
 -	return 0;
 -}
 -
@@ -452,8 +454,7 @@ index 1722935..70dfc2b 100644
  
 -int sys_vm_unmap(void *pointer, size_t size) {
 -	__syscall_ret ret = __syscall(34, pointer, size);
-+int sys_vm_unmap(void *pointer, size_t size) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
@@ -465,7 +466,8 @@ index 1722935..70dfc2b 100644
 -
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_vm_unmap(void *pointer, size_t size) STUB_ONLY
+ 
 -	return 0;
 -}
 +int sys_vm_protect(void *pointer, size_t size, int prot) STUB_ONLY
@@ -614,9 +616,9 @@ index 1722935..70dfc2b 100644
  		return ret.errno;
  	}
 -
- 	return 0;
- }
- 
+-	return 0;
+-}
+-
 -int sys_access(const char *path, int mode) {
 -	return sys_faccessat(AT_FDCWD, path, mode, 0);
 -}
@@ -628,9 +630,9 @@ index 1722935..70dfc2b 100644
 -		return ret.errno;
 -	}
 -
--	return 0;
--}
--
+ 	return 0;
+ }
+ 
 -int sys_chdir(const char *path) {
 -	__syscall_ret ret = __syscall(18, path);
 -
@@ -775,17 +777,14 @@ index 1722935..70dfc2b 100644
 -		__builtin_unreachable();
 -	}
 -}
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
@@ -803,38 +802,41 @@ index 1722935..70dfc2b 100644
 -
 -int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
-+int sys_listen(int fd, int backlog) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
-+int sys_inotify_create(int flags, int *fd) STUB_ONLY
- 
+-
 -int sys_inotify_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(42, flags);
-+int sys_fork(pid_t *child) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++		const void *buffer, socklen_t size) STUB_ONLY
+ 
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -int sys_fork(pid_t *child) {
 -	__syscall_ret ret = __syscall(14);
--
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_listen(int fd, int backlog) STUB_ONLY
+ 
 -	*child = (pid_t)ret.ret;
 -	return 0;
 -}
--
++int sys_inotify_create(int flags, int *fd) STUB_ONLY
+ 
 -int sys_execve(const char *path, char *const argv[], char *const envp[]) {
 -	__syscall_ret ret = __syscall(17, path, argv, envp);
--
++int sys_fork(pid_t *child) STUB_ONLY
+ 
 -	return ret.errno;
 -}
 +int sys_execve(const char *path, char *const argv[], char *const envp[]) STUB_ONLY
@@ -1022,10 +1024,10 @@ index 1722935..70dfc2b 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..86c9c68 100644
+index f421220..183814a 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,70 @@
+@@ -1,16 +1,71 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1040,6 +1042,7 @@ index f421220..86c9c68 100644
 +#define SYS_stat 9
 +#define SYS_fcntl 10
 +#define SYS_dup3 11
++#define SYS_ioctl 12
 +
  struct __syscall_ret {
  	uint64_t ret;

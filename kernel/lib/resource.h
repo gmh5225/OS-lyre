@@ -22,6 +22,7 @@ struct resource {
 
     ssize_t (*read)(struct resource *this, void *buf, off_t offset, size_t count);
     ssize_t (*write)(struct resource *this, const void *buf, off_t offset, size_t count);
+    int (*ioctl)(struct resource *this, uint64_t request, uint64_t arg);
     void *(*mmap)(struct resource *this, size_t file_page, int flags);
 };
 
@@ -51,6 +52,8 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
               int flags, bool specific, bool cloexec);
 struct f_descriptor *fd_create_from_resource(struct resource *res, int flags);
 struct f_descriptor *fd_from_fdnum(struct process *proc, int fdnum);
+
+int resource_default_ioctl(struct resource *this, uint64_t request, uint64_t arg);
 
 #define FILE_CREATION_FLAGS_MASK (O_CREAT | O_DIRECTORY | O_EXCL | O_NOCTTY | O_NOFOLLOW | O_TRUNC)
 #define FILE_DESCRIPTOR_FLAGS_MASK (O_CLOEXEC)
