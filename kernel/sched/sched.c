@@ -216,7 +216,7 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
         new_proc->mmap_anon_base = 0x80000000000;
     }
 
-    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/tty1", true);
+    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/console", true);
 
     fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 0, true);
     fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 1, true);

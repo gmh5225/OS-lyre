@@ -14,42 +14,39 @@ static volatile struct limine_terminal_request terminal_request = {
     .revision = 0
 };
 
-static limine_terminal_write term_write;
-
 struct tty {
     struct resource;
     struct limine_terminal *terminal;
 };
+
+static ssize_t tty_read(struct resource *_this, void *buf, off_t offset, size_t count) {
+    (void)_this; (void)buf; (void)offset;
+
+    return count;
+}
 
 static ssize_t tty_write(struct resource *_this, const void *buf, off_t offset, size_t count) {
     (void)offset;
 
     struct tty *this = (struct tty *)_this;
 
+    char *local = alloc(count);
+    memcpy(local, buf, count);
+
     uint64_t cr3 = read_cr3();
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
         vmm_switch_to(vmm_kernel_pagemap);
     }
 
-    term_write(this->terminal, buf, count);
+    terminal_request.response->write(this->terminal, local, count);
 
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
         write_cr3(cr3);
     }
 
+    free(local);
+
     return count;
-}
-
-static void add_terminal(struct limine_terminal *terminal, int term_number) {
-    struct tty *terminal_dev = resource_create(sizeof(struct tty));
-
-    terminal_dev->write = tty_write;
-    terminal_dev->terminal = terminal;
-
-    char device_name[32];
-    snprint(device_name, sizeof(device_name), "tty%u", term_number);
-
-    devtmpfs_add_device((struct resource *)terminal_dev, device_name);
 }
 
 void console_init(void) {
@@ -60,9 +57,11 @@ void console_init(void) {
         panic(NULL, true, "Limine terminal is not available");
     }
 
-    term_write = terminal_resp->write;
+    struct tty *terminal_dev = resource_create(sizeof(struct tty));
 
-    for (size_t i = 0; i < terminal_resp->terminal_count; i++) {
-        add_terminal(terminal_resp->terminals[i], i + 1);
-    }
+    terminal_dev->read = tty_read;
+    terminal_dev->write = tty_write;
+    terminal_dev->terminal = terminal_resp->terminals[0];
+
+    devtmpfs_add_device((struct resource *)terminal_dev, "console");
 }
