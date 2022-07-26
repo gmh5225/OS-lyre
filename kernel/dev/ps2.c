@@ -50,4 +50,5 @@ void ps2_init(void) {
 
     ps2_keyboard_vector = idt_allocate_vector();
     io_apic_set_irq_redirect(lapic_get_id(), ps2_keyboard_vector, 1, true);
+    inb(0x60);
 }
