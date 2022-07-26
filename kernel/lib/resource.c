@@ -256,6 +256,8 @@ cleanup:
 int syscall_close(void *_, int fdnum) {
     (void)_;
 
+    print("syscall: close(%d)", fdnum);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
@@ -264,6 +266,8 @@ int syscall_close(void *_, int fdnum) {
 
 int syscall_read(void *_, int fdnum, void *buf, size_t count) {
     (void)_;
+
+    print("syscall: read(%d, %lx, %lu)", fdnum, buf, count);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
@@ -286,6 +290,8 @@ int syscall_read(void *_, int fdnum, void *buf, size_t count) {
 int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     (void)_;
 
+    print("syscall: write(%d, %lx '%S', %lu)", fdnum, buf, buf, count, count);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
@@ -306,6 +312,8 @@ int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
 
 int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     (void)_;
+
+    print("syscall: seek(%d, %ld, %d)", fdnum, offset, whence);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
@@ -352,6 +360,8 @@ int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
 int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
+    print("syscall: fcntl(%d, %lu, %lx)", fdnum, request, arg);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
@@ -393,6 +403,8 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
 int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
+    print("syscall: ioctl(%d, %lu, %lx)", fdnum, request, arg);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
@@ -407,6 +419,8 @@ int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
 
 int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
     (void)_;
+
+    print("syscall: dup3(%d, %d, %x)", old_fdnum, new_fdnum, flags);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;

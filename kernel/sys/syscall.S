@@ -1,5 +1,9 @@
 #include <abi-bits/errno.h>
 
+.section .rodata
+newline:
+    .asciz " = %d (errno=%d)\n"
+
 .macro THUNK
     swapgs
     push $0
@@ -43,6 +47,11 @@
     mov %rax, 16(%rsp)
     mov %gs:0x8, %rax
     mov %rax, 24(%rsp)
+
+    mov $newline, %rdi
+    mov 16(%rsp), %rsi
+    mov 24(%rsp), %rdx
+    call print
 
 1:
     pop %rax

@@ -343,6 +343,8 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
     (void)_;
     (void)mode;
 
+    print("syscall: openat(%d, %s, %x, %o)", dir_fdnum, path, flags, mode);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
@@ -399,6 +401,8 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
 
 int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct stat *stat_buf) {
     (void)_;
+
+    print("syscall: stat(%d, %s, %x, %lx)", dir_fdnum, path, flags, stat_buf);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
