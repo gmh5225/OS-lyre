@@ -98,7 +98,7 @@ static ssize_t tty_read(struct resource *_this, void *_buf, off_t offset, size_t
 
     while (spinlock_test_and_acq(&read_lock) == false) {
         struct event *events[] = { &console_event };
-        if (!event_await(events, 1, true)) {
+        if (event_await(events, 1, true) == -1) {
             errno = EINTR;
             return -1;
         }
@@ -124,7 +124,7 @@ static ssize_t tty_read(struct resource *_this, void *_buf, off_t offset, size_t
                 spinlock_release(&read_lock);
                 for (;;) {
                     struct event *events[] = { &console_event };
-                    if (!event_await(events, 1, true)) {
+                    if (event_await(events, 1, true) == -1) {
                         errno = EINTR;
                         return -1;
                     }
