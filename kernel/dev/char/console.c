@@ -17,7 +17,8 @@
 #include <sys/cpu.h>
 #include <sys/int_events.h>
 #include <sched/sched.h>
-#include <abi-bits/termios.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 #include <abi-bits/poll.h>
 
 static bool is_printable(uint8_t c) {
@@ -163,6 +164,33 @@ static ssize_t tty_write(struct resource *_this, const void *buf, off_t offset, 
     free(local);
 
     return count;
+}
+
+static int tty_ioctl(struct resource *_this, uint64_t request, uint64_t argp) {
+    switch (request) {
+        case TIOCGWINSZ: {
+            struct winsize *w = (void *)argp;
+            struct limine_terminal *t = terminal_request.response->terminals[0];
+            w->ws_row = t->rows;
+            w->ws_col = t->columns;
+            w->ws_xpixel = t->framebuffer->width;
+            w->ws_ypixel = t->framebuffer->height;
+            return 0;
+        }
+        case TCGETS: {
+            struct termios *t = (void *)argp;
+            *t = console_res->termios;
+            return 0;
+        }
+        case TCSETS: case TCSETSW: case TCSETSF: {
+            struct termios *t = (void *)argp;
+            console_res->termios = *t;
+            return 0;
+        }
+        default: {
+            return resource_default_ioctl(_this, request, argp);
+        }
+    }
 }
 
 static void add_to_buf_char(char c, bool echo) {
@@ -449,6 +477,7 @@ void console_init(void) {
 
     console_res->read = tty_read;
     console_res->write = tty_write;
+    console_res->ioctl = tty_ioctl;
 
     devtmpfs_add_device((struct resource *)console_res, "console");
 
