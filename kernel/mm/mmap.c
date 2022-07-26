@@ -328,12 +328,12 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         if (snip_length == local_range->length && global_range->locals.length == 1) {
             if ((local_range->flags & MAP_ANONYMOUS) != 0) {
                 for (uintptr_t j = global_range->base; j < global_range->base + global_range->length; j += PAGE_SIZE) {
-                    uintptr_t phys = vmm_virt2phys(pagemap, j);
+                    uintptr_t phys = vmm_virt2phys(global_range->shadow_pagemap, j);
                     if (phys == INVALID_PHYS) {
                         continue;
                     }
 
-                    if (!vmm_unmap_page(pagemap, j)) {
+                    if (!vmm_unmap_page(global_range->shadow_pagemap, j)) {
                         // FIXME: Page map is in inconsistent state at this point!
                         errno = EINVAL;
                         return false;

@@ -229,6 +229,19 @@ bool sched_dequeue_thread(struct thread *thread) {
     return false;
 }
 
+noreturn void sched_dequeue_and_die(void) {
+    interrupt_toggle(false);
+
+    struct thread *thread = sched_current_thread();
+
+    sched_dequeue_thread(thread);
+
+    // TODO: Free stacks
+
+    sched_yield(false);
+    __builtin_unreachable();
+}
+
 struct process *sched_new_process(struct process *old_proc, struct pagemap *pagemap) {
     struct process *new_proc = ALLOC(struct process);
     if (new_proc == NULL) {
@@ -246,10 +259,12 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
 
         new_proc->thread_stack_top = old_proc->thread_stack_top;
         new_proc->mmap_anon_base = old_proc->mmap_anon_base;
+        new_proc->cwd = old_proc->cwd;
     } else {
         new_proc->pagemap = pagemap;
         new_proc->thread_stack_top = 0x70000000000;
         new_proc->mmap_anon_base = 0x80000000000;
+        new_proc->cwd = vfs_root;
     }
 
     struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/console", true);
@@ -441,4 +456,113 @@ void syscall_set_fs_base(void *_, void *base) {
 void syscall_set_gs_base(void *_, void *base) {
     (void)_;
     set_gs_base(base);
+}
+
+int syscall_fork(struct cpu_ctx *ctx) {
+    print("syscall: fork()");
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    struct process *new_proc = sched_new_process(proc, NULL);
+
+    for (int i = 0; i < MAX_FDS; i++) {
+        if (proc->fds[i] == NULL) {
+            continue;
+        }
+
+        if (fdnum_dup(proc, i, new_proc, i, 0, true, false) != i) {
+            goto fail;
+        }
+    }
+
+    struct thread *new_thread = ALLOC(struct thread);
+    if (new_thread == NULL) {
+        errno = ENOMEM;
+        goto fail;
+    }
+
+    memcpy(&new_thread->ctx, ctx, sizeof(struct cpu_ctx));
+
+    void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+    VECTOR_PUSH_BACK(new_thread->stacks, kernel_stack_phys);
+    new_thread->kernel_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
+
+    void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
+    VECTOR_PUSH_BACK(new_thread->stacks, pf_stack_phys);
+    new_thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
+
+#if defined (__x86_64__)
+    new_thread->cr3 = (uint64_t)new_proc->pagemap->top_level - VMM_HIGHER_HALF;
+#endif
+
+    new_thread->self = new_thread;
+    new_thread->process = new_proc;
+    new_thread->timeslice = thread->timeslice;
+    new_thread->gs_base = get_kernel_gs_base();
+    new_thread->fs_base = get_fs_base();
+    new_thread->running_on = -1;
+    new_thread->fpu_storage = pmm_alloc(DIV_ROUNDUP(fpu_storage_size, PAGE_SIZE))
+                              + VMM_HIGHER_HALF;
+
+    memcpy(new_thread->fpu_storage, thread->fpu_storage, fpu_storage_size);
+
+    new_thread->ctx.rax = 0;
+    new_thread->ctx.rbx = 0;
+
+    VECTOR_PUSH_BACK(new_proc->threads, new_thread);
+
+    sched_enqueue_thread(new_thread, false);
+
+    return 69;
+
+fail:
+    // TODO: Properly clean up
+    free(new_proc);
+    return -1;
+}
+
+int syscall_exec(void *_, const char *path, const char **argv, const char **envp) {
+    (void)_;
+
+    print("syscall: exec(%s, %lx, %lx)", path, argv, envp);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    struct pagemap *new_pagemap = vmm_new_pagemap();
+    struct auxval auxv, ld_auxv;
+    const char *ld_path;
+
+    struct vfs_node *node = vfs_get_node(proc->cwd, path, true);
+    if (node == NULL || !elf_load(new_pagemap, node->resource, 0x0, &auxv, &ld_path)) {
+        goto fail;
+    }
+
+    struct vfs_node *ld_node = vfs_get_node(vfs_root, ld_path, true);
+    if (ld_node == NULL || !elf_load(new_pagemap, ld_node->resource, 0x40000000, &ld_auxv, NULL)) {
+        goto fail;
+    }
+
+    struct pagemap *old_pagemap = proc->pagemap;
+
+    proc->pagemap = new_pagemap;
+    proc->thread_stack_top = 0x70000000000;
+    proc->mmap_anon_base = 0x80000000000;
+
+    // TODO: Kill old threads
+    proc->threads = (typeof(proc->threads))VECTOR_INIT;
+
+    uint64_t entry = ld_path == NULL ? auxv.at_entry : ld_auxv.at_entry;
+
+    struct thread *new_thread = sched_new_user_thread(proc, (void *)entry, NULL, NULL, argv, envp, &auxv, true);
+
+    if (new_thread == NULL) {
+        goto fail;
+    }
+
+    vmm_destroy_pagemap(old_pagemap);
+    sched_dequeue_and_die();
+
+fail:
+    return -1;
 }

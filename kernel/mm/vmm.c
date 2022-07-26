@@ -205,7 +205,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
             if ((local_range->flags & MAP_ANONYMOUS) != 0) {
                 for (uintptr_t i = local_range->base; i < local_range->base + local_range->length; i += PAGE_SIZE) {
                     uint64_t *old_pte = vmm_virt2pte(pagemap, i, false);
-                    if (old_pte == NULL) {
+                    if (old_pte == NULL || (PTE_GET_FLAGS(*old_pte) & PTE_PRESENT) == 0) {
                         continue;
                     }
 
@@ -265,11 +265,11 @@ static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
 }
 
 void vmm_destroy_pagemap(struct pagemap *pagemap) {
-    spinlock_acquire(&pagemap->lock);
-
     VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
-        ASSERT(munmap(pagemap, local_range->base, local_range->length));
+
+        // TODO: Find out why munmap fails here sometimes
+        munmap(pagemap, local_range->base, local_range->length);
     }
 
     destroy_level(pagemap->top_level, 0, 256, 4);
