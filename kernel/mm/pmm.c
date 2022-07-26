@@ -114,7 +114,7 @@ static void *inner_alloc(size_t pages, uint64_t limit) {
 void *pmm_alloc(size_t pages) {
     void *ret = pmm_alloc_nozero(pages);
     if (ret != NULL) {
-        memset(ret + VMM_HIGHER_HALF, 0, PAGE_SIZE);
+        memset(ret + VMM_HIGHER_HALF, 0, pages * PAGE_SIZE);
     }
 
     return ret;
