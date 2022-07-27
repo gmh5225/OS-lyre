@@ -42,7 +42,6 @@ newline:
 
     sti
     call *syscall_table(,%rbx,8)
-    cli
 
     mov %rax, 16(%rsp)
     mov %gs:0x8, %rax
@@ -52,6 +51,7 @@ newline:
     mov 16(%rsp), %rsi
     mov 24(%rsp), %rdx
     call print
+    cli
 
 1:
     pop %rax
