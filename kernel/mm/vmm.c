@@ -237,6 +237,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         VECTOR_PUSH_BACK(new_pagemap->mmap_ranges, new_local_range);
     }
 
+    spinlock_release(&pagemap->lock);
     return new_pagemap;
 
 cleanup:
