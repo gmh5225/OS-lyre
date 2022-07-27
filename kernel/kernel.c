@@ -22,24 +22,8 @@
 #include <acpi/acpi.h>
 #include <time/time.h>
 
-// The Limine requests can be placed anywhere, but it is important that
-// the compiler does not optimise them away, so, usually, they should
-// be made volatile or equivalent.
-
-static volatile struct limine_bootloader_info_request boot_info_request = {
-    .id = LIMINE_BOOTLOADER_INFO_REQUEST,
-    .revision = 0
-};
-
-static void done(void) {
-    for (;;) {
-        halt();
-    }
-}
-
 void kmain_thread(void);
 
-// The following will be our kernel's entry point.
 void _start(void) {
     serial_init();
     gdt_init();
@@ -50,9 +34,7 @@ void _start(void) {
     slab_init();
     vmm_init();
 
-    kernel_process = ALLOC(struct process);
-    kernel_process->mmap_anon_base = 0x80000000000;
-    kernel_process->pagemap = vmm_kernel_pagemap;
+    kernel_process = sched_new_process(NULL, vmm_kernel_pagemap);
 
     cpu_init();
     acpi_init();
@@ -87,15 +69,15 @@ void kmain_thread(void) {
     const char *envp[] = {"USER=lyre", "HOME=/", "TERM=linux", NULL};
 
     struct process *bash_proc = sched_new_process(NULL, bash_vm);
+
+    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/console", true);
+
+    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 0, true);
+    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 1, true);
+    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 2, true);
+
     sched_new_user_thread(bash_proc, (void *)ld_auxv.at_entry,
                           NULL, NULL, argv, envp, &bash_auxv, true);
 
-    print("Hello, %s!\n", "world");
-
-    if (boot_info_request.response) {
-        print("Booted by %s %s\n", boot_info_request.response->name,
-            boot_info_request.response->version);
-    }
-
-    done();
+    sched_dequeue_and_die();
 }

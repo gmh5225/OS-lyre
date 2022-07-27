@@ -13,10 +13,16 @@
 #define MAX_EVENTS 32
 
 struct process {
+    int pid;
+    int ppid;
+    int status;
     struct pagemap *pagemap;
     uintptr_t mmap_anon_base;
     uintptr_t thread_stack_top;
     VECTOR_TYPE(struct thread *) threads;
+    VECTOR_TYPE(struct process *) children;
+    VECTOR_TYPE(struct event *) child_events;
+    struct event event;
     struct vfs_node *cwd;
     spinlock_t fds_lock;
     struct f_descriptor *fds[MAX_FDS];

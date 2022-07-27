@@ -42,7 +42,6 @@ newline:
 
     sti
     call *syscall_table(,%rbx,8)
-    cli
 
     mov %rax, 16(%rsp)
     mov %gs:0x8, %rax
@@ -52,6 +51,7 @@ newline:
     mov 16(%rsp), %rsi
     mov 24(%rsp), %rdx
     call print
+    cli
 
 1:
     pop %rax
@@ -99,9 +99,11 @@ syscall_sysenter_entry:
     push $0x53
     push %r10
     pushfq
+    orq $0x200, (%rsp)
     push $0x4b
     push %r11
 
     THUNK
 
+    sti
     sysexitq

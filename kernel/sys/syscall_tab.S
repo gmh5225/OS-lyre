@@ -15,6 +15,11 @@ syscall_table:
     .quad syscall_fcntl       // 10
     .quad syscall_dup3        // 11
     .quad syscall_ioctl       // 12
+    .quad syscall_fork        // 13
+    .quad syscall_exec        // 14
+    .quad syscall_getpid      // 15
+    .quad syscall_waitpid     // 16
+    .quad syscall_exit        // 17
 syscall_table_end:
 
 .global syscall_count
