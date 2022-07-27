@@ -22,18 +22,8 @@
 #include <acpi/acpi.h>
 #include <time/time.h>
 
-// The Limine requests can be placed anywhere, but it is important that
-// the compiler does not optimise them away, so, usually, they should
-// be made volatile or equivalent.
-
-static volatile struct limine_bootloader_info_request boot_info_request = {
-    .id = LIMINE_BOOTLOADER_INFO_REQUEST,
-    .revision = 0
-};
-
 void kmain_thread(void);
 
-// The following will be our kernel's entry point.
 void _start(void) {
     serial_init();
     gdt_init();
