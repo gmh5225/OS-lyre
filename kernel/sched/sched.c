@@ -20,14 +20,18 @@ struct process *kernel_process;
 static struct thread *running_queue[MAX_RUNNING_THREADS];
 static size_t running_queue_i = 0;
 
+static spinlock_t lock = SPINLOCK_INIT;
+
 // This is a very crappy algorithm
 static int get_next_thread(int orig_i) {
+    spinlock_acquire(&lock);
+
     int cpu_number = this_cpu()->cpu_number;
 
-    size_t index = orig_i + 1;
+    int index = orig_i + 1;
 
     for (;;) {
-        if (index >= running_queue_i) {
+        if (index >= (int)running_queue_i) {
             index = 0;
         }
 
@@ -35,17 +39,19 @@ static int get_next_thread(int orig_i) {
 
         if (thread != NULL) {
             if (thread->running_on == cpu_number || spinlock_test_and_acq(&thread->lock) == true) {
+                spinlock_release(&lock);
                 return index;
             }
         }
 
-        if (index == (size_t)orig_i) {
+        if (index == orig_i) {
             break;
         }
 
         index++;
     }
 
+    spinlock_release(&lock);
     return -1;
 }
 
@@ -199,6 +205,8 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
 
     thread->enqueued_by_signal = by_signal;
 
+    spinlock_acquire(&lock);
+
     for (size_t i = 0; i < MAX_RUNNING_THREADS; i++) {
         if (CAS(&running_queue[i], NULL, thread)) {
             thread->enqueued = true;
@@ -209,10 +217,12 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
                 running_queue_i = i + 1;
             }
 
+            spinlock_release(&lock);
             return true;
         }
     }
 
+    spinlock_release(&lock);
     return false;
 }
 
@@ -221,12 +231,23 @@ bool sched_dequeue_thread(struct thread *thread) {
         return true;
     }
 
+    spinlock_acquire(&lock);
+
     for (size_t i = 0; i < running_queue_i; i++) {
         if (CAS(&running_queue[i], thread, NULL)) {
             thread->enqueued = false;
+
+            // XXX why does this not work??
+            //if (i == running_queue_i - 1) {
+            //    running_queue_i--;
+            //}
+
+            spinlock_release(&lock);
             return true;
         }
     }
+
+    spinlock_release(&lock);
     return false;
 }
 
@@ -501,7 +522,10 @@ int syscall_fork(struct cpu_ctx *ctx) {
         goto fail;
     }
 
-    new_thread->ctx = *ctx;
+    new_thread->lock = SPINLOCK_INIT;
+    new_thread->yield_await = SPINLOCK_INIT;
+    new_thread->enqueued = false;
+    new_thread->stacks = (typeof(new_thread->stacks))VECTOR_INIT;
 
     void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
     VECTOR_PUSH_BACK(new_thread->stacks, kernel_stack_phys);
@@ -510,6 +534,8 @@ int syscall_fork(struct cpu_ctx *ctx) {
     void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
     VECTOR_PUSH_BACK(new_thread->stacks, pf_stack_phys);
     new_thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
+
+    new_thread->ctx = *ctx;
 
 #if defined (__x86_64__)
     new_thread->cr3 = (uint64_t)new_proc->pagemap->top_level - VMM_HIGHER_HALF;
