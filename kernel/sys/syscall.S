@@ -99,9 +99,11 @@ syscall_sysenter_entry:
     push $0x53
     push %r10
     pushfq
+    orq $0x200, (%rsp)
     push $0x4b
     push %r11
 
     THUNK
 
+    sti
     sysexitq
