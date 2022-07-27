@@ -242,6 +242,8 @@ noreturn void sched_dequeue_and_die(void) {
     __builtin_unreachable();
 }
 
+static VECTOR_TYPE(struct process *) processes = VECTOR_INIT;
+
 struct process *sched_new_process(struct process *old_proc, struct pagemap *pagemap) {
     struct process *new_proc = ALLOC(struct process);
     if (new_proc == NULL) {
@@ -267,11 +269,7 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
         new_proc->cwd = vfs_root;
     }
 
-    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/console", true);
-
-    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 0, true);
-    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 1, true);
-    fdnum_create_from_resource(new_proc, dev_tty1->resource, 0, 2, true);
+    new_proc->pid = VECTOR_PUSH_BACK(processes, new_proc);
 
     return new_proc;
 
@@ -458,6 +456,13 @@ void syscall_set_gs_base(void *_, void *base) {
     set_gs_base(base);
 }
 
+int syscall_getpid(void *_) {
+    (void)_;
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+    return proc->pid;
+}
+
 int syscall_fork(struct cpu_ctx *ctx) {
     print("syscall: fork()");
 
@@ -481,7 +486,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
         goto fail;
     }
 
-    memcpy(&new_thread->ctx, ctx, sizeof(struct cpu_ctx));
+    new_thread->ctx = *ctx;
 
     void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
     VECTOR_PUSH_BACK(new_thread->stacks, kernel_stack_phys);

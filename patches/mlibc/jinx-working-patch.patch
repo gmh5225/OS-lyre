@@ -12,7 +12,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 1722935..81eac4b 100644
+index 1722935..d833a89 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -275,7 +275,7 @@ index 1722935..81eac4b 100644
  	return 0;
  }
  
-@@ -267,622 +128,258 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
+@@ -267,622 +128,259 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
  	return sys_openat(AT_FDCWD, path, flags, fd);
  }
  
@@ -460,7 +460,8 @@ index 1722935..81eac4b 100644
 -	__syscall_ret ret = __syscall(31);
 -
 -	return ret.ret;
-+    return 0;
++    __syscall_ret ret = __syscall(SYS_getpid);
++    return ret.ret;
  }
  
  pid_t sys_getppid() {
@@ -998,10 +999,10 @@ index 1722935..81eac4b 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..aad9c24 100644
+index f421220..584ffc9 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,73 @@
+@@ -1,16 +1,74 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1019,6 +1020,7 @@ index f421220..aad9c24 100644
 +#define SYS_ioctl 12
 +#define SYS_fork 13
 +#define SYS_exec 14
++#define SYS_getpid 15
 +
  struct __syscall_ret {
  	uint64_t ret;

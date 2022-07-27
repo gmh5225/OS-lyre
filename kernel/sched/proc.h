@@ -13,6 +13,7 @@
 #define MAX_EVENTS 32
 
 struct process {
+    int pid;
     struct pagemap *pagemap;
     uintptr_t mmap_anon_base;
     uintptr_t thread_stack_top;

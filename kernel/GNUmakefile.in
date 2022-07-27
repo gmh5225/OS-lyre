@@ -50,6 +50,7 @@ override INTERNALCFLAGS := \
     -std=gnu11             \
     -fms-extensions        \
     -fno-omit-frame-pointer \
+    -fno-strict-aliasing   \
     -Wno-microsoft-anon-tag \
     -Wvla                  \
     -Wshadow               \

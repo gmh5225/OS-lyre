@@ -17,6 +17,7 @@ syscall_table:
     .quad syscall_ioctl       // 12
     .quad syscall_fork        // 13
     .quad syscall_exec        // 14
+    .quad syscall_getpid      // 15
 syscall_table_end:
 
 .global syscall_count
