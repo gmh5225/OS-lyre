@@ -13,6 +13,7 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <fs/vfs/vfs.h>
+#include <abi-bits/wait.h>
 
 struct process *kernel_process;
 
@@ -259,10 +260,12 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
             goto cleanup;
         }
 
+        new_proc->ppid = old_proc->pid;
         new_proc->thread_stack_top = old_proc->thread_stack_top;
         new_proc->mmap_anon_base = old_proc->mmap_anon_base;
         new_proc->cwd = old_proc->cwd;
     } else {
+        new_proc->ppid = 0;
         new_proc->pagemap = pagemap;
         new_proc->thread_stack_top = 0x70000000000;
         new_proc->mmap_anon_base = 0x80000000000;
@@ -270,6 +273,11 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
     }
 
     new_proc->pid = VECTOR_PUSH_BACK(processes, new_proc);
+
+    if (old_proc != NULL) {
+        VECTOR_PUSH_BACK(old_proc->children, new_proc);
+        VECTOR_PUSH_BACK(old_proc->child_events, &new_proc->event);
+    }
 
     return new_proc;
 
@@ -577,4 +585,105 @@ int syscall_exec(void *_, const char *path, const char **argv, const char **envp
 
 fail:
     return -1;
+}
+
+int syscall_exit(void *_, int status) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall: exit(%d) = ...\n", status & 0xff);
+
+    for (int i = 0; i < MAX_FDS; i++) {
+        fdnum_close(proc, i);
+    }
+
+    if (proc->pid != -1) {
+        struct process *pid1 = VECTOR_ITEM(processes, 1);
+
+        VECTOR_FOR_EACH(proc->children, it) {
+            VECTOR_PUSH_BACK(pid1->children, *it);
+            VECTOR_PUSH_BACK(pid1->child_events, &(*it)->event);
+        }
+    }
+
+    proc->status = (status & 0xff) | 0x200;
+
+    event_trigger(&proc->event, false);
+    vmm_destroy_pagemap(proc->pagemap);
+    sched_dequeue_and_die();
+
+    // TODO: Kill all threads too
+}
+
+int syscall_waitpid(void *_, int pid, int *status, int flags) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall: waitpid(%d, %lx, %x)", pid, status, flags);
+
+    struct process *child = NULL;
+    struct event *child_event = NULL;
+    struct event **events = NULL;
+    size_t event_num = 0;
+
+    if (pid == -1) {
+        if (proc->children.length == 0) {
+            errno = ECHILD;
+            return -1;
+        }
+
+        events = proc->child_events.data;
+        event_num = proc->child_events.length;
+    } else if (pid < -1 || pid == 0) {
+        errno = EINVAL;
+        return -1;
+    } else {
+        if (proc->children.length == 0) {
+            errno = ECHILD;
+            return -1;
+        }
+
+        VECTOR_FOR_EACH(processes, it) {
+            struct process *it_proc = *it;
+            if (it_proc->pid == pid) {
+                child = it_proc;
+                break;
+            }
+        }
+
+        if (child == NULL || child->ppid != proc->pid) {
+            errno = ECHILD;
+            return -1;
+        }
+
+        child_event = &child->event;
+        events = &child_event;
+        event_num = 1;
+    }
+
+    bool block = (flags & WNOHANG) == 0;
+    ssize_t which = event_await(events, event_num, block);
+    if (which == -1) {
+        if (block) {
+            return 0;
+        } else {
+            errno = EINTR;
+            return -1;
+        }
+    }
+
+    if (child == NULL) {
+        child = VECTOR_ITEM(proc->children, which);
+    }
+
+    *status = child->status;
+
+    VECTOR_REMOVE(proc->child_events, VECTOR_FIND(proc->child_events, &child->event));
+    VECTOR_REMOVE(proc->children, VECTOR_FIND(proc->children, child));
+
+    return child->pid;
 }
