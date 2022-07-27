@@ -999,7 +999,7 @@ index 1722935..d833a89 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..584ffc9 100644
+index f421220..265eadb 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
 @@ -1,16 +1,74 @@
@@ -1043,35 +1043,35 @@ index f421220..584ffc9 100644
 +		"sysenter\n\t" \
 +		"1:" \
 +		: "=a"(ret.ret), "=b"(ret.errno) __VA_ARGS__ \
-+		: "r10", "r11", "memory" \
++		"r10", "r11", "memory" \
 +	); \
 +	return ret
 +
 +static inline struct __syscall_ret __syscall5(int number, uint64_t a, uint64_t b, uint64_t c, uint64_t d, uint64_t e) {
 +    register uint64_t r8 asm("%r8") = d;
 +    register uint64_t r9 asm("%r9") = e;
-+    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8), "r"(r9));
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8), "r"(r9) :);
 +}
 +
 +static inline struct __syscall_ret __syscall4(int number, uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
 +    register uint64_t r8 asm("%r8") = d;
-+    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8));
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a), "r"(r8) :);
 +}
 +
 +static inline struct __syscall_ret __syscall3(int number, uint64_t a, uint64_t b, uint64_t c) {
-+    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a));
++    __SYSCALL_EXPAND(, "+d"(b), "+c"(c) : "D"(number), "S"(a) :);
 +}
 +
 +static inline struct __syscall_ret __syscall2(int number, uint64_t a, uint64_t b) {
-+    __SYSCALL_EXPAND(, "+d"(b) : "D"(number), "S"(a));
++    __SYSCALL_EXPAND(, "+d"(b) : "D"(number), "S"(a) : "rcx", );
  }
 +
 +static inline struct __syscall_ret __syscall1(int number, uint64_t a) {
-+    __SYSCALL_EXPAND( : "D"(number), "S"(a));
++    __SYSCALL_EXPAND( : "D"(number), "S"(a) : "rcx", "rdx", );
 +}
 +
 +static inline struct __syscall_ret __syscall0(int number) {
-+    __SYSCALL_EXPAND( : "D"(number));
++    __SYSCALL_EXPAND( : "D"(number) : "rcx", "rdx", );
 +}
 +
 +#define __SYSCALL_NARGS_SEQ(_0,_1,_2,_3,_4,_5,_6,_7,N,...) N
