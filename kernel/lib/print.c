@@ -306,8 +306,10 @@ void print(const char *fmt, ...) {
 int syscall_debug(void *_, const char *str) {
     (void)_;
     if (debug) {
-        serial_outstr(str);
-        serial_out('\n');
+    serial_outstr(str);
+    serial_out('\n');
     }
+
+    print("syscall: debug(%lx)", str);
     return 0;
 }

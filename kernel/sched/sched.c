@@ -448,27 +448,34 @@ fail:
 
 void syscall_set_fs_base(void *_, void *base) {
     (void)_;
+
+    print("syscall: set_fs_base(%lx)", base);
     set_fs_base(base);
 }
 
 void syscall_set_gs_base(void *_, void *base) {
     (void)_;
+
+    print("syscall: set_gs_base(%lx)", base);
     set_gs_base(base);
 }
 
 int syscall_getpid(void *_) {
     (void)_;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall: getpid()");
     return proc->pid;
 }
 
 int syscall_fork(struct cpu_ctx *ctx) {
-    print("syscall: fork()");
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct process *new_proc = sched_new_process(proc, NULL);
+
+    print("syscall: fork()");
 
     for (int i = 0; i < MAX_FDS; i++) {
         if (proc->fds[i] == NULL) {
@@ -518,7 +525,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
 
     sched_enqueue_thread(new_thread, false);
 
-    return 69;
+    return new_proc->pid;
 
 fail:
     // TODO: Properly clean up
@@ -529,10 +536,10 @@ fail:
 int syscall_exec(void *_, const char *path, const char **argv, const char **envp) {
     (void)_;
 
-    print("syscall: exec(%s, %lx, %lx)", path, argv, envp);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall: exec(%s, %lx, %lx)", path, argv, envp);
 
     struct pagemap *new_pagemap = vmm_new_pagemap();
     struct auxval auxv, ld_auxv;

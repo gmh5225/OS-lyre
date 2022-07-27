@@ -359,6 +359,8 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
 void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fdnum, off_t offset) {
     (void)_;
 
+    print("syscall: mmap(%lx, %lx, %lx, %d, %ld)", hint, length, flags, fdnum, offset);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct resource *res = NULL;
