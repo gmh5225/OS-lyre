@@ -28,6 +28,10 @@ static int get_next_thread(int orig_i) {
 
     int cpu_number = this_cpu()->cpu_number;
 
+    if (orig_i >= (int)running_queue_i) {
+        orig_i = 0;
+    }
+
     int index = orig_i + 1;
 
     for (;;) {
@@ -237,10 +241,9 @@ bool sched_dequeue_thread(struct thread *thread) {
         if (CAS(&running_queue[i], thread, NULL)) {
             thread->enqueued = false;
 
-            // XXX why does this not work??
-            //if (i == running_queue_i - 1) {
-            //    running_queue_i--;
-            //}
+            if (i == running_queue_i - 1) {
+               running_queue_i--;
+            }
 
             spinlock_release(&lock);
             return true;
