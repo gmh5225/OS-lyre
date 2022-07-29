@@ -23,6 +23,7 @@ syscall_table:
     .quad syscall_getcwd      // 18
     .quad syscall_chdir       // 19
     .quad syscall_munmap      // 20
+    .quad syscall_pipe        // 21
 syscall_table_end:
 
 .global syscall_count

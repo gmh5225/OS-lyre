@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 1722935..4c19a95 100644
+index 1722935..04a61bc 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -249,12 +249,10 @@ index 1722935..4c19a95 100644
  
 -int sys_futex_wait(int *pointer, int expected, const struct timespec *time) {
 -	__syscall_ret ret = __syscall(23, pointer, expected, time);
-+int sys_futex_wait(int *pointer, int expected, const struct timespec *time) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_futex_wake(int *pointer) STUB_ONLY
- 
+-
 -	return 0;
 -}
 -
@@ -263,13 +261,15 @@ index 1722935..4c19a95 100644
 -
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_futex_wait(int *pointer, int expected, const struct timespec *time) STUB_ONLY
+ 
 -	int num_woken = ret.ret;
 -
 -	__ensure(num_woken >= 0 && num_woken <= 1);
 -	return num_woken;
 -}
--
++int sys_futex_wake(int *pointer) STUB_ONLY
+ 
 -int sys_timerfd_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(54, 0, flags);
 -
@@ -405,19 +405,44 @@ index 1722935..4c19a95 100644
 -	__syscall_ret ret = __syscall(4, fd, buf, count);
 -
 -	if (ret.errno != 0) {
+-		return ret.errno;
+-	}
+-
+-	*bytes_written = (ssize_t)ret.ret;
+-	return 0;
+-}
+-
+-int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) {
+-	__syscall_ret ret = __syscall(33, AT_FDCWD, path, data, max_size);
+-
+-	if (ret.errno != 0) {
+-		return ret.errno;
+-	}
+-
+-	*length = (ssize_t)ret.ret;
+-	return 0;
+-}
+-
+-int sys_link(const char *old_path, const char *new_path) {
+-	return sys_linkat(AT_FDCWD, old_path, AT_FDCWD, new_path, 0);
+-}
+-
+-int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
+-	__syscall_ret ret = __syscall(58, olddirfd, old_path, newdirfd, new_path, flags);
+-
+-	if (ret.errno != 0) {
 +	__syscall_ret ret = __syscall(SYS_write, fd, buf, count);
 +	ssize_t ret_value = (ssize_t)ret.ret;
 +	if (ret_value == -1) {
  		return ret.errno;
  	}
 -
--	*bytes_written = (ssize_t)ret.ret;
 +	*bytes_written = ret_value;
  	return 0;
  }
  
--int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) {
--	__syscall_ret ret = __syscall(33, AT_FDCWD, path, data, max_size);
+-int sys_unlinkat(int fd, const char *path, int flags) {
+-	__syscall_ret ret = __syscall(35, fd, path, flags);
 +int sys_readlink(const char *path, void *data, size_t max_size, ssize_t *length) STUB_ONLY
  
 -	if (ret.errno != 0) {
@@ -425,44 +450,19 @@ index 1722935..4c19a95 100644
 -	}
 +int sys_link(const char *old_path, const char *new_path) STUB_ONLY
  
--	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
 +int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) STUB_ONLY
  
--int sys_link(const char *old_path, const char *new_path) {
--	return sys_linkat(AT_FDCWD, old_path, AT_FDCWD, new_path, 0);
--}
-+int sys_unlinkat(int fd, const char *path, int flags) STUB_ONLY
- 
--int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
--	__syscall_ret ret = __syscall(58, olddirfd, old_path, newdirfd, new_path, flags);
-+int sys_fchmod(int fd, mode_t mode) STUB_ONLY
- 
--	if (ret.errno != 0) {
--		return ret.errno;
--	}
--
--	return 0;
--}
--
--int sys_unlinkat(int fd, const char *path, int flags) {
--	__syscall_ret ret = __syscall(35, fd, path, flags);
--
--	if (ret.errno != 0) {
--		return ret.errno;
--	}
--
--	return 0;
--}
--
 -int sys_fchmod(int fd, mode_t mode) {
 -	__syscall_ret ret = __syscall(57, fd, mode);
--
++int sys_unlinkat(int fd, const char *path, int flags) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_fchmod(int fd, mode_t mode) STUB_ONLY
+ 
 -	return 0;
 -}
 -
@@ -664,20 +664,20 @@ index 1722935..4c19a95 100644
  	return 0;
  }
  
-@@ -532,357 +297,138 @@ int sys_access(const char *path, int mode) {
- 	return sys_faccessat(AT_FDCWD, path, mode, 0);
+@@ -533,356 +298,143 @@ int sys_access(const char *path, int mode) {
  }
  
--int sys_pipe(int *fds, int flags) {
+ int sys_pipe(int *fds, int flags) {
 -	__syscall_ret ret = __syscall(21, fds, flags);
 -
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++	__syscall_ret ret = __syscall(SYS_pipe, fds, flags);
++    if ((int)ret.ret == -1) {
+ 		return ret.errno;
+ 	}
 -
--	return 0;
--}
-+int sys_pipe(int *fds, int flags) STUB_ONLY
+ 	return 0;
+ }
  
  int sys_chdir(const char *path) {
 -	__syscall_ret ret = __syscall(18, path);
@@ -694,29 +694,23 @@ index 1722935..4c19a95 100644
 -int sys_mkdir(const char *path, mode_t mode) {
 -	return sys_mkdirat(AT_FDCWD, path, mode);
 -}
-+int sys_mkdir(const char *path, mode_t mode) STUB_ONLY
- 
+-
 -int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
 -	__syscall_ret ret = __syscall(22, dirfd, path, mode);
-+int sys_mkdirat(int dirfd, const char *path, mode_t mode) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
-+int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
- 
+-
 -int sys_socket(int domain, int type_and_flags, int proto, int *fd) {
 -	__syscall_ret ret = __syscall(39, domain, type_and_flags, proto);
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
-+int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) {
 -	__syscall_ret ret = __syscall(46, domain, type_and_flags, proto, fds);
 -
@@ -725,23 +719,29 @@ index 1722935..4c19a95 100644
 -
 -int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
--
++int sys_mkdir(const char *path, mode_t mode) STUB_ONLY
+ 
 -	return ret.errno;
 -}
--
++int sys_mkdirat(int dirfd, const char *path, mode_t mode) STUB_ONLY
+ 
 -int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
--
++int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
+ 
 -	return ret.errno;
 -}
--
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
+ 
 -int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
 -	__syscall_ret ret = __syscall(61, fd);
--
++int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
 -	*newfd = ret.ret;
 -
 -	if(addr_ptr && addr_length) {
@@ -819,10 +819,12 @@ index 1722935..4c19a95 100644
 -		__builtin_unreachable();
 -	}
 -}
--
++		const void *buffer, socklen_t size) STUB_ONLY
+ 
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -833,12 +835,12 @@ index 1722935..4c19a95 100644
 -
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 
 -	*actual_length = max_addr_length;
 -	return 0;
 -}
@@ -848,12 +850,10 @@ index 1722935..4c19a95 100644
 -
 -	return ret.errno;
 -}
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -int sys_inotify_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(42, flags);
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -983,28 +983,28 @@ index 1722935..4c19a95 100644
  	}
 -
 -	*ret_pid = (pid_t)ret.ret;
+-	return 0;
+-}
+-
+-int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
+-	__syscall_ret ret = __syscall(38, size, list);
+-
+-	if (ret.errno != 0)
+-		return ret.errno;
+-
+-	*_ret = (int)ret.ret;
 +	*ret_pid = ret_value;
  	return 0;
  }
  
--int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
--	__syscall_ret ret = __syscall(38, size, list);
+-int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
+-	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
 +int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
  
 -	if (ret.errno != 0)
 -		return ret.errno;
 +int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
  
--	*_ret = (int)ret.ret;
--	return 0;
--}
--
--int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
--	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
--
--	if (ret.errno != 0)
--		return ret.errno;
--
 -	return 0;
 -}
 -
@@ -1079,10 +1079,10 @@ index 1722935..4c19a95 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..0e3d5bf 100644
+index f421220..3c3e9fd 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,79 @@
+@@ -1,16 +1,80 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1106,6 +1106,7 @@ index f421220..0e3d5bf 100644
 +#define SYS_getcwd 18
 +#define SYS_chdir 19
 +#define SYS_unmmap 20
++#define SYS_pipe 21
 +
  struct __syscall_ret {
  	uint64_t ret;
