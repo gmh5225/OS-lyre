@@ -264,7 +264,7 @@ int syscall_close(void *_, int fdnum) {
     return fdnum_close(proc, fdnum) ? 0 : -1;
 }
 
-int syscall_read(void *_, int fdnum, void *buf, size_t count) {
+ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
     (void)_;
 
     print("syscall: read(%d, %lx, %lu)", fdnum, buf, count);
@@ -287,7 +287,7 @@ int syscall_read(void *_, int fdnum, void *buf, size_t count) {
     return read;
 }
 
-int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
+ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     (void)_;
 
     print("syscall: write(%d, %lx '%S', %lu)", fdnum, buf, buf, count, count);
@@ -310,7 +310,7 @@ int syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     return written;
 }
 
-int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
+off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     (void)_;
 
     print("syscall: seek(%d, %ld, %d)", fdnum, offset, whence);
@@ -324,6 +324,14 @@ int syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     }
 
     struct f_description *description = fd->description;
+
+    switch (description->res->stat.st_mode & S_IFMT) {
+        case S_IFCHR:
+        case S_IFIFO:
+        case S_IFSOCK:
+            errno = ESPIPE;
+            return -1;
+    }
 
     off_t curr_offset = description->offset;
     off_t new_offset = 0;

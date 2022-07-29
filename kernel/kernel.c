@@ -66,7 +66,7 @@ void kmain_thread(void) {
     elf_load(bash_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
 
     const char *argv[] = {"/bin/bash", "-l", NULL};
-    const char *envp[] = {"USER=lyre", "HOME=/", "TERM=linux", NULL};
+    const char *envp[] = {"USER=root", "HOME=/root", "TERM=linux", NULL};
 
     struct process *bash_proc = sched_new_process(NULL, bash_vm);
 

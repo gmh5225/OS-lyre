@@ -492,7 +492,7 @@ void syscall_set_gs_base(void *_, void *base) {
     set_gs_base(base);
 }
 
-int syscall_getpid(void *_) {
+pid_t syscall_getpid(void *_) {
     (void)_;
 
     struct thread *thread = sched_current_thread();
@@ -646,7 +646,7 @@ int syscall_exit(void *_, int status) {
     // TODO: Kill all threads too
 }
 
-int syscall_waitpid(void *_, int pid, int *status, int flags) {
+pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     (void)_;
 
     struct thread *thread = sched_current_thread();

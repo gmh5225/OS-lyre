@@ -2,7 +2,7 @@
 
 .section .rodata
 newline:
-    .asciz " = %d (errno=%d)\n"
+    .asciz " = %ld (errno=%d)\n"
 
 .macro THUNK
     swapgs
