@@ -411,6 +411,14 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     thread->fpu_storage = pmm_alloc(DIV_ROUNDUP(fpu_storage_size, PAGE_SIZE))
                           + VMM_HIGHER_HALF;
 
+    // Set up FPU control word nd MXCSR as defined in the sysv ABI
+    fpu_restore(thread->fpu_storage);
+    uint16_t default_fcw = 0b1100111111;
+    asm volatile ("fldcw %0" :: "m"(default_fcw) : "memory");
+    uint32_t default_mxcsr = 0b1111110000000;
+    asm volatile ("ldmxcsr %0" :: "m"(default_mxcsr) : "memory");
+    fpu_save(thread->fpu_storage);
+
     if (proc->threads.length == 0) {
         void *stack_top = stack;
 
