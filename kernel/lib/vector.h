@@ -54,6 +54,7 @@
     for (size_t VECTOR_REMOVE_i = (IDX); VECTOR_REMOVE_i < VECTOR_REMOVE_vec->length - 1; VECTOR_REMOVE_i++) { \
         VECTOR_REMOVE_vec->data[VECTOR_REMOVE_i] = VECTOR_REMOVE_vec->data[VECTOR_REMOVE_i + 1]; \
     } \
+    VECTOR_REMOVE_vec->length--; \
 })
 
 #define VECTOR_ITEM(VEC, IDX) ((VEC).data[IDX])
@@ -69,6 +70,12 @@
     } \
     VECTOR_FIND_result; \
 })
+
+#define VECTOR_REMOVE_BY_VALUE(VEC, VALUE) do { \
+    __auto_type VECTOR_REMOVE_BY_VALUE_v = (VALUE); \
+    size_t VECTOR_REMOVE_BY_VALUE_i = VECTOR_FIND((VEC), VECTOR_REMOVE_BY_VALUE_v); \
+    VECTOR_REMOVE((VEC), VECTOR_REMOVE_BY_VALUE_i); \
+} while (0)
 
 #define VECTOR_FOR_EACH(VEC, BINDING) \
     for (typeof((VEC).data) BINDING = (VEC).data; \
