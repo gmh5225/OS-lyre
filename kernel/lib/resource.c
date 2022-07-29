@@ -11,8 +11,9 @@
 #include <abi-bits/stat.h>
 #include <sys/ioctl.h>
 
-int resource_default_ioctl(struct resource *this, uint64_t request, uint64_t arg) {
+int resource_default_ioctl(struct resource *this, struct f_description *description, uint64_t request, uint64_t arg) {
     (void)this;
+    (void)description;
     (void)arg;
 
     switch (request) {
@@ -28,8 +29,9 @@ int resource_default_ioctl(struct resource *this, uint64_t request, uint64_t arg
     return -1;
 }
 
-static ssize_t stub_read(struct resource *this, void *buf, off_t offset, size_t count) {
+static ssize_t stub_read(struct resource *this, struct f_description *description, void *buf, off_t offset, size_t count) {
     (void)this;
+    (void)description;
     (void)buf;
     (void)offset;
     (void)count;
@@ -37,8 +39,9 @@ static ssize_t stub_read(struct resource *this, void *buf, off_t offset, size_t 
     return -1;
 }
 
-static ssize_t stub_write(struct resource *this, const void *buf, off_t offset, size_t count) {
+static ssize_t stub_write(struct resource *this, struct f_description *description, const void *buf, off_t offset, size_t count) {
     (void)this;
+    (void)description;
     (void)buf;
     (void)offset;
     (void)count;
@@ -276,14 +279,15 @@ ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
         return -1;
     }
 
-    struct resource *res = fd->description->res;
+    struct f_description *description = fd->description;
+    struct resource *res = description->res;
 
-    ssize_t read = res->read(res, buf, fd->description->offset, count);
+    ssize_t read = res->read(res, description, buf, description->offset, count);
     if (read < 0) {
         return -1;
     }
 
-    fd->description->offset += read;
+    description->offset += read;
     return read;
 }
 
@@ -299,14 +303,15 @@ ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
         return -1;
     }
 
-    struct resource *res = fd->description->res;
+    struct f_description *description = fd->description;
+    struct resource *res = description->res;
 
-    ssize_t written = res->write(res, buf, fd->description->offset, count);
+    ssize_t written = res->write(res, description, buf, description->offset, count);
     if (written < 0) {
         return -1;
     }
 
-    fd->description->offset += written;
+    description->offset += written;
     return written;
 }
 
@@ -324,7 +329,6 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     }
 
     struct f_description *description = fd->description;
-
     switch (description->res->stat.st_mode & S_IFMT) {
         case S_IFCHR:
         case S_IFIFO:
@@ -421,8 +425,9 @@ int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
         return -1;
     }
 
-    struct resource *res = fd->description->res;
-    return res->ioctl(res, request, arg);
+    struct f_description *description = fd->description;
+    struct resource *res = description->res;
+    return res->ioctl(res, description, request, arg);
 }
 
 int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {

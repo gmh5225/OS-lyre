@@ -14,7 +14,7 @@
 bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
               struct auxval *auxv, const char **ld_path) {
     Elf64_Ehdr header;
-    if (res->read(res, &header, 0, sizeof(header)) < 0) {
+    if (res->read(res, NULL, &header, 0, sizeof(header)) < 0) {
         return false;
     }
 
@@ -31,7 +31,7 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
 
     for (size_t i = 0; i < header.e_phnum; i++) {
         Elf64_Phdr phdr;
-        if (res->read(res, &phdr, header.e_phoff + i * header.e_phentsize, sizeof(phdr)) < 0) {
+        if (res->read(res, NULL, &phdr, header.e_phoff + i * header.e_phentsize, sizeof(phdr)) < 0) {
             goto fail;
         }
 
@@ -59,7 +59,7 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
                     goto fail;
                 }
 
-                if (res->read(res, phys + misalign + VMM_HIGHER_HALF, phdr.p_offset, phdr.p_filesz) < 0) {
+                if (res->read(res, NULL, phys + misalign + VMM_HIGHER_HALF, phdr.p_offset, phdr.p_filesz) < 0) {
                     goto fail;
                 }
 
@@ -93,7 +93,7 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
                     goto fail;
                 }
 
-                if (res->read(res, path, phdr.p_offset, phdr.p_filesz) < 0) {
+                if (res->read(res, NULL, path, phdr.p_offset, phdr.p_filesz) < 0) {
                     free(path);
                     goto fail;
                 }

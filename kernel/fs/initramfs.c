@@ -89,7 +89,7 @@ void initramfs_init(void) {
                 }
 
                 struct resource *resource = node->resource;
-                ASSERT(resource->write(resource, (void *)current_file + 512, 0, size) == (ssize_t)size);
+                ASSERT(resource->write(resource, NULL, (void *)current_file + 512, 0, size) == (ssize_t)size);
                 break;
             }
             case TAR_FILE_TYPE_SYMLINK: {

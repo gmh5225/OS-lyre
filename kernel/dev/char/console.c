@@ -91,8 +91,10 @@ static size_t kbd_buffer_i = 0;
 static char kbd_bigbuf[KBD_BIGBUF_SIZE];
 static size_t kbd_bigbuf_i = 0;
 
-static ssize_t tty_read(struct resource *_this, void *_buf, off_t offset, size_t count) {
-    (void)_this; (void)offset;
+static ssize_t tty_read(struct resource *_this, struct f_description *description, void *_buf, off_t offset, size_t count) {
+    (void)_this;
+    (void)description;
+    (void)offset;
 
     char *buf = _buf;
 
@@ -143,7 +145,8 @@ static ssize_t tty_read(struct resource *_this, void *_buf, off_t offset, size_t
     return count;
 }
 
-static ssize_t tty_write(struct resource *_this, const void *buf, off_t offset, size_t count) {
+static ssize_t tty_write(struct resource *_this, struct f_description *description, const void *buf, off_t offset, size_t count) {
+    (void)description;
     (void)offset;
     (void)_this;
 
@@ -166,7 +169,7 @@ static ssize_t tty_write(struct resource *_this, const void *buf, off_t offset, 
     return count;
 }
 
-static int tty_ioctl(struct resource *_this, uint64_t request, uint64_t argp) {
+static int tty_ioctl(struct resource *_this, struct f_description *description, uint64_t request, uint64_t argp) {
     switch (request) {
         case TIOCGWINSZ: {
             struct winsize *w = (void *)argp;
@@ -188,7 +191,7 @@ static int tty_ioctl(struct resource *_this, uint64_t request, uint64_t argp) {
             return 0;
         }
         default: {
-            return resource_default_ioctl(_this, request, argp);
+            return resource_default_ioctl(_this, description, request, argp);
         }
     }
 }
@@ -206,7 +209,7 @@ static void add_to_buf_char(char c, bool echo) {
                 }
                 kbd_buffer[kbd_buffer_i++] = c;
                 if (echo && (console_res->termios.c_lflag & ECHO)) {
-                    tty_write(NULL, "\n", 0, 1);
+                    tty_write(NULL, NULL, "\n", 0, 1);
                 }
                 for (size_t i = 0; i < kbd_buffer_i; i++) {
                     if ((console_res->status & POLLIN) == 0) {
@@ -235,7 +238,7 @@ static void add_to_buf_char(char c, bool echo) {
                 kbd_buffer[kbd_buffer_i] = 0;
                 if (echo && (console_res->termios.c_lflag & ECHO) != 0) {
                     for (size_t i = 0; i < to_backspace; i++) {
-                        tty_write(NULL, "\b \b", 0, 3);
+                        tty_write(NULL, NULL, "\b \b", 0, 3);
                     }
                 }
                 return;
@@ -259,12 +262,12 @@ static void add_to_buf_char(char c, bool echo) {
 
     if (echo && (console_res->termios.c_lflag & ECHO) != 0) {
         if (is_printable(c)) {
-            tty_write(NULL, &c, 0, 1);
+            tty_write(NULL, NULL, &c, 0, 1);
         } else if (c >= 0x01 && c <= 0x1a) {
             char caret[2];
             caret[0] = '^';
             caret[1] = c + 0x40;
-            tty_write(NULL, caret, 0, 2);
+            tty_write(NULL, NULL, caret, 0, 2);
         }
     }
 }

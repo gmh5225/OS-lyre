@@ -31,7 +31,9 @@ struct devtmpfs {
 static struct vfs_filesystem *devtmpfs = NULL;
 static struct vfs_node *devtmpfs_root = NULL;
 
-static ssize_t devtmpfs_resource_read(struct resource *_this, void *buf, off_t offset, size_t count) {
+static ssize_t devtmpfs_resource_read(struct resource *_this, struct f_description *description, void *buf, off_t offset, size_t count) {
+    (void)description;
+
     struct devtmpfs_resource *this = (struct devtmpfs_resource *)_this;
 
     spinlock_acquire(&this->lock);
@@ -48,7 +50,9 @@ static ssize_t devtmpfs_resource_read(struct resource *_this, void *buf, off_t o
     return actual_count;
 }
 
-static ssize_t devtmpfs_resource_write(struct resource *_this, const void *buf, off_t offset, size_t count) {
+static ssize_t devtmpfs_resource_write(struct resource *_this, struct f_description *description, const void *buf, off_t offset, size_t count) {
+    (void)description;
+
     ssize_t ret = -1;
     struct devtmpfs_resource *this = (struct devtmpfs_resource *)_this;
 
