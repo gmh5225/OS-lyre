@@ -20,6 +20,9 @@ syscall_table:
     .quad syscall_getpid      // 15
     .quad syscall_waitpid     // 16
     .quad syscall_exit        // 17
+    .quad syscall_getcwd      // 18
+    .quad syscall_chdir       // 19
+    .quad syscall_munmap      // 20
 syscall_table_end:
 
 .global syscall_count

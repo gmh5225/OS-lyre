@@ -284,8 +284,11 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         struct mmap_range_global *global_range = local_range->global;
 
         uintptr_t snip_begin = i;
-        while (i < local_range->base + local_range->length && i < addr + length) {
+        for (;;) {
             i += PAGE_SIZE;
+            if (i >= local_range->base + local_range->length || i >= addr + length) {
+                break;
+            }
         }
 
         uintptr_t snip_end = i;
@@ -377,4 +380,15 @@ void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int f
         return MAP_FAILED;
     }
     return mmap(proc->pagemap, hint, length, (int)(flags >> 32), (int)flags, res, offset);
+}
+
+int syscall_munmap(void *_, uintptr_t addr, size_t length) {
+    (void)_;
+
+    print("syscall: munmap(%lx, %lx)", addr, length);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    return munmap(proc->pagemap, addr, length) ? 0 : -1;
 }

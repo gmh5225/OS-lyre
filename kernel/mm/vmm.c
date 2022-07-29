@@ -433,7 +433,7 @@ uint64_t *vmm_virt2pte(struct pagemap *pagemap, uintptr_t virt, bool allocate) {
 
 uintptr_t vmm_virt2phys(struct pagemap *pagemap, uintptr_t virt) {
     uint64_t *pte = vmm_virt2pte(pagemap, virt, false);
-    if (pte == NULL) {
+    if (pte == NULL || (PTE_GET_FLAGS(*pte) & PTE_PRESENT) == 0) {
         return INVALID_PHYS;
     }
 

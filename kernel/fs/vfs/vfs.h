@@ -38,5 +38,6 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
 struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
                              const char *target);
 struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode);
+size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len);
 
 #endif

@@ -9,6 +9,7 @@
 #include <sched/proc.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/fcntl.h>
+#include <limits.h>
 
 static spinlock_t vfs_lock = SPINLOCK_INIT;
 
@@ -339,6 +340,17 @@ cleanup:
     return ret;
 }
 
+size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len) {
+    size_t offset = 0;
+    if (node->parent != NULL) {
+        offset += vfs_pathname(node->parent, buffer, len - offset - 1);
+        buffer[offset++] = '/';
+    }
+
+    strncpy(buffer + offset, node->name, len - offset);
+    return strlen(node->name);
+}
+
 int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
     (void)_;
     (void)mode;
@@ -444,5 +456,56 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
     }
 
     memcpy(stat_buf, stat_src, sizeof(struct stat));
+    return 0;
+}
+
+int syscall_getcwd(void *_, char *buffer, size_t len) {
+    (void)_;
+
+    print("syscall: getcwd(%lx, %lu)", buffer, len);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    char path_buffer[PATH_MAX] = {0};
+    if (vfs_pathname(proc->cwd, path_buffer, PATH_MAX) >= len) {
+        errno = ERANGE;
+        return -1;
+    }
+
+    strncpy(buffer, path_buffer, len);
+    return 0;
+}
+
+int syscall_chdir(void *_, const char *path) {
+    (void)_;
+
+    print("syscall: chdir(%s)", path);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    if (path == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (strlen(path) == 0) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    struct vfs_node *node = vfs_get_node(proc->cwd, path, true);
+    if (node == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    if (!S_ISDIR(node->resource->stat.st_mode)) {
+        errno = ENOTDIR;
+        return -1;
+    }
+
+    proc->cwd = node;
     return 0;
 }
