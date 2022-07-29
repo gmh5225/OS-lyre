@@ -34,19 +34,19 @@ void madt_init(void) {
         switch (header->id) {
             case 0:
                 print("madt: Found local APIC #%lu\n", madt_lapics.length);
-                VECTOR_PUSH_BACK(madt_lapics, (struct madt_lapic *)header);
+                VECTOR_PUSH_BACK(&madt_lapics, (struct madt_lapic *)header);
                 break;
             case 1:
                 print("madt: Found IO APIC #%lu\n", madt_io_apics.length);
-                VECTOR_PUSH_BACK(madt_io_apics, (struct madt_io_apic *)header);
+                VECTOR_PUSH_BACK(&madt_io_apics, (struct madt_io_apic *)header);
                 break;
             case 2:
                 print("madt: Found ISO #%lu\n", madt_isos.length);
-                VECTOR_PUSH_BACK(madt_isos, (struct madt_iso *)header);
+                VECTOR_PUSH_BACK(&madt_isos, (struct madt_iso *)header);
                 break;
             case 4:
                 print("madt: Found NMI #%lu\n", madt_nmis.length);
-                VECTOR_PUSH_BACK(madt_nmis, (struct madt_nmi *)header);
+                VECTOR_PUSH_BACK(&madt_nmis, (struct madt_nmi *)header);
                 break;
         }
 

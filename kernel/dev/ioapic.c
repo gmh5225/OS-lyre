@@ -25,7 +25,7 @@ static size_t io_apic_gsi_count(struct madt_io_apic *io_apic) {
 
 static struct madt_io_apic *io_apic_from_gsi(uint32_t gsi) {
     for (size_t i = 0; i < madt_io_apics.length; i++) {
-        struct madt_io_apic *io_apic = VECTOR_ITEM(madt_io_apics, i);
+        struct madt_io_apic *io_apic = VECTOR_ITEM(&madt_io_apics, i);
         if (gsi >= io_apic->gsib && gsi < io_apic->gsib + io_apic_gsi_count(io_apic)) {
             return io_apic;
         }
@@ -36,7 +36,7 @@ static struct madt_io_apic *io_apic_from_gsi(uint32_t gsi) {
 
 void io_apic_set_irq_redirect(uint32_t lapic_id, uint8_t vector, uint8_t irq, bool status) {
     for (size_t i = 0; i < madt_isos.length; i++) {
-        struct madt_iso *iso = VECTOR_ITEM(madt_isos, i);
+        struct madt_iso *iso = VECTOR_ITEM(&madt_isos, i);
         if (iso->irq_source != irq) {
             continue;
         }

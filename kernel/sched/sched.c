@@ -296,11 +296,11 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
         new_proc->cwd = vfs_root;
     }
 
-    new_proc->pid = VECTOR_PUSH_BACK(processes, new_proc);
+    new_proc->pid = VECTOR_PUSH_BACK(&processes, new_proc);
 
     if (old_proc != NULL) {
-        VECTOR_PUSH_BACK(old_proc->children, new_proc);
-        VECTOR_PUSH_BACK(old_proc->child_events, &new_proc->event);
+        VECTOR_PUSH_BACK(&old_proc->children, new_proc);
+        VECTOR_PUSH_BACK(&old_proc->child_events, &new_proc->event);
     }
 
     return new_proc;
@@ -322,7 +322,7 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     thread->stacks = (typeof(thread->stacks))VECTOR_INIT;
 
     void *stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    VECTOR_PUSH_BACK(thread->stacks, stack_phys);
+    VECTOR_PUSH_BACK(&thread->stacks, stack_phys);
     void *stack = stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
 #if defined (__x86_64__)
@@ -387,11 +387,11 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     }
 
     void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    VECTOR_PUSH_BACK(thread->stacks, kernel_stack_phys);
+    VECTOR_PUSH_BACK(&thread->stacks, kernel_stack_phys);
     thread->kernel_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
     void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    VECTOR_PUSH_BACK(thread->stacks, pf_stack_phys);
+    VECTOR_PUSH_BACK(&thread->stacks, pf_stack_phys);
     thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
 #if defined (__x86_64__)
@@ -463,7 +463,7 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
         thread->ctx.rsp -= stack_top - (void *)stack;
     }
 
-    VECTOR_PUSH_BACK(proc->threads, thread);
+    VECTOR_PUSH_BACK(&proc->threads, thread);
 
     if (enqueue) {
         sched_enqueue_thread(thread, false);
@@ -531,11 +531,11 @@ int syscall_fork(struct cpu_ctx *ctx) {
     new_thread->stacks = (typeof(new_thread->stacks))VECTOR_INIT;
 
     void *kernel_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    VECTOR_PUSH_BACK(new_thread->stacks, kernel_stack_phys);
+    VECTOR_PUSH_BACK(&new_thread->stacks, kernel_stack_phys);
     new_thread->kernel_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
     void *pf_stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
-    VECTOR_PUSH_BACK(new_thread->stacks, pf_stack_phys);
+    VECTOR_PUSH_BACK(&new_thread->stacks, pf_stack_phys);
     new_thread->pf_stack = kernel_stack_phys + STACK_SIZE + VMM_HIGHER_HALF;
 
     new_thread->ctx = *ctx;
@@ -558,7 +558,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
     new_thread->ctx.rax = 0;
     new_thread->ctx.rbx = 0;
 
-    VECTOR_PUSH_BACK(new_proc->threads, new_thread);
+    VECTOR_PUSH_BACK(&new_proc->threads, new_thread);
 
     sched_enqueue_thread(new_thread, false);
 
@@ -629,11 +629,11 @@ int syscall_exit(void *_, int status) {
     }
 
     if (proc->pid != -1) {
-        struct process *pid1 = VECTOR_ITEM(processes, 1);
+        struct process *pid1 = VECTOR_ITEM(&processes, 1);
 
-        VECTOR_FOR_EACH(proc->children, it) {
-            VECTOR_PUSH_BACK(pid1->children, *it);
-            VECTOR_PUSH_BACK(pid1->child_events, &(*it)->event);
+        VECTOR_FOR_EACH(&proc->children, it) {
+            VECTOR_PUSH_BACK(&pid1->children, *it);
+            VECTOR_PUSH_BACK(&pid1->child_events, &(*it)->event);
         }
     }
 
@@ -676,7 +676,7 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
             return -1;
         }
 
-        VECTOR_FOR_EACH(processes, it) {
+        VECTOR_FOR_EACH(&processes, it) {
             struct process *it_proc = *it;
             if (it_proc->pid == pid) {
                 child = it_proc;
@@ -706,13 +706,13 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     }
 
     if (child == NULL) {
-        child = VECTOR_ITEM(proc->children, which);
+        child = VECTOR_ITEM(&proc->children, which);
     }
 
     *status = child->status;
 
-    VECTOR_REMOVE(proc->child_events, VECTOR_FIND(proc->child_events, &child->event));
-    VECTOR_REMOVE(proc->children, VECTOR_FIND(proc->children, child));
+    VECTOR_REMOVE_BY_VALUE(&proc->child_events, &child->event);
+    VECTOR_REMOVE_BY_VALUE(&proc->children, child);
 
     return child->pid;
 }

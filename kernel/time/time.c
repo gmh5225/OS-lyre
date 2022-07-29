@@ -38,7 +38,7 @@ void timer_arm(struct timer *timer) {
     timer->index = armed_timers.length;
     timer->fired = false;
 
-    VECTOR_PUSH_BACK(armed_timers, timer);
+    VECTOR_PUSH_BACK(&armed_timers, timer);
     spinlock_release(&timers_lock);
 }
 
@@ -49,9 +49,9 @@ void timer_disarm(struct timer *timer) {
         goto cleanup;
     }
 
-    VECTOR_ITEM(armed_timers, timer->index) = VECTOR_ITEM(armed_timers, armed_timers.length - 1);
-    VECTOR_ITEM(armed_timers, timer->index)->index = timer->index;
-    VECTOR_REMOVE(armed_timers, armed_timers.length - 1);
+    VECTOR_ITEM(&armed_timers, timer->index) = VECTOR_ITEM(&armed_timers, armed_timers.length - 1);
+    VECTOR_ITEM(&armed_timers, timer->index)->index = timer->index;
+    VECTOR_REMOVE(&armed_timers, armed_timers.length - 1);
 
     timer->index = -1;
 
@@ -80,7 +80,7 @@ void timer_handler(void) {
 
     if (spinlock_test_and_acq(&timers_lock)) {
         for (size_t i = 0; i < armed_timers.length; i++) {
-            struct timer *timer = VECTOR_ITEM(armed_timers, i);
+            struct timer *timer = VECTOR_ITEM(&armed_timers, i);
             if (timer->fired) {
                 continue;
             }

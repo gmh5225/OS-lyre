@@ -153,7 +153,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         goto cleanup;
     }
 
-    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
         struct mmap_range_global *global_range = local_range->global;
 
@@ -171,7 +171,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         }
 
         if ((local_range->flags & MAP_SHARED) != 0) {
-            VECTOR_PUSH_BACK(global_range->locals, new_local_range);
+            VECTOR_PUSH_BACK(&global_range->locals, new_local_range);
             for (uintptr_t i = local_range->base; i < local_range->base + local_range->length; i += PAGE_SIZE) {
                 uint64_t *old_pte = vmm_virt2pte(pagemap, i, false);
                 if (old_pte == NULL) {
@@ -200,7 +200,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
             new_global_range->res = global_range->res;
             new_global_range->offset = global_range->offset;
 
-            VECTOR_PUSH_BACK(new_global_range->locals, new_local_range);
+            VECTOR_PUSH_BACK(&new_global_range->locals, new_local_range);
 
             if ((local_range->flags & MAP_ANONYMOUS) != 0) {
                 for (uintptr_t i = local_range->base; i < local_range->base + local_range->length; i += PAGE_SIZE) {
@@ -234,7 +234,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
             }
         }
 
-        VECTOR_PUSH_BACK(new_pagemap->mmap_ranges, new_local_range);
+        VECTOR_PUSH_BACK(&new_pagemap->mmap_ranges, new_local_range);
     }
 
     spinlock_release(&pagemap->lock);
@@ -266,7 +266,7 @@ static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
 }
 
 void vmm_destroy_pagemap(struct pagemap *pagemap) {
-    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
 
         // TODO: Find out why munmap fails here sometimes

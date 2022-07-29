@@ -22,7 +22,7 @@ struct addr2range {
 };
 
 struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
-    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
         if (virt < local_range->base || virt >= local_range->base + local_range->length) {
             continue;
@@ -39,7 +39,7 @@ struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
 void mmap_list_ranges(struct pagemap *pagemap) {
     print("Ranges for %lx:\n", pagemap);
 
-    VECTOR_FOR_EACH(pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
         print("\tbase=%lx, length=%lx, offset=%lx\n", local_range->base, local_range->length, local_range->offset);
     }
@@ -99,7 +99,7 @@ bool mmap_page_in_range(struct mmap_range_global *global, uintptr_t virt,
         return false;
     }
 
-    VECTOR_FOR_EACH(global->locals, it) {
+    VECTOR_FOR_EACH(&global->locals, it) {
         struct mmap_range_local *local_range = *it;
         if (virt < local_range->base || virt >= local_range->base + local_range->length) {
             continue;
@@ -150,11 +150,11 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
     local_range->prot = prot;
     local_range->flags = flags;
 
-    VECTOR_PUSH_BACK(global_range->locals, local_range);
+    VECTOR_PUSH_BACK(&global_range->locals, local_range);
 
     spinlock_acquire(&pagemap->lock);
 
-    VECTOR_PUSH_BACK(pagemap->mmap_ranges, local_range);
+    VECTOR_PUSH_BACK(&pagemap->mmap_ranges, local_range);
 
     spinlock_release(&pagemap->lock);
 
@@ -239,11 +239,11 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
     local_range->flags = flags;
     local_range->offset = offset;
 
-    VECTOR_PUSH_BACK(global_range->locals, local_range);
+    VECTOR_PUSH_BACK(&global_range->locals, local_range);
 
     spinlock_acquire(&pagemap->lock);
 
-    VECTOR_PUSH_BACK(pagemap->mmap_ranges, local_range);
+    VECTOR_PUSH_BACK(&pagemap->mmap_ranges, local_range);
 
     spinlock_release(&pagemap->lock);
 
@@ -313,7 +313,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
             postsplit_range->prot = local_range->prot;
             postsplit_range->flags = local_range->flags;
 
-            VECTOR_PUSH_BACK(pagemap->mmap_ranges, postsplit_range);
+            VECTOR_PUSH_BACK(&pagemap->mmap_ranges, postsplit_range);
 
             local_range->length -= postsplit_range->length;
         }
@@ -325,7 +325,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         }
 
         if (snip_length == local_range->length) {
-            VECTOR_REMOVE(pagemap->mmap_ranges, VECTOR_FIND(pagemap->mmap_ranges, local_range));
+            VECTOR_REMOVE_BY_VALUE(&pagemap->mmap_ranges, local_range);
         }
 
         if (snip_length == local_range->length && global_range->locals.length == 1) {
@@ -347,7 +347,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
                 // TODO: res->unmap();
             }
 
-            VECTOR_REMOVE_BY_VALUE(pagemap->mmap_ranges, local_range);
+            VECTOR_REMOVE_BY_VALUE(&pagemap->mmap_ranges, local_range);
 
             free(local_range);
         } else {
