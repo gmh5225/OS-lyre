@@ -41,16 +41,15 @@ static inline uint32_t hash(const void *data, size_t length) {
 #define HASHMAP_GET(HASHMAP, RET, KEY_DATA, KEY_LENGTH) ({ \
     bool HASHMAP_GET_ok = false; \
     \
-    typeof(KEY_DATA) HASHMAP_GET_key_data = KEY_DATA; \
-    typeof(KEY_LENGTH) HASHMAP_GET_key_length = KEY_LENGTH; \
+    __auto_type HASHMAP_GET_key_data = KEY_DATA; \
+    __auto_type HASHMAP_GET_key_length = KEY_LENGTH; \
     \
-    typeof(HASHMAP) HASHMAP_GET_hashmap = HASHMAP; \
+    __auto_type HASHMAP_GET_hashmap = HASHMAP; \
     \
     size_t HASHMAP_GET_hash = hash(HASHMAP_GET_key_data, HASHMAP_GET_key_length); \
     size_t HASHMAP_GET_index = HASHMAP_GET_hash % HASHMAP_GET_hashmap->cap; \
     \
-    typeof(HASHMAP_GET_hashmap->buckets) HASHMAP_GET_bucket = \
-        &HASHMAP_GET_hashmap->buckets[HASHMAP_GET_index]; \
+    __auto_type HASHMAP_GET_bucket = &HASHMAP_GET_hashmap->buckets[HASHMAP_GET_index]; \
     \
     for (size_t HASHMAP_GET_i = 0; HASHMAP_GET_i < HASHMAP_GET_bucket->filled; HASHMAP_GET_i++) { \
         if (HASHMAP_GET_key_length != HASHMAP_GET_bucket->items[HASHMAP_GET_i].key_length) { \
@@ -74,10 +73,10 @@ static inline uint32_t hash(const void *data, size_t length) {
 })
 
 #define HASHMAP_INSERT(HASHMAP, KEY_DATA, KEY_LENGTH, ITEM) do { \
-    typeof(KEY_DATA) HASHMAP_INSERT_key_data = KEY_DATA; \
-    typeof(KEY_LENGTH) HASHMAP_INSERT_key_length = KEY_LENGTH; \
+    __auto_type HASHMAP_INSERT_key_data = KEY_DATA; \
+    __auto_type HASHMAP_INSERT_key_length = KEY_LENGTH; \
     \
-    typeof(HASHMAP) HASHMAP_INSERT_hashmap = HASHMAP; \
+    __auto_type HASHMAP_INSERT_hashmap = HASHMAP; \
     if (HASHMAP_INSERT_hashmap->buckets == NULL) { \
         HASHMAP_INSERT_hashmap->buckets = \
             alloc(HASHMAP_INSERT_hashmap->cap * sizeof(*HASHMAP_INSERT_hashmap->buckets)); \
@@ -86,8 +85,7 @@ static inline uint32_t hash(const void *data, size_t length) {
     size_t HASHMAP_INSERT_hash = hash(HASHMAP_INSERT_key_data, HASHMAP_INSERT_key_length); \
     size_t HASHMAP_INSERT_index = HASHMAP_INSERT_hash % HASHMAP_INSERT_hashmap->cap; \
     \
-    typeof(HASHMAP_INSERT_hashmap->buckets) HASHMAP_INSERT_bucket = \
-        &HASHMAP_INSERT_hashmap->buckets[HASHMAP_INSERT_index]; \
+    __auto_type HASHMAP_INSERT_bucket = &HASHMAP_INSERT_hashmap->buckets[HASHMAP_INSERT_index]; \
     \
     if (HASHMAP_INSERT_bucket->cap == 0) { \
         HASHMAP_INSERT_bucket->cap = 16; \
@@ -102,8 +100,7 @@ static inline uint32_t hash(const void *data, size_t length) {
                     HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items)); \
     } \
     \
-    typeof(HASHMAP_INSERT_bucket->items) HASHMAP_INSERT_item = \
-        &HASHMAP_INSERT_bucket->items[HASHMAP_INSERT_bucket->filled]; \
+    __auto_type HASHMAP_INSERT_item = &HASHMAP_INSERT_bucket->items[HASHMAP_INSERT_bucket->filled]; \
     \
     memcpy(HASHMAP_INSERT_item->key_data, HASHMAP_INSERT_key_data, HASHMAP_INSERT_key_length); \
     HASHMAP_INSERT_item->key_length = HASHMAP_INSERT_key_length; \

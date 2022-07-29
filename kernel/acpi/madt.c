@@ -6,10 +6,10 @@
 #include <acpi/acpi.h>
 #include <acpi/madt.h>
 
-typeof(madt_lapics) madt_lapics = (typeof(madt_lapics))VECTOR_INIT;
-typeof(madt_io_apics) madt_io_apics = (typeof(madt_io_apics))VECTOR_INIT;
-typeof(madt_isos) madt_isos = (typeof(madt_isos))VECTOR_INIT;
-typeof(madt_nmis) madt_nmis = (typeof(madt_nmis))VECTOR_INIT;
+__auto_type madt_lapics = (typeof(madt_lapics))VECTOR_INIT;
+__auto_type madt_io_apics = (typeof(madt_io_apics))VECTOR_INIT;
+__auto_type madt_isos = (typeof(madt_isos))VECTOR_INIT;
+__auto_type madt_nmis = (typeof(madt_nmis))VECTOR_INIT;
 
 struct madt {
     struct sdt;
