@@ -4,8 +4,9 @@
 #include <stddef.h>
 #include <lib/alloc.h>
 #include <lib/libc.h>
+#include <sys/types.h>
 
-#define VECTOR_INVALID_INDEX ((size_t)-1)
+#define VECTOR_INVALID_INDEX (-1)
 
 #define VECTOR_INIT {0}
 
@@ -57,11 +58,19 @@
     VECTOR_REMOVE_vec->length--; \
 } while (0)
 
-#define VECTOR_ITEM(VEC, IDX) ((VEC)->data[IDX])
+#define VECTOR_ITEM(VEC, IDX) ({ \
+    size_t VECTOR_ITEM_idx = IDX; \
+    __auto_type VECTOR_ITEM_vec = VEC; \
+    __auto_type VECTOR_ITEM_result = (typeof(*VECTOR_ITEM_vec->data))VECTOR_INVALID_INDEX; \
+    if (VECTOR_ITEM_idx < VECTOR_ITEM_vec->length) { \
+        VECTOR_ITEM_result = VECTOR_ITEM_vec->data[VECTOR_ITEM_idx]; \
+    } \
+    VECTOR_ITEM_result; \
+})
 
 #define VECTOR_FIND(VEC, VALUE) ({ \
     __auto_type VECTOR_FIND_vec = VEC; \
-    size_t VECTOR_FIND_result = VECTOR_INVALID_INDEX; \
+    ssize_t VECTOR_FIND_result = VECTOR_INVALID_INDEX; \
     for (size_t VECTOR_FIND_i = 0; VECTOR_FIND_i < VECTOR_FIND_vec->length; VECTOR_FIND_i++) { \
         if (VECTOR_FIND_vec->data[VECTOR_FIND_i] == (VALUE)) { \
             VECTOR_FIND_result = VECTOR_FIND_i; \

@@ -686,7 +686,7 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
 
         child = VECTOR_ITEM(&processes, pid);
 
-        if (child == VECTOR_INVALID_INDEX || child->ppid != proc->pid) {
+        if ((ssize_t)child == VECTOR_INVALID_INDEX || child->ppid != proc->pid) {
             errno = ECHILD;
             return -1;
         }

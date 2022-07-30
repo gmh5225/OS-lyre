@@ -49,7 +49,7 @@ void timer_disarm(struct timer *timer) {
         goto cleanup;
     }
 
-    VECTOR_ITEM(&armed_timers, timer->index) = VECTOR_ITEM(&armed_timers, armed_timers.length - 1);
+    armed_timers.data[timer->index] = VECTOR_ITEM(&armed_timers, armed_timers.length - 1);
     VECTOR_ITEM(&armed_timers, timer->index)->index = timer->index;
     VECTOR_REMOVE(&armed_timers, armed_timers.length - 1);
 
