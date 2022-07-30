@@ -294,7 +294,7 @@ ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
 ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     (void)_;
 
-    print("syscall: write(%d, %lx '%S', %lu)", fdnum, buf, buf, count, count);
+    print("syscall: write(%d, %lx, %lu)", fdnum, buf, buf, count, count);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;

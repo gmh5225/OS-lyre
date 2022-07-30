@@ -429,7 +429,6 @@ static noreturn void keyboard_handler(void) {
 static void dec_private(uint64_t esc_val_count, uint32_t *esc_values, uint64_t final) {
     (void)esc_val_count;
 
-    print("dec private: ? %lu %c\n", esc_values[0], final);
     switch (esc_values[0]) {
         case 1:
             switch (final) {
@@ -445,8 +444,6 @@ static void dec_private(uint64_t esc_val_count, uint32_t *esc_values, uint64_t f
 
 static void limine_term_callback(struct limine_terminal *term, uint64_t t, uint64_t a, uint64_t b, uint64_t c) {
     (void)term;
-
-    print("Limine terminal callback called\n");
 
     switch (t) {
         case 10:
