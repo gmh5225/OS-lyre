@@ -210,12 +210,12 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
                     }
 
                     uint64_t *new_pte = vmm_virt2pte(new_pagemap, i, true);
-                    if (old_pte == NULL) {
+                    if (new_pte == NULL) {
                         goto cleanup;
                     }
 
                     uint64_t *new_spte = vmm_virt2pte(new_global_range->shadow_pagemap, i, true);
-                    if (old_pte == NULL) {
+                    if (new_spte == NULL) {
                         goto cleanup;
                     }
 
