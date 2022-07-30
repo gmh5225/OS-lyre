@@ -19,7 +19,7 @@
 #define PTE_GET_FLAGS(VALUE) ((VALUE) & ~PTE_ADDR_MASK)
 
 struct pagemap {
-    spinlock_t lock;
+    struct smartlock lock;
     uint64_t *top_level;
     VECTOR_TYPE(struct mmap_range_local *) mmap_ranges;
 };

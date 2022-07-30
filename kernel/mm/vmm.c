@@ -53,7 +53,7 @@ void vmm_init(void) {
     ASSERT(kaddr_request.response != NULL);
 
     vmm_kernel_pagemap = ALLOC(struct pagemap);
-    vmm_kernel_pagemap->lock = SPINLOCK_INIT;
+    vmm_kernel_pagemap->lock = (typeof(vmm_kernel_pagemap->lock))SMARTLOCK_INIT;
     vmm_kernel_pagemap->top_level = pmm_alloc(1);
 
     ASSERT(vmm_kernel_pagemap->top_level != NULL);
@@ -123,7 +123,7 @@ struct pagemap *vmm_new_pagemap(void) {
         goto cleanup;
     }
 
-    pagemap->lock = SPINLOCK_INIT;
+    pagemap->lock = (typeof(vmm_kernel_pagemap->lock))SMARTLOCK_INIT;
     pagemap->top_level = pmm_alloc(1);
     if (pagemap->top_level == NULL) {
         errno = ENOMEM;
@@ -146,7 +146,7 @@ cleanup:
 }
 
 struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     struct pagemap *new_pagemap = vmm_new_pagemap();
     if (new_pagemap == NULL) {
@@ -237,11 +237,11 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         VECTOR_PUSH_BACK(&new_pagemap->mmap_ranges, new_local_range);
     }
 
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
     return new_pagemap;
 
 cleanup:
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
     if (new_pagemap != NULL) {
         vmm_destroy_pagemap(new_pagemap);
     }
@@ -266,6 +266,8 @@ static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
 }
 
 void vmm_destroy_pagemap(struct pagemap *pagemap) {
+    smartlock_acquire(&pagemap->lock);
+
     VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
         struct mmap_range_local *local_range = *it;
 
@@ -287,7 +289,7 @@ void vmm_switch_to(struct pagemap *pagemap) {
 }
 
 bool vmm_map_page(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys, uint64_t flags) {
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     bool ok = false;
     size_t pml4_entry = (virt & (0x1ffull << 39)) >> 39;
@@ -318,12 +320,12 @@ bool vmm_map_page(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys, uint6
     pml1[pml1_entry] = phys | flags;
 
 cleanup:
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
     return ok;
 }
 
 bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags) {
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     bool ok = false;
     size_t pml4_entry = (virt & (0x1ffull << 39)) >> 39;
@@ -361,12 +363,12 @@ bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags) {
     );
 
 cleanup:
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
     return ok;
 }
 
 bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt) {
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     bool ok = false;
     size_t pml4_entry = (virt & (0x1ffull << 39)) >> 39;
@@ -404,7 +406,7 @@ bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt) {
     );
 
 cleanup:
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
     return ok;
 }
 

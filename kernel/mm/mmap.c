@@ -58,12 +58,12 @@ bool mmap_handle_pf(struct cpu_ctx *ctx) {
     struct process *process = thread->process;
     struct pagemap *pagemap = process->pagemap;
 
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     struct addr2range range = addr2range(pagemap, cr2);
     struct mmap_range_local *local_range = range.range;
 
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
 
     if (local_range == NULL) {
         return false;
@@ -152,11 +152,11 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
 
     VECTOR_PUSH_BACK(&global_range->locals, local_range);
 
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     VECTOR_PUSH_BACK(&pagemap->mmap_ranges, local_range);
 
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
 
     for (size_t i = 0; i < aligned_length; i += PAGE_SIZE) {
         if (!mmap_page_in_range(global_range, aligned_virt + i, phys + i, prot)) {
@@ -241,11 +241,11 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
 
     VECTOR_PUSH_BACK(&global_range->locals, local_range);
 
-    spinlock_acquire(&pagemap->lock);
+    smartlock_acquire(&pagemap->lock);
 
     VECTOR_PUSH_BACK(&pagemap->mmap_ranges, local_range);
 
-    spinlock_release(&pagemap->lock);
+    smartlock_release(&pagemap->lock);
 
     if (res != NULL) {
         res->refcount++;
@@ -294,14 +294,14 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         uintptr_t snip_end = i;
         size_t snip_length = snip_end - snip_begin;
 
-        spinlock_acquire(&pagemap->lock);
+        smartlock_acquire(&pagemap->lock);
 
         if (snip_begin > local_range->base && snip_end < local_range->base + local_range->length) {
             struct mmap_range_local *postsplit_range = ALLOC(struct mmap_range_local);
             if (postsplit_range == NULL) {
                 // FIXME: Page map is in inconsistent state at this point!
                 errno = ENOMEM;
-                spinlock_release(&pagemap->lock);
+                smartlock_release(&pagemap->lock);
                 return false;
             }
 
@@ -318,7 +318,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
             local_range->length -= postsplit_range->length;
         }
 
-        spinlock_release(&pagemap->lock);
+        smartlock_release(&pagemap->lock);
 
         for (uintptr_t j = snip_begin; j < snip_end; j += PAGE_SIZE) {
             vmm_unmap_page(pagemap, j);

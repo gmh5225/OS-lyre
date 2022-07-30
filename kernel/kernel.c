@@ -24,9 +24,12 @@
 
 void kmain_thread(void);
 
+void *mock_thread = &mock_thread;
+
 void _start(void) {
     serial_init();
     gdt_init();
+    set_gs_base(&mock_thread);
     idt_init();
     except_init();
     int_events_init();
