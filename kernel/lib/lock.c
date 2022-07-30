@@ -4,9 +4,13 @@
 
 void smartlock_acquire(struct smartlock *smartlock) {
     struct thread *thread = sched_current_thread();
+    if (smartlock->thread == thread && smartlock->refcount > 0) {
+        goto end;
+    }
     while (!CAS(&smartlock->thread, NULL, thread)) {
         asm ("pause");
     }
+end:
     smartlock->refcount++;
 }
 
