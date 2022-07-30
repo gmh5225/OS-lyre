@@ -1,0 +1,25 @@
+#include <stddef.h>
+#include <lib/lock.h>
+#include <sched/proc.h>
+
+void smartlock_acquire(struct smartlock *smartlock) {
+    struct thread *thread = sched_current_thread();
+    while (!CAS(&smartlock->thread, NULL, thread)) {
+        asm ("pause");
+    }
+    smartlock->refcount++;
+}
+
+void smartlock_release(struct smartlock *smartlock) {
+    struct thread *thread = sched_current_thread();
+    if (smartlock->thread != thread) {
+        panic(NULL, true, "Invalid smartlock release");
+    }
+    if (smartlock->refcount == 0) {
+        panic(NULL, true, "Smartlock release refcount is 0");
+    }
+    smartlock->refcount--;
+    if (smartlock->refcount == 0) {
+        smartlock->thread = NULL;
+    }
+}
