@@ -684,15 +684,9 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
             return -1;
         }
 
-        VECTOR_FOR_EACH(&processes, it) {
-            struct process *it_proc = *it;
-            if (it_proc->pid == pid) {
-                child = it_proc;
-                break;
-            }
-        }
+        child = VECTOR_ITEM(&processes, pid);
 
-        if (child == NULL || child->ppid != proc->pid) {
+        if (child == VECTOR_INVALID_INDEX || child->ppid != proc->pid) {
             errno = ECHILD;
             return -1;
         }
