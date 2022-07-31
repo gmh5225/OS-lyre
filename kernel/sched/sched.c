@@ -134,6 +134,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 #endif
         cpu->last_run_queue_index = 0;
         cpu->active = false;
+        vmm_switch_to(vmm_kernel_pagemap);
         sched_await();
     }
 
@@ -632,6 +633,11 @@ int syscall_exit(void *_, int status) {
 
     print("syscall: exit(%d) = ...\n", status & 0xff);
 
+    struct pagemap *old_pagemap = proc->pagemap;
+
+    vmm_switch_to(vmm_kernel_pagemap);
+    thread->process = kernel_process;
+
     for (int i = 0; i < MAX_FDS; i++) {
         fdnum_close(proc, i);
     }
@@ -645,10 +651,11 @@ int syscall_exit(void *_, int status) {
         }
     }
 
+    vmm_destroy_pagemap(old_pagemap);
+
     proc->status = (status & 0xff) | 0x200;
 
     event_trigger(&proc->event, false);
-    vmm_destroy_pagemap(proc->pagemap);
     sched_dequeue_and_die();
 
     // TODO: Kill all threads too
