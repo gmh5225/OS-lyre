@@ -347,8 +347,6 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
                 // TODO: res->unmap();
             }
 
-            VECTOR_REMOVE_BY_VALUE(&pagemap->mmap_ranges, local_range);
-
             free(local_range);
         } else {
             if (snip_begin == local_range->base) {
