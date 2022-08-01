@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 1722935..b75a826 100644
+index 1722935..b0f5451 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -104,7 +104,7 @@ index 1722935..b75a826 100644
  	switch (optional_action) {
  		case TCSANOW:
  			optional_action = TCSETS; break;
-@@ -62,204 +55,75 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
+@@ -62,204 +55,87 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
  		case TCSAFLUSH:
  			optional_action = TCSETSF; break;
  		default:
@@ -247,23 +247,26 @@ index 1722935..b75a826 100644
  }
  #endif
  
--int sys_futex_wait(int *pointer, int expected, const struct timespec *time) {
+ int sys_futex_wait(int *pointer, int expected, const struct timespec *time) {
 -	__syscall_ret ret = __syscall(23, pointer, expected, time);
-+int sys_futex_wait(int *pointer, int expected, const struct timespec *time) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
--		return ret.errno;
++	__syscall_ret ret = __syscall(SYS_futex_wait, pointer, expected);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
 -
--	return 0;
--}
--
--int sys_futex_wake(int *pointer) {
++	}
+ 	return 0;
+ }
+ 
+ int sys_futex_wake(int *pointer) {
 -	__syscall_ret ret = __syscall(24, pointer);
 -
 -	if (ret.errno != 0)
--		return ret.errno;
-+int sys_futex_wake(int *pointer) STUB_ONLY
- 
++	__syscall_ret ret = __syscall(SYS_futex_wake, pointer);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
+-
 -	int num_woken = ret.ret;
 -
 -	__ensure(num_woken >= 0 && num_woken <= 1);
@@ -277,14 +280,16 @@ index 1722935..b75a826 100644
 -		return ret.errno;
 -
 -	*fd = (int)ret.ret;
--	return 0;
--}
++	}
+ 	return 0;
+ }
+ 
+-int sys_ioctl(int fd, unsigned long request, void *arg, int *result) {
+-	__syscall_ret ret = __syscall(9, fd, request, arg);
 +int sys_timerfd_create(int flags, int *fd) STUB_ONLY
  
- int sys_ioctl(int fd, unsigned long request, void *arg, int *result) {
--	__syscall_ret ret = __syscall(9, fd, request, arg);
--
 -	if (ret.errno != 0)
++int sys_ioctl(int fd, unsigned long request, void *arg, int *result) {
 +	__syscall_ret ret = __syscall(SYS_ioctl, fd, request, arg);
 +	int ret_value = (int)ret.ret;
 +	if (ret_value == -1) {
@@ -334,7 +339,7 @@ index 1722935..b75a826 100644
  	return 0;
  }
  
-@@ -268,75 +132,108 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
+@@ -268,75 +144,108 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
  }
  
  int sys_open_dir(const char *path, int *handle) {
@@ -475,7 +480,7 @@ index 1722935..b75a826 100644
  	return 0;
  }
  
-@@ -345,186 +242,128 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +254,128 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -711,7 +716,7 @@ index 1722935..b75a826 100644
  	return 0;
  }
  
-@@ -533,356 +372,143 @@ int sys_access(const char *path, int mode) {
+@@ -533,356 +384,158 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -866,18 +871,22 @@ index 1722935..b75a826 100644
 -		__builtin_unreachable();
 -	}
 -}
--
++		const void *buffer, socklen_t size) STUB_ONLY
+ 
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
--
++int sys_listen(int fd, int backlog) STUB_ONLY
+ 
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
 -
@@ -888,20 +897,16 @@ index 1722935..b75a826 100644
 -	*actual_length = max_addr_length;
 -	return 0;
 -}
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -int sys_inotify_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(42, flags);
-+int sys_listen(int fd, int backlog) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -1030,18 +1035,15 @@ index 1722935..b75a826 100644
  	}
 -
 -	*ret_pid = (pid_t)ret.ret;
-+	*ret_pid = ret_value;
- 	return 0;
- }
- 
+-	return 0;
+-}
+-
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
- 
+-
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
@@ -1052,15 +1054,18 @@ index 1722935..b75a826 100644
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
--	return 0;
--}
--
++	*ret_pid = ret_value;
+ 	return 0;
+ }
+ 
 -int sys_umount2(const char *target, int flags) {
 -	__syscall_ret ret = __syscall(44, target, flags);
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+ 
 -	return 0;
 -}
 +int sys_umount2(const char *target, int flags) STUB_ONLY
@@ -1073,63 +1078,75 @@ index 1722935..b75a826 100644
 -		return ret.errno;
 -
 -	return 0;
-+	strncpy(buffer, "lyre", bufsize);
++	struct utsname utsname = {0};
++	if (int err = sys_uname(&utsname)) {
++		return err;
++	}
++	if (strlen(utsname.nodename) >= bufsize) {
++		return ENAMETOOLONG;
++	}
++	strncpy(buffer, utsname.nodename, bufsize);
 +    return 0;
  }
 +#endif
  
 -int sys_sethostname(const char *buffer, size_t bufsize) {
 -	__syscall_ret ret = __syscall(52, buffer, bufsize);
--
++int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_sleep(time_t *secs, long *nanos) STUB_ONLY
+ 
 -	return 0;
 -}
--
++int sys_getitimer(int which, struct itimerval *curr_value) STUB_ONLY
+ 
 -int sys_sleep(time_t *secs, long *nanos) {
 -	struct timespec req = {
 -		.tv_sec = *secs,
 -		.tv_nsec = *nanos
 -	};
 -	struct timespec rem = {0, 0};
--
++int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) STUB_ONLY
+ 
 -	__syscall_ret ret = __syscall(53, &req, &rem);
--
++int sys_umask(mode_t mode, mode_t *old) {
++    return ENOSYS;
++}
+ 
 -	if (ret.errno != 0)
--		return ret.errno;
++int sys_uname(struct utsname *buf) {
++	__syscall_ret ret = __syscall(SYS_uname, buf);
++    if ((int)ret.ret == -1) {
+ 		return ret.errno;
 -
 -	*secs = rem.tv_sec;
 -	*nanos = rem.tv_nsec;
--	return 0;
--}
--
++	}
+ 	return 0;
+ }
+ 
 -
 -int sys_getitimer(int which, struct itimerval *curr_value) {
 -	__syscall_ret ret = __syscall(63, which, curr_value);
-+int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
-+int sys_sleep(time_t *secs, long *nanos) STUB_ONLY
- 
-+int sys_getitimer(int which, struct itimerval *curr_value) STUB_ONLY
- 
+-
+-
 -int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) {
 -	__syscall_ret ret = __syscall(64, which, new_value, old_value);
-+int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) STUB_ONLY
- 
+-
 -	return ret.errno;
-+int sys_umask(mode_t mode, mode_t *old) {
-+    return ENOSYS;
- }
- 
+-}
+-
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..b7dcab0 100644
+index f421220..c665c5d 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,84 @@
+@@ -1,16 +1,87 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1158,6 +1175,9 @@ index f421220..b7dcab0 100644
 +#define SYS_linkat 23
 +#define SYS_unlinkat 24
 +#define SYS_readdir 25
++#define SYS_uname 26
++#define SYS_futex_wait 27
++#define SYS_futex_wake 28
 +
  struct __syscall_ret {
  	uint64_t ret;

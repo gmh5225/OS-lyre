@@ -62,4 +62,6 @@ static inline struct thread *sched_current_thread(void) {
     return ret;
 }
 
+void proc_init(void);
+
 #endif

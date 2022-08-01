@@ -28,6 +28,9 @@ syscall_table:
     .quad syscall_linkat      // 23
     .quad syscall_unlinkat    // 24
     .quad syscall_readdir     // 25
+    .quad syscall_uname       // 26
+    .quad syscall_futex_wait  // 27
+    .quad syscall_futex_wake  // 28
 syscall_table_end:
 
 .global syscall_count
