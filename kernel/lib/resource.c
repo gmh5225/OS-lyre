@@ -259,10 +259,10 @@ cleanup:
 int syscall_close(void *_, int fdnum) {
     (void)_;
 
-    print("syscall: close(%d)", fdnum);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): close(%d)", proc->pid, proc->name, fdnum);
 
     return fdnum_close(proc, fdnum) ? 0 : -1;
 }
@@ -270,10 +270,11 @@ int syscall_close(void *_, int fdnum) {
 ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
     (void)_;
 
-    print("syscall: read(%d, %lx, %lu)", fdnum, buf, count);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): read(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
+
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
         return -1;
@@ -294,10 +295,11 @@ ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
 ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     (void)_;
 
-    print("syscall: write(%d, %lx, %lu)", fdnum, buf, buf, count, count);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, buf, count, count);
+
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
         return -1;
@@ -318,12 +320,12 @@ ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
 off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     (void)_;
 
-    print("syscall: seek(%d, %ld, %d)", fdnum, offset, whence);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
 
+    print("syscall (%d %s): seek(%d, %ld, %d)", proc->pid, proc->name, fdnum, offset, whence);
+
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
         return -1;
     }
@@ -372,12 +374,12 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
 int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
-    print("syscall: fcntl(%d, %lu, %lx)", fdnum, request, arg);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
 
+    print("syscall (%d %s): fcntl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
+
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
         return -1;
     }
@@ -415,12 +417,12 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
 int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
-    print("syscall: ioctl(%d, %lu, %lx)", fdnum, request, arg);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
 
+    print("syscall (%d %s): ioctl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
+
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
         return -1;
     }
@@ -433,10 +435,10 @@ int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
 int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
     (void)_;
 
-    print("syscall: dup3(%d, %d, %x)", old_fdnum, new_fdnum, flags);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): dup3(%d, %d, %x)", proc->pid, proc->name, old_fdnum, new_fdnum, flags);
 
     return fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
 }

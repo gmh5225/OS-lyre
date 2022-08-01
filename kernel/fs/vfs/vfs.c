@@ -342,23 +342,27 @@ cleanup:
 
 size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len) {
     size_t offset = 0;
-    if (node->parent != NULL) {
-        offset += vfs_pathname(node->parent, buffer, len - offset - 1);
-        buffer[offset++] = '/';
+    if (node->parent != vfs_root && node->parent != NULL) {
+        struct vfs_node *parent = reduce_node(node->parent, false);
+
+        if (parent != vfs_root && parent != NULL) {
+            offset += vfs_pathname(parent, buffer, len - offset - 1);
+            buffer[offset++] = '/';
+        }
     }
 
     strncpy(buffer + offset, node->name, len - offset);
-    return strlen(node->name);
+    return strlen(node->name) + offset;
 }
 
 int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
     (void)_;
     (void)mode;
 
-    print("syscall: openat(%d, %s, %x, %o)", dir_fdnum, path, flags, mode);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): openat(%d, %s, %x, %o)", proc->pid, proc->name, dir_fdnum, path, flags, mode);
 
     if (path == NULL) {
         errno = EINVAL;
@@ -414,11 +418,11 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
 int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct stat *stat_buf) {
     (void)_;
 
-    print("syscall: stat(%d, %s, %x, %lx)", dir_fdnum, path, flags, stat_buf);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct stat *stat_src = NULL;
+
+    print("syscall (%d %s): stat(%d, %s, %x, %lx)", proc->pid, proc->name, dir_fdnum, path, flags, stat_buf);
 
     if (stat_buf == NULL) {
         errno = EINVAL;
@@ -462,10 +466,10 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
 int syscall_getcwd(void *_, char *buffer, size_t len) {
     (void)_;
 
-    print("syscall: getcwd(%lx, %lu)", buffer, len);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): getcwd(%lx, %lu)", proc->pid, proc->name, buffer, len);
 
     char path_buffer[PATH_MAX] = {0};
     if (vfs_pathname(proc->cwd, path_buffer, PATH_MAX) >= len) {
@@ -480,10 +484,10 @@ int syscall_getcwd(void *_, char *buffer, size_t len) {
 int syscall_chdir(void *_, const char *path) {
     (void)_;
 
-    print("syscall: chdir(%s)", path);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): chdir(%s)", proc->pid, proc->name, path);
 
     if (path == NULL) {
         errno = EINVAL;

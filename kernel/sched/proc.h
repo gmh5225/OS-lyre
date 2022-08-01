@@ -26,6 +26,7 @@ struct process {
     struct vfs_node *cwd;
     spinlock_t fds_lock;
     struct f_descriptor *fds[MAX_FDS];
+    char name[128];
 };
 
 struct thread {

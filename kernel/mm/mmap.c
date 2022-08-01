@@ -362,12 +362,12 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
 void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fdnum, off_t offset) {
     (void)_;
 
-    print("syscall: mmap(%lx, %lx, %lx, %d, %ld)", hint, length, flags, fdnum, offset);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    struct resource *res = NULL;
 
+    print("syscall (%d %s): mmap(%lx, %lx, %lx, %d, %ld)", proc->pid, proc->name, hint, length, flags, fdnum, offset);
+
+    struct resource *res = NULL;
     if (fdnum != -1) {
         struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
         if (fd == NULL) {
@@ -385,10 +385,10 @@ void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int f
 int syscall_munmap(void *_, uintptr_t addr, size_t length) {
     (void)_;
 
-    print("syscall: munmap(%lx, %lx)", addr, length);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+
+    print("syscall (%d %s): munmap(%lx, %lx)", proc->pid, proc->name, addr, length);
 
     return munmap(proc->pagemap, addr, length) ? 0 : -1;
 }

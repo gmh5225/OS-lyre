@@ -280,6 +280,8 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
     new_proc->threads = (typeof(new_proc->threads))VECTOR_INIT;
 
     if (old_proc != NULL) {
+        memcpy(new_proc->name, old_proc->name, sizeof(old_proc->name));
+
         new_proc->pagemap = vmm_fork_pagemap(old_proc->pagemap);
         if (new_proc->pagemap == NULL) {
             goto cleanup;
@@ -490,14 +492,20 @@ fail:
 void syscall_set_fs_base(void *_, void *base) {
     (void)_;
 
-    print("syscall: set_fs_base(%lx)", base);
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): set_fs_base(%lx)", proc->pid, proc->name, base);
     set_fs_base(base);
 }
 
 void syscall_set_gs_base(void *_, void *base) {
     (void)_;
 
-    print("syscall: set_gs_base(%lx)", base);
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): set_gs_base(%lx)", proc->pid, proc->name, base);
     set_gs_base(base);
 }
 
@@ -507,7 +515,7 @@ pid_t syscall_getpid(void *_) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall: getpid()");
+    print("syscall (%d %s): getpid()", proc->pid, proc->name);
     return proc->pid;
 }
 
@@ -516,7 +524,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
     struct process *proc = thread->process;
     struct process *new_proc = sched_new_process(proc, NULL);
 
-    print("syscall: fork()");
+    print("syscall (%d %s): fork()", proc->pid, proc->name);
 
     for (int i = 0; i < MAX_FDS; i++) {
         if (proc->fds[i] == NULL) {
@@ -585,7 +593,7 @@ int syscall_exec(void *_, const char *path, const char **argv, const char **envp
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall: exec(%s, %lx, %lx)", path, argv, envp);
+    print("syscall (%d %s): exec(%s, %lx, %lx)", proc->pid, proc->name, path, argv, envp);
 
     struct pagemap *new_pagemap = vmm_new_pagemap();
     struct auxval auxv, ld_auxv;
@@ -618,6 +626,7 @@ int syscall_exec(void *_, const char *path, const char **argv, const char **envp
         goto fail;
     }
 
+    vfs_pathname(node, proc->name, sizeof(proc->name) - 1);
     vmm_switch_to(vmm_kernel_pagemap);
 
     thread->process = kernel_process;
@@ -635,7 +644,7 @@ int syscall_exit(void *_, int status) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall: exit(%d) = ...\n", status & 0xff);
+    print("syscall (%d %s): exit(%d) = ...\n", proc->pid, proc->name, status & 0xff);
 
     struct pagemap *old_pagemap = proc->pagemap;
 
@@ -671,7 +680,7 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall: waitpid(%d, %lx, %x)", pid, status, flags);
+    print("syscall (%d %s): waitpid(%d, %lx, %x)", proc->pid, proc->name, pid, status, flags);
 
     struct process *child = NULL;
     struct event *child_event = NULL;

@@ -168,11 +168,11 @@ fail:
 int syscall_pipe(void *_, int pipe_fdnums[static 2], int flags) {
     (void)_;
 
-    print("syscall: pipe(%lx, %x)", pipe_fdnums, flags);
-
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct resource *pipe = pipe_create();
+
+    print("syscall (%d %s): pipe(%lx, %x)", proc->pid, proc->name, pipe_fdnums, flags);
 
     if (pipe == NULL) {
         return -1;
