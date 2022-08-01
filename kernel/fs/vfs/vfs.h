@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <lib/resource.h>
 #include <lib/hashmap.h>
+#include <lib/lock.h>
 
 struct vfs_filesystem;
 
@@ -15,6 +16,7 @@ struct vfs_node {
     char *name;
     struct vfs_node *parent;
     HASHMAP_TYPE(struct vfs_node *) children;
+    struct smartlock children_lock;
     char *symlink_target;
 };
 

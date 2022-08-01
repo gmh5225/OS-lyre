@@ -24,6 +24,10 @@ syscall_table:
     .quad syscall_chdir       // 19
     .quad syscall_munmap      // 20
     .quad syscall_pipe        // 21
+    .quad syscall_readlinkat  // 22
+    .quad syscall_linkat      // 23
+    .quad syscall_unlinkat    // 24
+    .quad syscall_readdir     // 25
 syscall_table_end:
 
 .global syscall_count

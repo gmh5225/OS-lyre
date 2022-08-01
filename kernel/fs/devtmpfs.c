@@ -275,6 +275,8 @@ bool devtmpfs_add_device(struct resource *device, const char *name) {
     device->stat.st_ino = fs->inode_counter++;
     device->stat.st_nlink = 1;
 
+    smartlock_acquire(&devtmpfs_root->children_lock);
     HASHMAP_SINSERT(&devtmpfs_root->children, name, new_node);
+    smartlock_release(&devtmpfs_root->children_lock);
     return new_node;
 }

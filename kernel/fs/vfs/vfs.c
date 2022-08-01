@@ -9,6 +9,7 @@
 #include <sched/proc.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/fcntl.h>
+#include <dirent.h> // XXX this unfortunately brings in some libc function declarations, be careful
 #include <limits.h>
 
 static spinlock_t vfs_lock = SPINLOCK_INIT;
@@ -37,8 +38,10 @@ static void create_dotentries(struct vfs_node *node, struct vfs_node *parent) {
     dot->redir = node;
     dotdot->redir = parent;
 
+    smartlock_acquire(&node->children_lock);
     HASHMAP_SINSERT(&node->children, ".", dot);
     HASHMAP_SINSERT(&node->children, "..", dotdot);
+    smartlock_release(&node->children_lock);
 }
 
 static HASHMAP_TYPE(struct vfs_filesystem *) filesystems;
@@ -108,6 +111,8 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
         current_node = reduce_node(current_node, false);
 
         struct vfs_node *new_node;
+
+        // XXX put a lock around this guy
         if (!HASHMAP_SGET(&current_node->children, new_node, elem_str)) {
             errno = ENOENT;
             if (last) {
@@ -145,7 +150,6 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
 static struct vfs_node *get_parent_dir(int dir_fdnum, const char *path) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    // struct vfs_node *parent = NULL;
 
     if (*path == '/') {
         return vfs_root;
@@ -293,7 +297,9 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
     struct vfs_filesystem *target_fs = r.target_parent->filesystem;
     struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, r.basename, dest);
 
+    smartlock_acquire(&r.target_parent->children_lock);
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
+    smartlock_release(&r.target_parent->children_lock);
 
     ret = target_node;
 
@@ -511,5 +517,216 @@ int syscall_chdir(void *_, const char *path) {
     }
 
     proc->cwd = node;
+    return 0;
+}
+
+int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): readdir(%d, %lx, %lu)", proc->pid, proc->name, dir_fdnum, buffer, *size);
+
+    struct f_descriptor *dir_fd = fd_from_fdnum(proc, dir_fdnum);
+    if (dir_fd == NULL) {
+        errno = EBADF;
+        return -1;
+    }
+
+    struct vfs_node *dir_node = dir_fd->description->node;
+    if (!S_ISDIR(dir_fd->description->res->stat.st_mode)) {
+        errno = ENOTDIR;
+        return -1;
+    }
+
+    smartlock_acquire(&dir_node->children_lock);
+
+    size_t entries_length = 0;
+    for (size_t i = 0; i < dir_node->children.cap; i++) {
+        typeof(dir_node->children.buckets) bucket = &dir_node->children.buckets[i];
+
+        for (size_t j = 0; j < bucket->filled; j++) {
+            struct vfs_node *child = bucket->items[j].item;
+            entries_length += sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
+        }
+    }
+
+    // We need space for a null entry that marks the end of directory
+    entries_length += sizeof(struct dirent) - 1024;
+
+    if (entries_length > *size) {
+        *size = entries_length;
+        errno = ENOBUFS;
+        smartlock_release(&dir_node->children_lock);
+        return -1;
+    }
+
+    size_t offset = 0;
+    for (size_t i = 0; i < dir_node->children.cap; i++) {
+        typeof(dir_node->children.buckets) bucket = &dir_node->children.buckets[i];
+
+        for (size_t j = 0; j < bucket->filled; j++) {
+            struct vfs_node *child = bucket->items[j].item;
+            struct vfs_node *reduced = reduce_node(child, false);
+            struct dirent *ent = buffer + offset;
+
+            ent->d_ino = reduced->resource->stat.st_ino;
+            ent->d_reclen = sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
+            ent->d_off = 0;
+
+            switch (reduced->resource->stat.st_mode & S_IFMT) {
+                case S_IFBLK:
+                    ent->d_type = DT_BLK;
+                    break;
+                case S_IFCHR:
+                    ent->d_type = DT_CHR;
+                    break;
+                case S_IFIFO:
+                    ent->d_type = DT_FIFO;
+                    break;
+                case S_IFREG:
+                    ent->d_type = DT_REG;
+                    break;
+                case S_IFDIR:
+                    ent->d_type = DT_DIR;
+                    break;
+                case S_IFLNK:
+                    ent->d_type = DT_LNK;
+                    break;
+                case S_IFSOCK:
+                    ent->d_type = DT_SOCK;
+                    break;
+            }
+
+            memcpy(ent->d_name, child->name, strlen(child->name) + 1);
+            offset += ent->d_reclen;
+        }
+    }
+
+    smartlock_release(&dir_node->children_lock);
+
+    struct dirent *terminator = buffer + offset;
+    terminator->d_reclen = 0;
+    return 0;
+}
+
+int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, size_t length) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): readlink(%s, %lx, %lu)", proc->pid, proc->name, path, buffer, length);
+
+    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
+    if (parent == NULL) {
+        return -1;
+    }
+
+    struct vfs_node *node = vfs_get_node(parent, path, false);
+    if (node == NULL) {
+        return -1;
+    }
+
+    if (!S_ISLNK(node->resource->stat.st_mode)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    node = reduce_node(node, true);
+    if (node == NULL) {
+        return -1;
+    }
+
+    char path_buffer[PATH_MAX] = {0};
+    if (vfs_pathname(node, path_buffer, PATH_MAX) >= length) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+
+    size_t actual_length = strlen(path_buffer);
+    strncpy(buffer, path_buffer, actual_length);
+    return actual_length;
+}
+
+int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_fdnum, const char *new_path, int flags) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): linkat(%d, %s, %d, %s, %x)", proc->pid, proc->name, olddir_fdnum, old_path, newdir_fdnum, new_path, flags);
+
+    if (old_path == NULL || strlen(old_path) == 0) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    struct vfs_node *old_parent = get_parent_dir(olddir_fdnum, old_path);
+    if (old_parent == NULL) {
+        return -1;
+    }
+
+    struct vfs_node *new_parent = get_parent_dir(newdir_fdnum, new_path);
+    if (new_parent == NULL) {
+        return -1;
+    }
+
+    struct path2node_res old_res = path2node(old_parent, old_path);
+    struct path2node_res new_res = path2node(new_parent, new_path);
+    if (old_res.target_parent->filesystem != new_res.target_parent->filesystem) {
+        errno = EXDEV;
+        return -1;
+    }
+
+    struct vfs_node *old_node = vfs_get_node(old_parent, old_path, (flags & AT_SYMLINK_NOFOLLOW) == 0);
+    if (old_node == NULL) {
+        return -1;
+    }
+
+    struct vfs_filesystem *fs = new_res.target_parent->filesystem;
+    struct vfs_node *node = fs->link(fs, new_res.target_parent, new_path, old_node);
+    if (node == NULL) {
+        return -1;
+    }
+
+    smartlock_acquire(&new_res.target_parent->children_lock);
+    HASHMAP_SINSERT(&new_res.target_parent->children, new_res.basename, node);
+    smartlock_release(&new_res.target_parent->children_lock);
+    return 0;
+}
+
+int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
+
+    if (path == NULL || strlen(path) == 0) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
+    if (parent == NULL) {
+        return -1;
+    }
+
+    struct path2node_res res = path2node(parent, path);
+    if (res.target == NULL) {
+        return -1;
+    }
+
+    if (S_ISDIR(res.target->resource->stat.st_mode) && (flags & AT_REMOVEDIR) == 0) {
+        errno = EISDIR;
+        return -1;
+    }
+
+    // XXX implement hashmap remove @@@mint
+
+    res.target->resource->unref(res.target->resource, NULL);
     return 0;
 }
