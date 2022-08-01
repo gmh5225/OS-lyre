@@ -87,8 +87,12 @@
     VECTOR_REMOVE(VECTOR_REMOVE_BY_VALUE_vec, VECTOR_REMOVE_BY_VALUE_i); \
 } while (0)
 
-#define VECTOR_FOR_EACH(VEC, BINDING) \
-    for (__auto_type BINDING = (VEC)->data; \
-        BINDING != (VEC)->data + (VEC)->length; BINDING++)
+#define VECTOR_FOR_EACH(VEC, BINDING, ...) do { \
+    __auto_type VECTOR_FOR_EACH_vec = VEC; \
+    for (size_t VECTOR_FOR_EACH_i = 0; VECTOR_FOR_EACH_i < VECTOR_FOR_EACH_vec->length; VECTOR_FOR_EACH_i++) { \
+        __auto_type BINDING = &VECTOR_FOR_EACH_vec->data[VECTOR_FOR_EACH_i]; \
+        __VA_ARGS__ \
+    } \
+} while (0)
 
 #endif

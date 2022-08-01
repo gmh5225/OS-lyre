@@ -22,7 +22,7 @@ struct addr2range {
 };
 
 struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
-    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it,
         struct mmap_range_local *local_range = *it;
         if (virt < local_range->base || virt >= local_range->base + local_range->length) {
             continue;
@@ -31,7 +31,7 @@ struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
         size_t memory_page = virt / PAGE_SIZE;
         size_t file_page = local_range->offset / PAGE_SIZE + (memory_page - local_range->base / PAGE_SIZE);
         return (struct addr2range){.range = local_range, .memory_page = memory_page, .file_page = file_page};
-    }
+    );
 
     return (struct addr2range){.range = NULL, .memory_page = 0, .file_page = 0};
 }
@@ -39,10 +39,10 @@ struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
 void mmap_list_ranges(struct pagemap *pagemap) {
     print("Ranges for %lx:\n", pagemap);
 
-    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it,
         struct mmap_range_local *local_range = *it;
         print("\tbase=%lx, length=%lx, offset=%lx\n", local_range->base, local_range->length, local_range->offset);
-    }
+    );
 }
 
 bool mmap_handle_pf(struct cpu_ctx *ctx) {
@@ -99,7 +99,7 @@ bool mmap_page_in_range(struct mmap_range_global *global, uintptr_t virt,
         return false;
     }
 
-    VECTOR_FOR_EACH(&global->locals, it) {
+    VECTOR_FOR_EACH(&global->locals, it,
         struct mmap_range_local *local_range = *it;
         if (virt < local_range->base || virt >= local_range->base + local_range->length) {
             continue;
@@ -108,7 +108,7 @@ bool mmap_page_in_range(struct mmap_range_global *global, uintptr_t virt,
         if (!vmm_map_page(local_range->pagemap, virt, phys, pt_flags)) {
             return false;
         }
-    }
+    );
 
     return true;
 }

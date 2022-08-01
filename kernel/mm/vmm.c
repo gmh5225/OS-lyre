@@ -153,7 +153,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         goto cleanup;
     }
 
-    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it,
         struct mmap_range_local *local_range = *it;
         struct mmap_range_global *global_range = local_range->global;
 
@@ -235,7 +235,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         }
 
         VECTOR_PUSH_BACK(&new_pagemap->mmap_ranges, new_local_range);
-    }
+    );
 
     smartlock_release(&pagemap->lock);
     return new_pagemap;
@@ -268,12 +268,12 @@ static void destroy_level(uint64_t *pml, size_t start, size_t end, int level) {
 void vmm_destroy_pagemap(struct pagemap *pagemap) {
     smartlock_acquire(&pagemap->lock);
 
-    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it) {
+    VECTOR_FOR_EACH(&pagemap->mmap_ranges, it,
         struct mmap_range_local *local_range = *it;
 
         // TODO: Find out why munmap fails here sometimes
         munmap(pagemap, local_range->base, local_range->length);
-    }
+    );
 
     destroy_level(pagemap->top_level, 0, 256, 4);
     free(pagemap);

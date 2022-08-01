@@ -618,6 +618,10 @@ int syscall_exec(void *_, const char *path, const char **argv, const char **envp
         goto fail;
     }
 
+    vmm_switch_to(vmm_kernel_pagemap);
+
+    thread->process = kernel_process;
+
     vmm_destroy_pagemap(old_pagemap);
     sched_dequeue_and_die();
 
@@ -645,10 +649,10 @@ int syscall_exit(void *_, int status) {
     if (proc->pid != -1) {
         struct process *pid1 = VECTOR_ITEM(&processes, 1);
 
-        VECTOR_FOR_EACH(&proc->children, it) {
+        VECTOR_FOR_EACH(&proc->children, it,
             VECTOR_PUSH_BACK(&pid1->children, *it);
             VECTOR_PUSH_BACK(&pid1->child_events, &(*it)->event);
-        }
+        );
     }
 
     vmm_destroy_pagemap(old_pagemap);
