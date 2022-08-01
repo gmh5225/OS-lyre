@@ -17,9 +17,8 @@ virtual machines.
 **Note: Lyre is still pre-alpha software not meant for daily or production usage!**
 
 ![Screenshot 0](/screenshot0.png?raw=true "Screenshot 0")
-![Screenshot 1](/screenshot1.png?raw=true "Screenshot 1")
 
-Photo by Pixabay: https://www.pexels.com/photo/gray-and-black-galaxy-wallpaper-2150/
+[Photo by Pixabay](https://www.pexels.com/photo/a-close-up-shot-of-a-goat-12973509/)
 
 ## Download latest nightly image
 
