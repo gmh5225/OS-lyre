@@ -318,8 +318,6 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
             local_range->length -= postsplit_range->length;
         }
 
-        smartlock_release(&pagemap->lock);
-
         for (uintptr_t j = snip_begin; j < snip_end; j += PAGE_SIZE) {
             vmm_unmap_page(pagemap, j);
         }
@@ -327,6 +325,8 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         if (snip_length == local_range->length) {
             VECTOR_REMOVE_BY_VALUE(&pagemap->mmap_ranges, local_range);
         }
+
+        smartlock_release(&pagemap->lock);
 
         if (snip_length == local_range->length && global_range->locals.length == 1) {
             if ((local_range->flags & MAP_ANONYMOUS) != 0) {
