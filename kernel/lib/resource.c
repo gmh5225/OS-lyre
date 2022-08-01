@@ -56,17 +56,24 @@ static void *stub_mmap(struct resource *this, size_t file_page, int flags) {
     return NULL;
 }
 
+static bool stub_unref(struct resource *this, struct f_description *description) {
+    (void)this;
+    (void)description;
+    this->refcount--;
+    return true;
+}
+
 void *resource_create(size_t size) {
     struct resource *res = alloc(size);
     if (res == NULL) {
         return NULL;
     }
 
-    res->refcount = 1;
     res->read = stub_read;
     res->write = stub_write;
     res->ioctl = resource_default_ioctl;
     res->mmap = stub_mmap;
+    res->unref = stub_unref;
     return res;
 }
 
@@ -97,6 +104,8 @@ bool fdnum_close(struct process *proc, int fdnum) {
         errno = EBADF;
         goto cleanup;
     }
+
+    fd->description->res->unref(fd->description->res, fd->description);
 
     if (fd->description->refcount-- == 1) {
         free(fd->description);

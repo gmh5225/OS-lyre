@@ -736,5 +736,7 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     VECTOR_REMOVE_BY_VALUE(&proc->child_events, &child->event);
     VECTOR_REMOVE_BY_VALUE(&proc->children, child);
 
+    VECTOR_REMOVE_BY_VALUE(&processes, child);
+
     return child->pid;
 }
