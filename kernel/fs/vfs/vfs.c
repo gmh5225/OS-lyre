@@ -151,7 +151,7 @@ static struct vfs_node *get_parent_dir(int dir_fdnum, const char *path) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    if (*path == '/') {
+    if (path != NULL && *path == '/') {
         return vfs_root;
     } else if (dir_fdnum == AT_FDCWD) {
         return proc->cwd;
@@ -361,6 +361,38 @@ size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len) {
     return strlen(node->name) + offset;
 }
 
+bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bool enoent_error,
+                            struct vfs_node **parent, struct vfs_node **node, char **basename) {
+	if (!empty_path && (path == NULL || strlen(path) == 0)) {
+        errno = ENOENT;
+		return false;
+	}
+
+    struct vfs_node *parent_node = get_parent_dir(dir_fdnum, path);
+    if (parent == NULL) {
+        return false;
+    }
+
+    if (parent != NULL) {
+        *parent = parent_node;
+    }
+
+    struct path2node_res res = path2node(parent_node, path);
+    if (res.target == NULL && enoent_error) {
+        return false;
+    }
+
+    if (node != NULL) {
+        *node = res.target;
+    }
+
+    if (basename != NULL) {
+        *basename = res.basename;
+    }
+
+    return true;
+}
+
 int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
     (void)_;
     (void)mode;
@@ -370,18 +402,8 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
 
     print("syscall (%d %s): openat(%d, %s, %x, %o)", proc->pid, proc->name, dir_fdnum, path, flags, mode);
 
-    if (path == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    if (strlen(path) == 0) {
-        errno = ENOENT;
-        return -1;
-    }
-
-    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
-    if (parent == NULL) {
+    struct vfs_node *parent = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
         return -1;
     }
 
@@ -421,6 +443,7 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
     return fdnum_create_from_fd(proc, fd, 0, false);
 }
 
+// XXX convert to use vfs_fdnum_path_to_node
 int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct stat *stat_buf) {
     (void)_;
 
@@ -619,8 +642,8 @@ int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, s
 
     print("syscall (%d %s): readlink(%s, %lx, %lu)", proc->pid, proc->name, path, buffer, length);
 
-    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
-    if (parent == NULL) {
+    struct vfs_node *parent = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
         return -1;
     }
 
@@ -650,6 +673,7 @@ int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, s
     return actual_length;
 }
 
+// XXX convert to vfs_fdnum_path_to_node
 int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_fdnum, const char *new_path, int flags) {
     (void)_;
 
@@ -705,28 +729,45 @@ int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
 
     print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
 
-    if (path == NULL || strlen(path) == 0) {
-        errno = ENOENT;
+    struct vfs_node *parent = NULL, *node = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, &node, NULL)) {
         return -1;
     }
 
-    struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
-    if (parent == NULL) {
-        return -1;
-    }
-
-    struct path2node_res res = path2node(parent, path);
-    if (res.target == NULL) {
-        return -1;
-    }
-
-    if (S_ISDIR(res.target->resource->stat.st_mode) && (flags & AT_REMOVEDIR) == 0) {
+    if (S_ISDIR(node->resource->stat.st_mode) && (flags & AT_REMOVEDIR) == 0) {
         errno = EISDIR;
         return -1;
     }
 
     // XXX implement hashmap remove @@@mint
 
-    res.target->resource->unref(res.target->resource, NULL);
+    node->resource->unref(node->resource, NULL);
+    return 0;
+}
+
+int syscall_mkdirat(void *_, int dir_fdnum, const char *path, mode_t mode){
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): mkdirat(%d, %s, %04o)", proc->pid, proc->name, dir_fdnum, path, mode);
+
+	if (path == NULL || strlen(path) == 0) {
+        errno = ENOENT;
+		return -1;
+	}
+
+    struct vfs_node *parent = NULL;
+    char *basename = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, NULL, &basename)) {
+        return -1;
+    }
+
+    struct vfs_node *node = vfs_create(parent, basename, mode | S_IFDIR);
+    if (node == NULL) {
+        return -1;
+    }
+
     return 0;
 }

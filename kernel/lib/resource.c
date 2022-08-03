@@ -10,6 +10,7 @@
 #include <abi-bits/seek-whence.h>
 #include <abi-bits/stat.h>
 #include <sys/ioctl.h>
+#include <fs/vfs/vfs.h>
 
 int resource_default_ioctl(struct resource *this, struct f_description *description, uint64_t request, uint64_t arg) {
     (void)this;
@@ -450,4 +451,27 @@ int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
     print("syscall (%d %s): dup3(%d, %d, %x)", proc->pid, proc->name, old_fdnum, new_fdnum, flags);
 
     return fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
+}
+
+int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int flags) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): fchmodat(%d, %s, %x, %x)", proc->pid, proc->name, dir_fdnum, path, mode, flags);
+
+    struct vfs_node *parent = NULL, *node = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, true, true, &parent, &node, NULL)) {
+        return -1;
+    }
+
+    struct vfs_node *target = node;
+    if (target == NULL) {
+        target = parent;
+    }
+
+    target->resource->stat.st_mode &= ~0777;
+    target->resource->stat.st_mode |= mode & 0777;
+    return 0;
 }

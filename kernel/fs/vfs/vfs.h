@@ -41,5 +41,7 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
                              const char *target);
 struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode);
 size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len);
+bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bool enoent_error,
+                            struct vfs_node **parent, struct vfs_node **node, char **basename);
 
 #endif

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <limine.h>
 #include <lib/alloc.h>
+#include <lib/errno.h>
 #include <lib/lock.h>
 #include <lib/misc.h>
 #include <lib/panic.h>
@@ -9,6 +10,7 @@
 #include <lib/vector.h>
 #include <time/time.h>
 #include <dev/pit.h>
+#include <sched/sched.h>
 
 static volatile struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,
@@ -94,4 +96,48 @@ void timer_handler(void) {
 
         spinlock_release(&timers_lock);
     }
+}
+
+int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): sleep(%lx, %lx)", proc->pid, proc->name, duration, remaining);
+
+    if (duration->tv_sec == 0 && duration->tv_nsec == 0) {
+        return 0;
+    }
+
+    if (duration->tv_nsec < 0 || duration->tv_nsec < 0 || duration->tv_nsec > 1000000000) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    struct timer *timer = timer_new(*duration);
+    if (timer == NULL) {
+        return -1;
+    }
+
+    struct event *event = &timer->event;
+
+    int ret = 0;
+    ssize_t which = event_await(&event, 1, true);
+
+    if (which == -1) {
+        if (remaining != NULL) {
+            *remaining = timer->when;
+        }
+
+        errno = EINTR;
+        ret = -1;
+        goto cleanup;
+    }
+
+    return 0;
+
+cleanup:
+    free(timer);
+    return ret;
 }

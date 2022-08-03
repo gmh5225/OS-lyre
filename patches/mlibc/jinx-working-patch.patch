@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 1722935..b0f5451 100644
+index 1722935..aab8734 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -104,7 +104,7 @@ index 1722935..b0f5451 100644
  	switch (optional_action) {
  		case TCSANOW:
  			optional_action = TCSETS; break;
-@@ -62,204 +55,87 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
+@@ -62,204 +55,92 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
  		case TCSAFLUSH:
  			optional_action = TCSETSF; break;
  		default:
@@ -148,10 +148,12 @@ index 1722935..b0f5451 100644
  int sys_epoll_pwait(int epfd, struct epoll_event *ev, int n,
 -					int timeout, const sigset_t *sigmask, int *raised) {
 -	__syscall_ret ret = __syscall(49, epfd, ev, n, timeout, sigmask);
--
++					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_epoll_create(int flags, int *fd) STUB_ONLY
+ 
 -	*raised = (int)ret.ret;
 -	return 0;
 -}
@@ -165,12 +167,10 @@ index 1722935..b0f5451 100644
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
-+					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
- 
+-
 -int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) {
 -	__syscall_ret ret = __syscall(47, epfd, mode, fd, ev);
-+int sys_epoll_create(int flags, int *fd) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
 +int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) STUB_ONLY
@@ -303,13 +303,15 @@ index 1722935..b0f5451 100644
  
  int sys_isatty(int fd) {
 -	struct winsize ws;
--	int ret;
+ 	int ret;
 -
 -	if (!sys_ioctl(fd, TIOCGWINSZ, &ws, &ret))
--		return 0;
++	struct winsize size;
++    if (sys_ioctl(fd, TIOCGWINSZ, &size, &ret) == 0) {
+ 		return 0;
 -
--	return ENOTTY;
-+    return 0;
++	}
+ 	return ENOTTY;
  }
  
  int sys_getcwd(char *buffer, size_t size) {
@@ -339,7 +341,7 @@ index 1722935..b0f5451 100644
  	return 0;
  }
  
-@@ -268,75 +144,108 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
+@@ -268,75 +149,108 @@ int sys_open(const char *path, int flags, mode_t, int *fd) {
  }
  
  int sys_open_dir(const char *path, int *handle) {
@@ -480,7 +482,7 @@ index 1722935..b0f5451 100644
  	return 0;
  }
  
-@@ -345,186 +254,128 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +259,138 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -509,22 +511,27 @@ index 1722935..b0f5451 100644
  
 -int sys_fchmod(int fd, mode_t mode) {
 -	__syscall_ret ret = __syscall(57, fd, mode);
-+int sys_fchmod(int fd, mode_t mode) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++int sys_fchmodat(int fd, const char *pathname, mode_t mode, int flags) {
++	__syscall_ret ret = __syscall(SYS_fchmodat, fd, pathname, mode, flags);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
+ 	}
 -
--	return 0;
--}
--
+ 	return 0;
+ }
+ 
 -int sys_rmdir(const char *path) {
 -	(void)path;
 -	mlibc::infoLogger() << "mlibc: " << __func__ << " is a stub!\n" << frg::endlog;
 -	return 0;
--}
-+int sys_rmdir(const char *path) STUB_ONLY
++int sys_fchmod(int fd, mode_t mode) {
++	return sys_fchmodat(fd, "", mode, AT_EMPTY_PATH);
+ }
  
++int sys_rmdir(const char *path) STUB_ONLY
++
  int sys_vm_map(void *hint, size_t size, int prot, int flags,
  			   int fd, off_t offset, void **window) {
 -	__syscall_ret ret = __syscall(1, hint, size,
@@ -716,7 +723,7 @@ index 1722935..b0f5451 100644
  	return 0;
  }
  
-@@ -533,356 +384,158 @@ int sys_access(const char *path, int mode) {
+@@ -533,22 +399,18 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -740,14 +747,13 @@ index 1722935..b0f5451 100644
  		return ret.errno;
  	}
 -
--	return 0;
--}
--
--int sys_mkdir(const char *path, mode_t mode) {
--	return sys_mkdirat(AT_FDCWD, path, mode);
--}
--
--int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
+ 	return 0;
+ }
+ 
+@@ -557,332 +419,161 @@ int sys_mkdir(const char *path, mode_t mode) {
+ }
+ 
+ int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
 -	__syscall_ret ret = __syscall(22, dirfd, path, mode);
 -
 -	return ret.errno;
@@ -757,51 +763,52 @@ index 1722935..b0f5451 100644
 -	__syscall_ret ret = __syscall(39, domain, type_and_flags, proto);
 -
 -	if (ret.errno != 0)
--		return ret.errno;
++	__syscall_ret ret = __syscall(SYS_mkdirat, dirfd, path, mode);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
 -
 -	*fd = (int)ret.ret;
++	}
  	return 0;
  }
  
 -int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) {
 -	__syscall_ret ret = __syscall(46, domain, type_and_flags, proto, fds);
--
--	return ret.errno;
--}
--
--int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
--	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
--
--	return ret.errno;
--}
--
--int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
--	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
-+int sys_mkdir(const char *path, mode_t mode) STUB_ONLY
- 
--	return ret.errno;
--}
-+int sys_mkdirat(int dirfd, const char *path, mode_t mode) STUB_ONLY
- 
--int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
--	__syscall_ret ret = __syscall(61, fd);
 +int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
  
+-	return ret.errno;
+-}
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
+ 
+-int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
+-	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
++int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
+-	return ret.errno;
+-}
++int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
+-int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
+-	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
+-
+-	return ret.errno;
+-}
+-
+-int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
+-	__syscall_ret ret = __syscall(61, fd);
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
+-
 -	*newfd = ret.ret;
-+int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -	if(addr_ptr && addr_length) {
 -		if(int e = mlibc::sys_peername(*newfd, addr_ptr, *addr_length, addr_length); e) {
 -			return e;
 -		}
 -	}
-+int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -	return 0;
 -}
 +int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) STUB_ONLY
@@ -1035,37 +1042,37 @@ index 1722935..b0f5451 100644
  	}
 -
 -	*ret_pid = (pid_t)ret.ret;
--	return 0;
--}
--
++	*ret_pid = ret_value;
+ 	return 0;
+ }
+ 
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
--
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+ 
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
 -
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
-+	*ret_pid = ret_value;
- 	return 0;
- }
- 
+-	return 0;
+-}
+-
 -int sys_umount2(const char *target, int flags) {
 -	__syscall_ret ret = __syscall(44, target, flags);
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
- 
+-
 -	return 0;
 -}
 +int sys_umount2(const char *target, int flags) STUB_ONLY
@@ -1092,61 +1099,70 @@ index 1722935..b0f5451 100644
  
 -int sys_sethostname(const char *buffer, size_t bufsize) {
 -	__syscall_ret ret = __syscall(52, buffer, bufsize);
-+int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_sleep(time_t *secs, long *nanos) STUB_ONLY
- 
+-
 -	return 0;
 -}
-+int sys_getitimer(int which, struct itimerval *curr_value) STUB_ONLY
++int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
  
--int sys_sleep(time_t *secs, long *nanos) {
+ int sys_sleep(time_t *secs, long *nanos) {
 -	struct timespec req = {
 -		.tv_sec = *secs,
 -		.tv_nsec = *nanos
 -	};
 -	struct timespec rem = {0, 0};
-+int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) STUB_ONLY
- 
+-
 -	__syscall_ret ret = __syscall(53, &req, &rem);
-+int sys_umask(mode_t mode, mode_t *old) {
-+    return ENOSYS;
-+}
- 
+-
 -	if (ret.errno != 0)
-+int sys_uname(struct utsname *buf) {
-+	__syscall_ret ret = __syscall(SYS_uname, buf);
++	struct timespec time = {.tv_sec = *secs, .tv_nsec = *nanos};
++	struct timespec rem = {.tv_sec = 0, .tv_nsec = 0};
++	__syscall_ret ret = __syscall(SYS_sleep, &time, &rem);
 +    if ((int)ret.ret == -1) {
  		return ret.errno;
 -
--	*secs = rem.tv_sec;
--	*nanos = rem.tv_nsec;
 +	}
+ 	*secs = rem.tv_sec;
+ 	*nanos = rem.tv_nsec;
  	return 0;
  }
  
--
++int sys_getitimer(int which, struct itimerval *curr_value) STUB_ONLY
+ 
 -int sys_getitimer(int which, struct itimerval *curr_value) {
 -	__syscall_ret ret = __syscall(63, which, curr_value);
--
++int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) STUB_ONLY
+ 
 -	return ret.errno;
--}
--
--
++int sys_umask(mode_t mode, mode_t *old) {
++    return ENOSYS;
+ }
+ 
++int sys_uname(struct utsname *buf) {
++	__syscall_ret ret = __syscall(SYS_uname, buf);
++    if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
++}
+ 
 -int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) {
 -	__syscall_ret ret = __syscall(64, which, new_value, old_value);
 -
 -	return ret.errno;
--}
--
++int sys_fsync(int fd) {
++	mlibc::infoLogger() << "sys_fsync is a stub" << frg::endlog;
++	return 0;
+ }
+ 
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..c665c5d 100644
+index f421220..7b7728b 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,87 @@
+@@ -1,16 +1,90 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1178,6 +1194,9 @@ index f421220..c665c5d 100644
 +#define SYS_uname 26
 +#define SYS_futex_wait 27
 +#define SYS_futex_wake 28
++#define SYS_mkdirat 29
++#define SYS_fchmodat 30
++#define SYS_sleep 31
 +
  struct __syscall_ret {
  	uint64_t ret;

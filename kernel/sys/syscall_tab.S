@@ -31,6 +31,9 @@ syscall_table:
     .quad syscall_uname       // 26
     .quad syscall_futex_wait  // 27
     .quad syscall_futex_wake  // 28
+    .quad syscall_mkdirat     // 29
+    .quad syscall_fchmodat    // 30
+    .quad syscall_sleep       // 31
 syscall_table_end:
 
 .global syscall_count
