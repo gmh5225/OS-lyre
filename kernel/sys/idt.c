@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <sys/idt.h>
 #include <lib/lock.h>
+#include <lib/panic.h>
 #include <lib/print.h>
 
 struct idt_entry {
@@ -44,9 +46,7 @@ uint8_t idt_allocate_vector(void) {
     spinlock_acquire(&lock);
 
     if (free_vector == 0xf0) {
-        // TODO panic
-        print("IDT exhausted");
-        for (;;);
+        panic(NULL, true, "IDT exhausted");
     }
 
     uint8_t ret = free_vector++;
