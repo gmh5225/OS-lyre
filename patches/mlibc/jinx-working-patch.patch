@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..73a3733 100644
+index 877ff63..b2e1b96 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -104,7 +104,7 @@ index 877ff63..73a3733 100644
  	switch (optional_action) {
  		case TCSANOW:
  			optional_action = TCSETS; break;
-@@ -73,139 +66,41 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
+@@ -73,139 +66,44 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
  }
  
  int sys_tcb_set(void *pointer) {
@@ -166,7 +166,7 @@ index 877ff63..73a3733 100644
  #ifndef MLIBC_BUILDING_RTDL
  int sys_pselect(int nfds, fd_set *read_set, fd_set *write_set,
  		fd_set *except_set, const struct timespec *timeout,
--		const sigset_t *sigmask, int *num_events) {
+ 		const sigset_t *sigmask, int *num_events) {
 -	struct pollfd *fds = (struct pollfd *)malloc(nfds * sizeof(struct pollfd));
 -
 -	for (int i = 0; i < nfds; i++) {
@@ -230,9 +230,9 @@ index 877ff63..73a3733 100644
 -	if (except_set)
 -		memcpy(except_set, &res_except_set, sizeof(fd_set));
 -
--	return 0;
--}
-+		const sigset_t *sigmask, int *num_events) STUB_ONLY
++    *num_events = 0;
+ 	return 0;
+ }
  #endif
  
  int sys_futex_wait(int *pointer, int expected, const struct timespec *time) {
@@ -255,7 +255,7 @@ index 877ff63..73a3733 100644
  		return ret.errno;
  
  	int num_woken = ret.ret;
-@@ -214,20 +109,12 @@ int sys_futex_wake(int *pointer) {
+@@ -214,20 +112,12 @@ int sys_futex_wake(int *pointer) {
  	return num_woken;
  }
  
@@ -279,7 +279,7 @@ index 877ff63..73a3733 100644
  		return ret.errno;
  
  	*result = (int)ret.ret;
-@@ -245,18 +132,18 @@ int sys_isatty(int fd) {
+@@ -245,18 +135,18 @@ int sys_isatty(int fd) {
  }
  
  int sys_getcwd(char *buffer, size_t size) {
@@ -302,7 +302,7 @@ index 877ff63..73a3733 100644
  		return ret.errno;
  
  	*fd = (int)ret.ret;
-@@ -268,75 +155,108 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
+@@ -268,75 +158,108 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
  }
  
  int sys_open_dir(const char *path, int *handle) {
@@ -443,7 +443,7 @@ index 877ff63..73a3733 100644
  	return 0;
  }
  
-@@ -345,186 +265,138 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +268,138 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -684,7 +684,7 @@ index 877ff63..73a3733 100644
  	return 0;
  }
  
-@@ -533,22 +405,18 @@ int sys_access(const char *path, int mode) {
+@@ -533,22 +408,18 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -711,7 +711,7 @@ index 877ff63..73a3733 100644
  	return 0;
  }
  
-@@ -557,332 +425,161 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +428,161 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
@@ -739,19 +739,19 @@ index 877ff63..73a3733 100644
  
 -	return ret.errno;
 -}
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
+-
 -int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
-+int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
  
 -	return ret.errno;
 -}
-+int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
++int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
  
 -int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
--
++int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
 -	return ret.errno;
 -}
 -
@@ -839,12 +839,10 @@ index 877ff63..73a3733 100644
 -		__builtin_unreachable();
 -	}
 -}
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -852,11 +850,10 @@ index 877ff63..73a3733 100644
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
-+int sys_listen(int fd, int backlog) STUB_ONLY
++		const void *buffer, socklen_t size) STUB_ONLY
  
 -	if (ret.errno != 0) {
 -		return ret.errno;
@@ -871,14 +868,17 @@ index 877ff63..73a3733 100644
 -
 -	return ret.errno;
 -}
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -int sys_inotify_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(42, flags);
--
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_listen(int fd, int backlog) STUB_ONLY
+ 
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
