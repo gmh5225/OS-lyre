@@ -28,7 +28,6 @@ int syscall_uname(void *_, struct utsname *buffer) {
 	strncpy(buffer->nodename, "lyre", sizeof(buffer->nodename));
 	strncpy(buffer->release, "0.0.1", sizeof(buffer->release));
 	strncpy(buffer->version, __DATE__ " " __TIME__, sizeof(buffer->version));
-	strncpy(buffer->domainname, "lyre", sizeof(buffer->domainname));
     return 0;
 }
 
