@@ -78,12 +78,14 @@ void initramfs_init(void) {
 
         uint64_t mode = oct2int(current_file->mode, sizeof(current_file->mode));
         uint64_t size = oct2int(current_file->size, sizeof(current_file->size));
+        uint64_t mtime = oct2int(current_file->mtime, sizeof(current_file->mtime));
         // uint64_t uid = oct2int(current_file->uid, sizeof(current_file->uid));
         // uint64_t gid = oct2int(current_file->gid, sizeof(current_file->gid));
 
+        struct vfs_node *node = NULL;
         switch (current_file->type) {
             case TAR_FILE_TYPE_NORMAL: {
-                struct vfs_node *node = vfs_create(vfs_root, name, mode | S_IFREG);
+                node = vfs_create(vfs_root, name, mode | S_IFREG);
                 if (node == NULL) {
                     panic(NULL, true, "Failed to allocate an initramfs node");
                 }
@@ -93,25 +95,27 @@ void initramfs_init(void) {
                 break;
             }
             case TAR_FILE_TYPE_SYMLINK: {
-                struct vfs_node *node = vfs_symlink(vfs_root, link_name, name);
+                node = vfs_symlink(vfs_root, link_name, name);
                 if (node == NULL) {
                     panic(NULL, true, "Failed to allocate an initramfs node");
                 }
-
                 break;
             }
             case TAR_FILE_TYPE_DIRECTORY: {
-                struct vfs_node *node = vfs_create(vfs_root, name, mode | S_IFDIR);
+                node = vfs_create(vfs_root, name, mode | S_IFDIR);
                 if (node == NULL) {
                     panic(NULL, true, "Failed to allocate an initramfs node");
                 }
-
                 break;
             }
             case TAR_FILE_TYPE_GNU_LONG_PATH:
                 name_override = (void *)current_file + 512;
                 name_override[size] = 0;
                 break;
+        }
+
+        if (node != NULL) {
+            node->resource->stat.st_mtim = (struct timespec){.tv_sec = mtime, .tv_nsec = 0};
         }
 
         // switch (current_file->type) {

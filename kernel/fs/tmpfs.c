@@ -13,6 +13,7 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <bits/posix/stat.h>
+#include <time/time.h>
 
 struct tmpfs_resource {
     struct resource;
@@ -131,10 +132,9 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
     resource->stat.st_mode = mode;
     resource->stat.st_nlink = 1;
 
-    // TODO: Port time stuff in
-    // resource->stat.st_atim = realtime_clock;
-    // resource->stat.st_ctim = realtime_clock;
-    // resource->stat.st_mtim = realtime_clock;
+    resource->stat.st_atim = time_realtime;
+    resource->stat.st_ctim = time_realtime;
+    resource->stat.st_mtim = time_realtime;
 
     return resource;
 }
