@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..3c76b1a 100644
+index 877ff63..b2b52de 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -321,7 +321,7 @@ index 877ff63..3c76b1a 100644
  
  int sys_openat(int dirfd, const char *path, int flags, mode_t mode, int *fd) {
 -	__syscall_ret ret = __syscall(2, dirfd, path, flags, 0);
-+	__syscall_ret ret = __syscall(SYS_openat, dirfd, path, flags, 0);
++	__syscall_ret ret = __syscall(SYS_openat, dirfd, path, flags, mode);
  
 -	if (ret.errno != 0)
 +	if ((int)ret.ret == -1)

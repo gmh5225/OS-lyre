@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <dev/char/serial.h>
 #include <dev/char/console.h>
+#include <dev/char/streams.h>
 #include <dev/lapic.h>
 #include <dev/ps2.h>
 #include <lib/elf.h>
@@ -57,6 +58,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
     ps2_init();
     console_init();
+    streams_init();
     initramfs_init();
 
     struct pagemap *bash_vm = vmm_new_pagemap();
