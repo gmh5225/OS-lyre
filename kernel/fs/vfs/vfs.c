@@ -373,13 +373,13 @@ bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bo
         return false;
     }
 
-    if (parent != NULL) {
-        *parent = parent_node;
+    struct path2node_res res = path2node(parent_node, path);
+    if (res.target == NULL && (errno == ENOENT && enoent_error)) {
+        return false;
     }
 
-    struct path2node_res res = path2node(parent_node, path);
-    if (res.target == NULL && enoent_error) {
-        return false;
+    if (parent != NULL) {
+        *parent = res.target_parent;
     }
 
     if (node != NULL) {
@@ -395,7 +395,6 @@ bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bo
 
 int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
     (void)_;
-    (void)mode;
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
@@ -407,12 +406,22 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
         return -1;
     }
 
+    if (parent == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
     int create_flags = flags & FILE_CREATION_FLAGS_MASK;
     int follow_links = (flags & O_NOFOLLOW) == 0;
 
     struct vfs_node *node = vfs_get_node(parent, path, follow_links);
-    if (node == NULL && (create_flags & O_CREAT) != 0) {
-        node = vfs_create(parent, path, 0644 | S_IFREG);
+    if (node == NULL) {
+        if ((create_flags & O_CREAT) != 0) {
+            node = vfs_create(parent, path, (mode & ~proc->umask) | S_IFREG);
+        } else {
+            errno = ENOENT;
+            return -1;
+        }
     }
 
     if (node == NULL) {
@@ -647,6 +656,11 @@ int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, s
         return -1;
     }
 
+    if (parent == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
     struct vfs_node *node = vfs_get_node(parent, path, false);
     if (node == NULL) {
         return -1;
@@ -760,11 +774,16 @@ int syscall_mkdirat(void *_, int dir_fdnum, const char *path, mode_t mode){
 
     struct vfs_node *parent = NULL;
     char *basename = NULL;
-    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, NULL, &basename)) {
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, &basename)) {
         return -1;
     }
 
-    struct vfs_node *node = vfs_create(parent, basename, mode | S_IFDIR);
+    if (parent == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    struct vfs_node *node = vfs_create(parent, basename, (mode & ~proc->umask) | S_IFDIR);
     if (node == NULL) {
         return -1;
     }

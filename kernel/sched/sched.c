@@ -291,12 +291,14 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
         new_proc->thread_stack_top = old_proc->thread_stack_top;
         new_proc->mmap_anon_base = old_proc->mmap_anon_base;
         new_proc->cwd = old_proc->cwd;
+        new_proc->umask = old_proc->umask;
     } else {
         new_proc->ppid = 0;
         new_proc->pagemap = pagemap;
         new_proc->thread_stack_top = 0x70000000000;
         new_proc->mmap_anon_base = 0x80000000000;
         new_proc->cwd = vfs_root;
+        new_proc->umask = S_IWGRP | S_IWOTH;
     }
 
     new_proc->pid = VECTOR_PUSH_BACK(&processes, new_proc);

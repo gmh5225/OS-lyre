@@ -35,6 +35,7 @@ syscall_table:
     .quad syscall_fchmodat    // 30
     .quad syscall_sleep       // 31
     .quad syscall_ppoll       // 32
+    .quad syscall_umask       // 33
 syscall_table_end:
 
 .global syscall_count

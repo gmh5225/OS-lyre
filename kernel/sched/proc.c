@@ -90,3 +90,16 @@ int syscall_futex_wake(void *_, int *ptr) {
     smartlock_release(&futex_lock);
     return 0;
 }
+
+mode_t syscall_umask(void *_, mode_t mask) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): umask(%o)", proc->pid, proc->name, mask);
+
+    mode_t old_mask = proc->umask;
+    proc->umask = mask;
+    return old_mask;
+}
