@@ -262,9 +262,9 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
     create_dotentries(mount_node, r.target_parent);
 
     if (source != NULL && strlen(source) != 0) {
-        print("vfs: Mounted `%s` on `%s` with filesystem `%s`\n", source, target, fs_name);
+        kernel_print("vfs: Mounted `%s` on `%s` with filesystem `%s`\n", source, target, fs_name);
     } else {
-        print("vfs: Mounted %s on `%s`\n", fs_name, target);
+        kernel_print("vfs: Mounted %s on `%s`\n", fs_name, target);
     }
 
     ret = true;
@@ -399,7 +399,7 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): openat(%d, %s, %x, %o)", proc->pid, proc->name, dir_fdnum, path, flags, mode);
+    debug_print("syscall (%d %s): openat(%d, %s, %x, %o)", proc->pid, proc->name, dir_fdnum, path, flags, mode);
 
     struct vfs_node *parent = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
@@ -460,7 +460,7 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
     struct process *proc = thread->process;
     struct stat *stat_src = NULL;
 
-    print("syscall (%d %s): stat(%d, %s, %x, %lx)", proc->pid, proc->name, dir_fdnum, path, flags, stat_buf);
+    debug_print("syscall (%d %s): stat(%d, %s, %x, %lx)", proc->pid, proc->name, dir_fdnum, path, flags, stat_buf);
 
     if (stat_buf == NULL) {
         errno = EINVAL;
@@ -507,7 +507,7 @@ int syscall_getcwd(void *_, char *buffer, size_t len) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): getcwd(%lx, %lu)", proc->pid, proc->name, buffer, len);
+    debug_print("syscall (%d %s): getcwd(%lx, %lu)", proc->pid, proc->name, buffer, len);
 
     char path_buffer[PATH_MAX] = {0};
     if (vfs_pathname(proc->cwd, path_buffer, PATH_MAX) >= len) {
@@ -525,7 +525,7 @@ int syscall_chdir(void *_, const char *path) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): chdir(%s)", proc->pid, proc->name, path);
+    debug_print("syscall (%d %s): chdir(%s)", proc->pid, proc->name, path);
 
     if (path == NULL) {
         errno = EINVAL;
@@ -558,7 +558,7 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): readdir(%d, %lx, %lu)", proc->pid, proc->name, dir_fdnum, buffer, *size);
+    debug_print("syscall (%d %s): readdir(%d, %lx, %lu)", proc->pid, proc->name, dir_fdnum, buffer, *size);
 
     struct f_descriptor *dir_fd = fd_from_fdnum(proc, dir_fdnum);
     if (dir_fd == NULL) {
@@ -649,7 +649,7 @@ int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, s
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): readlink(%s, %lx, %lu)", proc->pid, proc->name, path, buffer, length);
+    debug_print("syscall (%d %s): readlink(%s, %lx, %lu)", proc->pid, proc->name, path, buffer, length);
 
     struct vfs_node *parent = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
@@ -694,7 +694,7 @@ int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_f
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): linkat(%d, %s, %d, %s, %x)", proc->pid, proc->name, olddir_fdnum, old_path, newdir_fdnum, new_path, flags);
+    debug_print("syscall (%d %s): linkat(%d, %s, %d, %s, %x)", proc->pid, proc->name, olddir_fdnum, old_path, newdir_fdnum, new_path, flags);
 
     if (old_path == NULL || strlen(old_path) == 0) {
         errno = ENOENT;
@@ -741,7 +741,7 @@ int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
+    debug_print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
 
     struct vfs_node *parent = NULL, *node = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, &node, NULL)) {
@@ -765,7 +765,7 @@ int syscall_mkdirat(void *_, int dir_fdnum, const char *path, mode_t mode){
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): mkdirat(%d, %s, %04o)", proc->pid, proc->name, dir_fdnum, path, mode);
+    debug_print("syscall (%d %s): mkdirat(%d, %s, %04o)", proc->pid, proc->name, dir_fdnum, path, mode);
 
 	if (path == NULL || strlen(path) == 0) {
         errno = ENOENT;

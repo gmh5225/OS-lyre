@@ -58,8 +58,8 @@ void initramfs_init(void) {
 
     struct limine_file *module = modules->modules[0];
 
-    print("initramfs: Address=%lx, length=%lu\n", module->address, module->size);
-    print("initramfs: Unpacking...\n", module->address, module->size);
+    kernel_print("initramfs: address=%lx, length=%lu\n", module->address, module->size);
+    kernel_print("initramfs: Unpacking...\n", module->address, module->size);
 
     struct tar *current_file = (struct tar *)module->address;
     char *name_override = NULL;
@@ -120,27 +120,27 @@ void initramfs_init(void) {
 
         // switch (current_file->type) {
         //     case TAR_FILE_TYPE_HARD_LINK:
-        //         print("initramfs: Hard link '%s' to '%s', mode=%04o, uid=%lu, gid=%lu\n", name, link_name, mode, uid, gid);
+        //         kernel_print("initramfs: Hard link '%s' to '%s', mode=%04o, uid=%lu, gid=%lu\n", name, link_name, mode, uid, gid);
         //         break;
         //     case TAR_FILE_TYPE_SYMLINK:
-        //         print("initramfs: Symbolic link '%s' to '%s', mode=%04o, uid=%lu, gid=%lu\n", name, link_name, mode, uid, gid);
+        //         kernel_print("initramfs: Symbolic link '%s' to '%s', mode=%04o, uid=%lu, gid=%lu\n", name, link_name, mode, uid, gid);
         //         break;
         //     case TAR_FILE_TYPE_CHAR_DEV: {
         //         uint64_t dev_major = oct2int(current_file->dev_major, sizeof(current_file->dev_major));
         //         uint64_t dev_minor = oct2int(current_file->dev_minor, sizeof(current_file->dev_minor));
-        //         print("initramfs: Character device '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
+        //         kernel_print("initramfs: Character device '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
         //         break;
         //     }
         //     case TAR_FILE_TYPE_BLOCK_DEV: {
         //         uint64_t dev_major = oct2int(current_file->dev_major, sizeof(current_file->dev_major));
         //         uint64_t dev_minor = oct2int(current_file->dev_minor, sizeof(current_file->dev_minor));
-        //         print("initramfs: Block device '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
+        //         kernel_print("initramfs: Block device '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
         //         break;
         //     }
         //     case TAR_FILE_TYPE_FIFO: {
         //         uint64_t dev_major = oct2int(current_file->dev_major, sizeof(current_file->dev_major));
         //         uint64_t dev_minor = oct2int(current_file->dev_minor, sizeof(current_file->dev_minor));
-        //         print("initramfs: FIFO '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
+        //         kernel_print("initramfs: FIFO '%s', device=%lu:%lu, mode=%04o, uid=%lu, gid=%lu\n", name, dev_major, dev_minor, mode, uid, gid);
         //         break;
         //     }
         // }

@@ -33,7 +33,7 @@ void pmm_init(void) {
     for (size_t i = 0; i < memmap->entry_count; i++) {
         struct limine_memmap_entry *entry = entries[i];
 
-        print("pmm: Memory map entry: base=%lx, length=%lx, type=%lx\n",
+        kernel_print("pmm: Memory map entry: base=%lx, length=%lx, type=%lx\n",
             entry->base, entry->length, entry->type);
 
         if (entry->type != LIMINE_MEMMAP_USABLE && entry->type != LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE) {
@@ -50,8 +50,8 @@ void pmm_init(void) {
     total_page_count = highest_addr / PAGE_SIZE;
     size_t bitmap_size = ALIGN_UP(total_page_count / 8, PAGE_SIZE);
 
-    print("pmm: Highest address: %lx\n", highest_addr);
-    print("pmm: Bitmap size: %lu bytes\n", bitmap_size);
+    kernel_print("pmm: Highest address: %lx\n", highest_addr);
+    kernel_print("pmm: Bitmap size: %lu bytes\n", bitmap_size);
 
     // Find a hole for the bitmap in the memory map.
     for (size_t i = 0; i < memmap->entry_count; i++) {
@@ -88,7 +88,7 @@ void pmm_init(void) {
         }
     }
 
-    print("pmm: Free pages: %lu\n", free_pages);
+    kernel_print("pmm: Free pages: %lu\n", free_pages);
 }
 
 static void *inner_alloc(size_t pages, uint64_t limit) {

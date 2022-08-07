@@ -37,11 +37,11 @@ struct addr2range addr2range(struct pagemap *pagemap, uintptr_t virt) {
 }
 
 void mmap_list_ranges(struct pagemap *pagemap) {
-    print("Ranges for %lx:\n", pagemap);
+    kernel_print("Ranges for %lx:\n", pagemap);
 
     VECTOR_FOR_EACH(&pagemap->mmap_ranges, it,
         struct mmap_range_local *local_range = *it;
-        print("\tbase=%lx, length=%lx, offset=%lx\n", local_range->base, local_range->length, local_range->offset);
+        kernel_print("\tbase=%lx, length=%lx, offset=%lx\n", local_range->base, local_range->length, local_range->offset);
     );
 }
 
@@ -365,7 +365,7 @@ void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int f
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): mmap(%lx, %lx, %lx, %d, %ld)", proc->pid, proc->name, hint, length, flags, fdnum, offset);
+    debug_print("syscall (%d %s): mmap(%lx, %lx, %lx, %d, %ld)", proc->pid, proc->name, hint, length, flags, fdnum, offset);
 
     struct resource *res = NULL;
     if (fdnum != -1) {
@@ -388,7 +388,7 @@ int syscall_munmap(void *_, uintptr_t addr, size_t length) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): munmap(%lx, %lx)", proc->pid, proc->name, addr, length);
+    debug_print("syscall (%d %s): munmap(%lx, %lx)", proc->pid, proc->name, addr, length);
 
     return munmap(proc->pagemap, addr, length) ? 0 : -1;
 }

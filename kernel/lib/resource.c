@@ -276,7 +276,7 @@ int syscall_close(void *_, int fdnum) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): close(%d)", proc->pid, proc->name, fdnum);
+    debug_print("syscall (%d %s): close(%d)", proc->pid, proc->name, fdnum);
 
     return fdnum_close(proc, fdnum) ? 0 : -1;
 }
@@ -287,7 +287,7 @@ ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): read(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
+    debug_print("syscall (%d %s): read(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
@@ -312,7 +312,7 @@ ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, buf, count, count);
+    debug_print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, buf, count, count);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
@@ -337,7 +337,7 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): seek(%d, %ld, %d)", proc->pid, proc->name, fdnum, offset, whence);
+    debug_print("syscall (%d %s): seek(%d, %ld, %d)", proc->pid, proc->name, fdnum, offset, whence);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
@@ -391,7 +391,7 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): fcntl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
+    debug_print("syscall (%d %s): fcntl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
@@ -422,7 +422,7 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
             fd->description->flags = (int)arg;
             return 0;
         default:
-            print("fcntl: Unhandled request %lx\n", request);
+            debug_print("fcntl: Unhandled request %lx\n", request);
             errno = EINVAL;
             return -1;
     }
@@ -434,7 +434,7 @@ int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): ioctl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
+    debug_print("syscall (%d %s): ioctl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
@@ -452,7 +452,7 @@ int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): dup3(%d, %d, %x)", proc->pid, proc->name, old_fdnum, new_fdnum, flags);
+    debug_print("syscall (%d %s): dup3(%d, %d, %x)", proc->pid, proc->name, old_fdnum, new_fdnum, flags);
 
     return fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
 }
@@ -463,7 +463,7 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): fchmodat(%d, %s, %x, %x)", proc->pid, proc->name, dir_fdnum, path, mode, flags);
+    debug_print("syscall (%d %s): fchmodat(%d, %s, %x, %x)", proc->pid, proc->name, dir_fdnum, path, mode, flags);
 
     struct vfs_node *parent = NULL, *node = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, true, true, &parent, &node, NULL)) {
@@ -486,7 +486,7 @@ int syscall_ppoll(void *_, struct pollfd *fds, nfds_t nfds, const struct timespe
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): ppoll(%lx, %lu, %lx, %lx)", proc->pid, proc->name, fds, nfds, timeout, sigmask);
+    debug_print("syscall (%d %s): ppoll(%lx, %lu, %lx, %lx)", proc->pid, proc->name, fds, nfds, timeout, sigmask);
 
     int fd_count = 0, event_count = 0, ret = 0;
     int fd_nums[RLIMIT_NOFILE];

@@ -184,7 +184,7 @@ int syscall_pipe(void *_, int pipe_fdnums[static 2], int flags) {
     struct process *proc = thread->process;
     struct resource *pipe = pipe_create();
 
-    print("syscall (%d %s): pipe(%lx, %x)", proc->pid, proc->name, pipe_fdnums, flags);
+    debug_print("syscall (%d %s): pipe(%lx, %x)", proc->pid, proc->name, pipe_fdnums, flags);
 
     if (pipe == NULL) {
         return -1;

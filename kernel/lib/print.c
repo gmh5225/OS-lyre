@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <dev/char/serial.h>
+#include <dev/char/console.h>
 #include <lib/libc.h>
 #include <lib/lock.h>
 #include <lib/print.h>
@@ -282,40 +283,56 @@ size_t snprint(char *buffer, size_t size, const char *fmt, ...) {
     return ret;
 }
 
-void vprint(const char *fmt, va_list args) {
-    static spinlock_t lock = SPINLOCK_INIT;
+static spinlock_t kernel_print_lock = SPINLOCK_INIT;
+static spinlock_t debug_print_lock = SPINLOCK_INIT;
 
-    spinlock_acquire(&lock);
+void kernel_vprint(const char *fmt, va_list args) {
+    spinlock_acquire(&kernel_print_lock);
 
     char buffer[1024];
-    vsnprint(buffer, sizeof(buffer), fmt, args);
-    if (debug) {
-        serial_outstr(buffer);
-    }
+    size_t length = vsnprint(buffer, sizeof(buffer), fmt, args);
 
-    spinlock_release(&lock);
+    serial_outstr(buffer);
+    console_write(buffer, length);
+    spinlock_release(&kernel_print_lock);
 }
 
-void print(const char *fmt, ...) {
+void kernel_print(const char *fmt, ...) {
     va_list args;
-
     va_start(args, fmt);
-    vprint(fmt, args);
+    kernel_vprint(fmt, args);
     va_end(args);
+}
+
+void debug_vprint(const char *fmt, va_list args) {
+    if (debug) {
+        spinlock_acquire(&debug_print_lock);
+
+        char buffer[1024];
+        vsnprint(buffer, sizeof(buffer), fmt, args);
+        serial_outstr(buffer);
+        spinlock_release(&debug_print_lock);
+    }
+}
+
+void debug_print(const char *fmt, ...) {
+    if (debug) {
+        va_list args;
+        va_start(args, fmt);
+        debug_vprint(fmt, args);
+        va_end(args);
+    }
 }
 
 int syscall_debug(void *_, const char *str) {
     (void)_;
 
-    if (debug) {
-        serial_outstr(str);
-        serial_out('\n');
-    }
+    debug_print("%s\n", str);
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): debug(%lx)", proc->pid, proc->name, str);
+    debug_print("syscall (%d %s): debug(%lx)", proc->pid, proc->name, str);
 
     return 0;
 }

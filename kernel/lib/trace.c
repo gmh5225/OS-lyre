@@ -27,10 +27,10 @@ void trace_printaddr(uintptr_t address) {
     size_t offset;
     struct symbol sym;
     if (!trace_address(address, &offset, &sym)) {
-        print("  Failed to print address\n");
+        kernel_print("  Failed to print address\n");
         return;
     }
-    print("  [%016lx] <%s+0x%lx>\n", address, sym.name, offset);
+    kernel_print("  [%016lx] <%s+0x%lx>\n", address, sym.name, offset);
 }
 
 void trace_printstack(uintptr_t _base_ptr) {

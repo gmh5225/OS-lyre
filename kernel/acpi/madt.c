@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <lib/print.h>
 #include <lib/panic.h>
+#include <lib/misc.h>
 #include <lib/vector.h>
 #include <acpi/acpi.h>
 #include <acpi/madt.h>
@@ -26,30 +27,30 @@ void madt_init(void) {
 
     size_t offset = 0;
     for (;;) {
-        if (offset + sizeof(struct madt) - 1 >= madt->length) {
+        if (madt->length - sizeof(struct madt) - offset < 2) {
             break;
         }
 
         struct madt_header *header = (struct madt_header *)(madt->entries_data + offset);
         switch (header->id) {
             case 0:
-                print("madt: Found local APIC #%lu\n", madt_lapics.length);
+                kernel_print("madt: Found local APIC #%lu\n", madt_lapics.length);
                 VECTOR_PUSH_BACK(&madt_lapics, (struct madt_lapic *)header);
                 break;
             case 1:
-                print("madt: Found IO APIC #%lu\n", madt_io_apics.length);
+                kernel_print("madt: Found IO APIC #%lu\n", madt_io_apics.length);
                 VECTOR_PUSH_BACK(&madt_io_apics, (struct madt_io_apic *)header);
                 break;
             case 2:
-                print("madt: Found ISO #%lu\n", madt_isos.length);
+                kernel_print("madt: Found ISO #%lu\n", madt_isos.length);
                 VECTOR_PUSH_BACK(&madt_isos, (struct madt_iso *)header);
                 break;
             case 4:
-                print("madt: Found NMI #%lu\n", madt_nmis.length);
+                kernel_print("madt: Found NMI #%lu\n", madt_nmis.length);
                 VECTOR_PUSH_BACK(&madt_nmis, (struct madt_nmi *)header);
                 break;
         }
 
-        offset += header->length;
+        offset += MAX(header->length, 2);
     }
 }

@@ -87,7 +87,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     // SYSENTER
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
         if (cpu_local->bsp) {
-            print("cpu: Using SYSENTER\n");
+            kernel_print("cpu: Using SYSENTER\n");
         }
 
         wrmsr(0x174, 0x28); // CS
@@ -96,7 +96,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_XSAVE)) {
         if (cpu_local->bsp) {
-            print("fpu: xsave supported\n");
+            kernel_print("fpu: xsave supported\n");
         }
 
         // Enable XSAVE and x{get,set}bv
@@ -106,24 +106,24 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
         uint64_t xcr0 = 0;
         if (cpu_local->bsp) {
-            print("fpu: Saving x87 state using xsave\n");
+            kernel_print("fpu: Saving x87 state using xsave\n");
         }
         xcr0 |= (uint64_t)1 << 0;
         if (cpu_local->bsp) {
-            print("fpu: Saving SSE state using xsave\n");
+            kernel_print("fpu: Saving SSE state using xsave\n");
         }
         xcr0 |= (uint64_t)1 << 1;
 
         if (ecx & CPUID_AVX) {
             if (cpu_local->bsp) {
-                print("fpu: Saving AVX state using xsave\n");
+                kernel_print("fpu: Saving AVX state using xsave\n");
             }
             xcr0 |= (uint64_t)1 << 2;
         }
 
         if (cpuid(7, 0, &eax, &ebx, &ecx, &edx) && (ebx & CPUID_AVX512)) {
             if (cpu_local->bsp) {
-                print("fpu: Saving AVX-512 state using xsave\n");
+                kernel_print("fpu: Saving AVX-512 state using xsave\n");
             }
             xcr0 |= (uint64_t)1 << 5;
             xcr0 |= (uint64_t)1 << 6;
@@ -141,7 +141,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
         fpu_restore = xrstor;
     } else {
         if (cpu_local->bsp) {
-            print("fpu: Using legacy fxsave\n");
+            kernel_print("fpu: Using legacy fxsave\n");
         }
         fpu_storage_size = 512;
         fpu_save = fxsave;
@@ -152,7 +152,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     interrupt_toggle(true);
 
-    print("cpu: Processor #%u online!\n", cpu_number);
+    kernel_print("cpu: Processor #%u online!\n", cpu_number);
 
     cpus_started_i++;
 
@@ -166,7 +166,7 @@ void cpu_init(void) {
 
     ASSERT(smp_resp != NULL);
 
-    print("cpu: %u processors detected\n", smp_resp->cpu_count);
+    kernel_print("cpu: %u processors detected\n", smp_resp->cpu_count);
 
     for (size_t i = 0; i < smp_resp->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_resp->cpus[i];

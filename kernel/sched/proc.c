@@ -22,7 +22,7 @@ int syscall_uname(void *_, struct utsname *buffer) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): uname(%lx)", proc->pid, proc->name, buffer);
+    debug_print("syscall (%d %s): uname(%lx)", proc->pid, proc->name, buffer);
 
 	strncpy(buffer->sysname, "Lyre", sizeof(buffer->sysname));
 	strncpy(buffer->nodename, "lyre", sizeof(buffer->nodename));
@@ -37,7 +37,7 @@ int syscall_futex_wait(void *_, int *ptr, int expected) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): futex_wait(%lx, %d)", proc->pid, proc->name, ptr, expected);
+    debug_print("syscall (%d %s): futex_wait(%lx, %d)", proc->pid, proc->name, ptr, expected);
 
     if (*ptr != expected) {
         errno = EAGAIN;
@@ -71,7 +71,7 @@ int syscall_futex_wake(void *_, int *ptr) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): futex_wake(%lx)", proc->pid, proc->name, ptr);
+    debug_print("syscall (%d %s): futex_wake(%lx)", proc->pid, proc->name, ptr);
 
     // Make sure the page isn't demand paged
     *(volatile int *)ptr;
@@ -97,7 +97,7 @@ mode_t syscall_umask(void *_, mode_t mask) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): umask(%o)", proc->pid, proc->name, mask);
+    debug_print("syscall (%d %s): umask(%o)", proc->pid, proc->name, mask);
 
     mode_t old_mask = proc->umask;
     proc->umask = mask;

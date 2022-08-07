@@ -41,7 +41,7 @@ struct console {
 
 static spinlock_t read_lock;
 static struct event console_event;
-static struct console *console_res;
+static struct console *console_res = NULL;
 
 static const char convtab_capslock[] = {
     '\0', '\e', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b', '\t',
@@ -482,4 +482,13 @@ void console_init(void) {
     devtmpfs_add_device((struct resource *)console_res, "console");
 
     sched_new_kernel_thread(keyboard_handler, NULL, true);
+}
+
+void console_write(const char *buf, size_t length) {
+    if (console_res != NULL) {
+        console_res->write((struct resource *)console_res, NULL, buf, 0, length);
+    } else {
+        struct limine_terminal_response *terminal_resp = terminal_request.response;
+        terminal_resp->write(terminal_resp->terminals[0], buf, length);
+    }
 }

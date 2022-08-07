@@ -50,7 +50,7 @@ newline:
     mov $newline, %rdi
     mov 16(%rsp), %rsi
     mov 24(%rsp), %rdx
-    call print
+    call debug_print
     cli
 
 1:

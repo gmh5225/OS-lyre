@@ -52,9 +52,9 @@ void acpi_init(void) {
         rsdt = (struct rsdt *)((uint64_t)rsdp->rsdt_addr + VMM_HIGHER_HALF);
     }
 
-    print("acpi: Revision: %lu\n", rsdp->revision);
-    print("acpi: Uses XSDT? %s\n", use_xsdt() ? "true" : "false");
-    print("acpi: RSDT at %lx\n", rsdt);
+    kernel_print("acpi: Revision: %lu\n", rsdp->revision);
+    kernel_print("acpi: Uses XSDT? %s\n", use_xsdt() ? "true" : "false");
+    kernel_print("acpi: RSDT at %lx\n", rsdt);
 
     struct sdt *fadt = acpi_find_sdt("FACP", 0);
     if (fadt != NULL && fadt->length >= 116) {
@@ -88,10 +88,10 @@ void *acpi_find_sdt(const char signature[static 4], size_t index) {
             continue;
         }
 
-        print("acpi: Found '%S' at %lx\n", signature, 4, sdt);
+        kernel_print("acpi: Found '%S' at %lx, length=%lu\n", signature, 4, sdt, sdt->length);
         return sdt;
     }
 
-    print("acpi: Could not find '%S'\n", signature, 4);
+    kernel_print("acpi: Could not find '%S'\n", signature, 4);
     return NULL;
 }

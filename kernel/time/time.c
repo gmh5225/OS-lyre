@@ -104,7 +104,7 @@ int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    print("syscall (%d %s): sleep(%lx, %lx)", proc->pid, proc->name, duration, remaining);
+    debug_print("syscall (%d %s): sleep(%lx, %lx)", proc->pid, proc->name, duration, remaining);
 
     if (duration->tv_sec == 0 && duration->tv_nsec == 0) {
         return 0;
