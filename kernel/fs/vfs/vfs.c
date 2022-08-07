@@ -363,10 +363,10 @@ size_t vfs_pathname(struct vfs_node *node, char *buffer, size_t len) {
 
 bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bool enoent_error,
                             struct vfs_node **parent, struct vfs_node **node, char **basename) {
-	if (!empty_path && (path == NULL || strlen(path) == 0)) {
+    if (!empty_path && (path == NULL || strlen(path) == 0)) {
         errno = ENOENT;
-		return false;
-	}
+        return false;
+    }
 
     struct vfs_node *parent_node = get_parent_dir(dir_fdnum, path);
     if (parent == NULL) {
@@ -767,10 +767,10 @@ int syscall_mkdirat(void *_, int dir_fdnum, const char *path, mode_t mode){
 
     debug_print("syscall (%d %s): mkdirat(%d, %s, %04o)", proc->pid, proc->name, dir_fdnum, path, mode);
 
-	if (path == NULL || strlen(path) == 0) {
+    if (path == NULL || strlen(path) == 0) {
         errno = ENOENT;
-		return -1;
-	}
+        return -1;
+    }
 
     struct vfs_node *parent = NULL;
     char *basename = NULL;

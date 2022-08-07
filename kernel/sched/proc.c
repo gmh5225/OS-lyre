@@ -24,10 +24,10 @@ int syscall_uname(void *_, struct utsname *buffer) {
 
     debug_print("syscall (%d %s): uname(%lx)", proc->pid, proc->name, buffer);
 
-	strncpy(buffer->sysname, "Lyre", sizeof(buffer->sysname));
-	strncpy(buffer->nodename, "lyre", sizeof(buffer->nodename));
-	strncpy(buffer->release, "0.0.1", sizeof(buffer->release));
-	strncpy(buffer->version, __DATE__ " " __TIME__, sizeof(buffer->version));
+    strncpy(buffer->sysname, "Lyre", sizeof(buffer->sysname));
+    strncpy(buffer->nodename, "lyre", sizeof(buffer->nodename));
+    strncpy(buffer->release, "0.0.1", sizeof(buffer->release));
+    strncpy(buffer->version, __DATE__ " " __TIME__, sizeof(buffer->version));
     return 0;
 }
 

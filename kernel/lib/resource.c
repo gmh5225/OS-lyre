@@ -180,9 +180,9 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
     }
 
     if (specific && old_fdnum == new_fdnum && old_proc == new_proc) {
-		errno = EINVAL;
-		return -1;
-	}
+        errno = EINVAL;
+        return -1;
+    }
 
     struct f_descriptor *old_fd = fd_from_fdnum(old_proc, old_fdnum);
     if (old_fd == NULL) {

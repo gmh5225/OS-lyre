@@ -78,31 +78,31 @@ void streams_init(void) {
     struct resource *null = resource_create(sizeof(struct resource));
     null->read = null_read;
     null->write = null_write;
-	null->stat.st_size = 0;
-	null->stat.st_blocks = 0;
-	null->stat.st_blksize = 4096;
-	null->stat.st_rdev = resource_create_dev_id();
-	null->stat.st_mode = 0666 | S_IFCHR;
+    null->stat.st_size = 0;
+    null->stat.st_blocks = 0;
+    null->stat.st_blksize = 4096;
+    null->stat.st_rdev = resource_create_dev_id();
+    null->stat.st_mode = 0666 | S_IFCHR;
     devtmpfs_add_device(null, "null");
 
     struct resource *full = resource_create(sizeof(struct resource));
     full->read = full_read;
     full->write = full_write;
-	full->stat.st_size = 0;
-	full->stat.st_blocks = 0;
-	full->stat.st_blksize = 4096;
-	full->stat.st_rdev = resource_create_dev_id();
-	full->stat.st_mode = 0666 | S_IFCHR;
+    full->stat.st_size = 0;
+    full->stat.st_blocks = 0;
+    full->stat.st_blksize = 4096;
+    full->stat.st_rdev = resource_create_dev_id();
+    full->stat.st_mode = 0666 | S_IFCHR;
     devtmpfs_add_device(full, "full");
 
     struct resource *zero = resource_create(sizeof(struct resource));
     zero->read = zero_read;
     zero->write = zero_write;
-	zero->stat.st_size = 0;
-	zero->stat.st_blocks = 0;
-	zero->stat.st_blksize = 4096;
-	zero->stat.st_rdev = resource_create_dev_id();
-	zero->stat.st_mode = 0666 | S_IFCHR;
+    zero->stat.st_size = 0;
+    zero->stat.st_blocks = 0;
+    zero->stat.st_blksize = 4096;
+    zero->stat.st_rdev = resource_create_dev_id();
+    zero->stat.st_mode = 0666 | S_IFCHR;
     devtmpfs_add_device(zero, "zero");
 
     struct resource *urandom = resource_create(sizeof(struct resource));
