@@ -9,8 +9,12 @@
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
 #include <abi-bits/stat.h>
+#include <abi-bits/signal.h>
 #include <sys/ioctl.h>
+#include <sys/poll.h>
+#include <sys/resource.h>
 #include <fs/vfs/vfs.h>
+#include <time/time.h>
 
 int resource_default_ioctl(struct resource *this, struct f_description *description, uint64_t request, uint64_t arg) {
     (void)this;
@@ -474,4 +478,115 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
     target->resource->stat.st_mode &= ~0777;
     target->resource->stat.st_mode |= mode & 0777;
     return 0;
+}
+
+int syscall_ppoll(void *_, struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, sigset_t *sigmask) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    print("syscall (%d %s): ppoll(%lx, %lu, %lx, %lx)", proc->pid, proc->name, fds, nfds, timeout, sigmask);
+
+    int fd_count = 0, event_count = 0, ret = 0;
+    int fd_nums[RLIMIT_NOFILE];
+    struct f_descriptor *fd_list[RLIMIT_NOFILE];
+    struct event *events[RLIMIT_NOFILE];
+    struct timer *timer = NULL;
+
+    // XXX no signals yet
+
+    if (nfds > RLIMIT_NOFILE) {
+        ret = -1;
+        errno = EINVAL;
+        goto cleanup;
+    }
+
+    for (size_t i = 0; i < nfds; i++) {
+        struct pollfd *pollfd = &fds[i];
+
+        pollfd->revents = 0;
+        if (pollfd->fd < 0) {
+            continue;
+        }
+
+        struct f_descriptor *fd = fd_from_fdnum(proc, pollfd->fd);
+        if (fd == NULL) {
+            pollfd->revents = POLLNVAL;
+            ret++;
+            continue;
+        }
+
+        struct resource *res = fd->description->res;
+        int status = res->status;
+
+        if (((uint16_t)status & pollfd->events) != 0) {
+            pollfd->revents = (uint16_t)status & pollfd->events;
+            ret++;
+            res->unref(res, fd->description);
+            continue;
+        }
+
+        fd_list[fd_count] = fd;
+        fd_nums[fd_count] = i;
+        events[event_count] = &res->event;
+
+        fd_count++;
+        event_count++;
+    }
+
+    if (ret != 0) {
+        goto cleanup;
+    }
+
+    if (timeout != NULL) {
+        timer = timer_new(*timeout);
+        if (timer == NULL) {
+            errno = ENOMEM;
+            ret = -1;
+            goto cleanup;
+        }
+
+        events[event_count++] = &timer->event;
+    }
+
+    for (;;) {
+        ssize_t which = event_await(events, event_count, true);
+        if (which == -1) {
+            ret = -1;
+            errno = EINTR;
+            goto cleanup;
+        }
+
+        if (timer != NULL && which == event_count - 1) {
+            ret = 0;
+            goto cleanup;
+        }
+
+        struct pollfd *pollfd = &fds[fd_nums[which]];
+        struct f_descriptor *fd = fd_list[which];
+        struct resource *res = fd->description->res;
+
+        int status = res->status;
+        if (((uint16_t)status & pollfd->events) != 0) {
+            pollfd->revents = (uint16_t)status & pollfd->events;
+            ret++;
+            break;
+        }
+    }
+
+cleanup:
+    for (int i = 0; i < fd_count; i++) {
+        struct f_descriptor *fd = fd_list[i];
+        struct resource *res = fd->description->res;
+
+        res->unref(res, fd->description);
+    }
+
+    if (timer != NULL) {
+        timer_disarm(timer);
+        free(timer);
+    }
+
+    return ret;
 }

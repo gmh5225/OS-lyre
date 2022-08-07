@@ -34,6 +34,7 @@ syscall_table:
     .quad syscall_mkdirat     // 29
     .quad syscall_fchmodat    // 30
     .quad syscall_sleep       // 31
+    .quad syscall_ppoll       // 32
 syscall_table_end:
 
 .global syscall_count

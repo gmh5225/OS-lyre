@@ -40,7 +40,7 @@ index 5cf1f7b..d9f8724 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..b2e1b96 100644
+index 877ff63..a25538a 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,21 @@
@@ -104,7 +104,7 @@ index 877ff63..b2e1b96 100644
  	switch (optional_action) {
  		case TCSANOW:
  			optional_action = TCSETS; break;
-@@ -73,139 +66,44 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
+@@ -73,18 +66,18 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
  }
  
  int sys_tcb_set(void *pointer) {
@@ -113,35 +113,32 @@ index 877ff63..b2e1b96 100644
  	return 0;
  }
  
- int sys_ppoll(struct pollfd *fds, int nfds, const struct timespec *timeout,
+-int sys_ppoll(struct pollfd *fds, int nfds, const struct timespec *timeout,
 -		const sigset_t *sigmask, int *num_events) {
 -	__syscall_ret ret = __syscall(36, fds, nfds, timeout, sigmask);
-+		const sigset_t *sigmask, int *num_events) STUB_ONLY
++int sys_ppoll(struct pollfd *fds, int nfds, const struct timespec *timeout, const sigset_t *sigmask, int *num_events) {
++	__syscall_ret ret = __syscall(SYS_ppoll, fds, nfds, timeout, sigmask);
++	int ret_value = (int)ret.ret;
  
 -	if (ret.errno != 0)
--		return ret.errno;
--
++	if (ret_value == -1)
+ 		return ret.errno;
+ 
 -	*num_events = (int)ret.ret;
--	return 0;
--}
--
--int sys_poll(struct pollfd *fds, nfds_t count, int timeout, int *num_events) {
--	struct timespec ts;
--	ts.tv_sec = timeout / 1000;
--	ts.tv_nsec = (timeout % 1000) * 1000000;
--	return sys_ppoll(fds, count, &ts, NULL, num_events);
--}
-+int sys_poll(struct pollfd *fds, nfds_t count, int timeout, int *num_events) STUB_ONLY
++	*num_events = ret_value;
+ 	return 0;
+ }
+ 
+@@ -96,67 +89,48 @@ int sys_poll(struct pollfd *fds, nfds_t count, int timeout, int *num_events) {
+ }
  
  int sys_epoll_pwait(int epfd, struct epoll_event *ev, int n,
 -					int timeout, const sigset_t *sigmask, int *raised) {
 -	__syscall_ret ret = __syscall(49, epfd, ev, n, timeout, sigmask);
-+					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_epoll_create(int flags, int *fd) STUB_ONLY
- 
+-
 -	*raised = (int)ret.ret;
 -	return 0;
 -}
@@ -155,10 +152,12 @@ index 877ff63..b2e1b96 100644
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
--
++					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
+ 
 -int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) {
 -	__syscall_ret ret = __syscall(47, epfd, mode, fd, ev);
--
++int sys_epoll_create(int flags, int *fd) STUB_ONLY
+ 
 -	return ret.errno;
 -}
 +int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) STUB_ONLY
@@ -168,60 +167,79 @@ index 877ff63..b2e1b96 100644
  		fd_set *except_set, const struct timespec *timeout,
  		const sigset_t *sigmask, int *num_events) {
 -	struct pollfd *fds = (struct pollfd *)malloc(nfds * sizeof(struct pollfd));
--
--	for (int i = 0; i < nfds; i++) {
--		struct pollfd *fd = &fds[i];
++	struct pollfd *fds = (struct pollfd *)calloc(nfds, sizeof(struct pollfd));
++	if (fds == NULL) {
++		return ENOMEM;
++	}
+ 
+ 	for (int i = 0; i < nfds; i++) {
+ 		struct pollfd *fd = &fds[i];
 -		memset(fd, 0, sizeof(struct pollfd));
--
+ 
 -		if (read_set && FD_ISSET(i, read_set))
 -			fd->events |= POLLIN; // TODO: Additional events.
 -		if (write_set && FD_ISSET(i, write_set))
 -			fd->events |= POLLOUT; // TODO: Additional events.
 -		if (except_set && FD_ISSET(i, except_set))
--			fd->events |= POLLPRI;
++		if (read_set && FD_ISSET(i, read_set)) {
++			fd->events |= POLLIN;
++		}
++		if (write_set && FD_ISSET(i, write_set)) {
++			fd->events |= POLLOUT;
++		}
++		if (except_set && FD_ISSET(i, except_set)) {
+ 			fd->events |= POLLPRI;
++		}
+ 
+ 		if (!fd->events) {
+ 			fd->fd = -1;
+ 			continue;
+ 		}
 -
--		if (!fd->events) {
--			fd->fd = -1;
--			continue;
--		}
--
--		fd->fd = i;
--	}
--
+ 		fd->fd = i;
+ 	}
+ 
 -	int e = sys_ppoll(fds, nfds, timeout, sigmask, num_events);
 -
 -	if (e != 0) {
--		free(fds);
++	int ret = sys_ppoll(fds, nfds, timeout, sigmask, num_events);
++	if (ret != 0) {
+ 		free(fds);
 -		return e;
--	}
--
++		return ret;
+ 	}
+ 
 -	fd_set res_read_set;
 -	fd_set res_write_set;
 -	fd_set res_except_set;
--	FD_ZERO(&res_read_set);
--	FD_ZERO(&res_write_set);
--	FD_ZERO(&res_except_set);
--
--	for (int i = 0; i < nfds; i++) {
--		struct pollfd *fd = &fds[i];
--
++	fd_set res_read_set, res_write_set, res_except_set;
+ 	FD_ZERO(&res_read_set);
+ 	FD_ZERO(&res_write_set);
+ 	FD_ZERO(&res_except_set);
+@@ -164,48 +138,45 @@ int sys_pselect(int nfds, fd_set *read_set, fd_set *write_set,
+ 	for (int i = 0; i < nfds; i++) {
+ 		struct pollfd *fd = &fds[i];
+ 
 -		if (read_set && FD_ISSET(i, read_set)
 -				&& fd->revents & (POLLIN | POLLERR | POLLHUP)) {
--			FD_SET(i, &res_read_set);
--		}
++		if (read_set && FD_ISSET(i, read_set) && (fd->revents & (POLLIN | POLLERR | POLLHUP)) != 0) {
+ 			FD_SET(i, &res_read_set);
+ 		}
 -
 -		if (write_set && FD_ISSET(i, write_set)
 -				&& fd->revents & (POLLOUT | POLLERR | POLLHUP)) {
--			FD_SET(i, &res_write_set);
--		}
++		if (write_set && FD_ISSET(i, write_set) && (fd->revents & (POLLOUT | POLLERR | POLLHUP)) != 0) {
+ 			FD_SET(i, &res_write_set);
+ 		}
 -
 -		if (except_set && FD_ISSET(i, except_set)
 -				&& fd->revents & POLLPRI) {
--			FD_SET(i, &res_except_set);
--		}
--	}
--
--	free(fds);
++		if (except_set && FD_ISSET(i, except_set) && (fd->revents & POLLPRI) != 0) {
+ 			FD_SET(i, &res_except_set);
+ 		}
+ 	}
+ 
+ 	free(fds);
 -
 -	if (read_set)
 -		memcpy(read_set, &res_read_set, sizeof(fd_set));
@@ -229,8 +247,16 @@ index 877ff63..b2e1b96 100644
 -		memcpy(write_set, &res_write_set, sizeof(fd_set));
 -	if (except_set)
 -		memcpy(except_set, &res_except_set, sizeof(fd_set));
--
-+    *num_events = 0;
++	if (read_set) {
++		*read_set = res_read_set;
++	}
++	if (write_set) {
++		*write_set = res_write_set;
++	}
++	if (except_set) {
++		*except_set = res_except_set;
++	}
+ 
  	return 0;
  }
  #endif
@@ -255,7 +281,7 @@ index 877ff63..b2e1b96 100644
  		return ret.errno;
  
  	int num_woken = ret.ret;
-@@ -214,20 +112,12 @@ int sys_futex_wake(int *pointer) {
+@@ -214,20 +185,12 @@ int sys_futex_wake(int *pointer) {
  	return num_woken;
  }
  
@@ -279,7 +305,7 @@ index 877ff63..b2e1b96 100644
  		return ret.errno;
  
  	*result = (int)ret.ret;
-@@ -245,18 +135,18 @@ int sys_isatty(int fd) {
+@@ -245,18 +208,18 @@ int sys_isatty(int fd) {
  }
  
  int sys_getcwd(char *buffer, size_t size) {
@@ -302,7 +328,7 @@ index 877ff63..b2e1b96 100644
  		return ret.errno;
  
  	*fd = (int)ret.ret;
-@@ -268,75 +158,108 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
+@@ -268,75 +231,108 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
  }
  
  int sys_open_dir(const char *path, int *handle) {
@@ -443,7 +469,7 @@ index 877ff63..b2e1b96 100644
  	return 0;
  }
  
-@@ -345,186 +268,138 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +341,138 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -684,7 +710,7 @@ index 877ff63..b2e1b96 100644
  	return 0;
  }
  
-@@ -533,22 +408,18 @@ int sys_access(const char *path, int mode) {
+@@ -533,22 +481,18 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -711,7 +737,7 @@ index 877ff63..b2e1b96 100644
  	return 0;
  }
  
-@@ -557,332 +428,161 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +501,161 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
@@ -742,26 +768,25 @@ index 877ff63..b2e1b96 100644
 -
 -int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
-+int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
-+int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
 -
 -int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
 -	__syscall_ret ret = __syscall(61, fd);
--
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
 -	*newfd = ret.ret;
 -
 -	if(addr_ptr && addr_length) {
@@ -769,7 +794,8 @@ index 877ff63..b2e1b96 100644
 -			return e;
 -		}
 -	}
--
++int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+ 
 -	return 0;
 -}
 +int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) STUB_ONLY
@@ -846,39 +872,39 @@ index 877ff63..b2e1b96 100644
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++		const void *buffer, socklen_t size) STUB_ONLY
+ 
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
--
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 
 -	*actual_length = max_addr_length;
 -	return 0;
 -}
--
++int sys_listen(int fd, int backlog) STUB_ONLY
+ 
 -int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
 -
 -	return ret.errno;
 -}
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -int sys_inotify_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(42, flags);
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_listen(int fd, int backlog) STUB_ONLY
- 
+-
 -	*fd = (int)ret.ret;
 -	return 0;
 -}
@@ -1003,10 +1029,9 @@ index 877ff63..b2e1b96 100644
  	}
 -
 -	*ret_pid = (pid_t)ret.ret;
-+	*ret_pid = ret_value;
- 	return 0;
- }
- 
+-	return 0;
+-}
+-
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
 -
@@ -1016,24 +1041,25 @@ index 877ff63..b2e1b96 100644
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
- 
+-
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+-
+-	if (ret.errno != 0)
+-		return ret.errno;
+-
++	*ret_pid = ret_value;
+ 	return 0;
+ }
+ 
+-int sys_umount2(const char *target, int flags) {
+-	__syscall_ret ret = __syscall(44, target, flags);
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
  
 -	if (ret.errno != 0)
 -		return ret.errno;
--
--	return 0;
--}
--
--int sys_umount2(const char *target, int flags) {
--	__syscall_ret ret = __syscall(44, target, flags);
--
--	if (ret.errno != 0)
--		return ret.errno;
--
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+ 
 -	return 0;
 -}
 +int sys_umount2(const char *target, int flags) STUB_ONLY
@@ -1120,10 +1146,10 @@ index 877ff63..b2e1b96 100644
  
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-workdir/sysdeps/vinix/generic/syscall.h
-index f421220..7b7728b 100644
+index f421220..9200566 100644
 --- mlibc-clean/sysdeps/vinix/generic/syscall.h
 +++ mlibc-workdir/sysdeps/vinix/generic/syscall.h
-@@ -1,16 +1,90 @@
+@@ -1,16 +1,91 @@
  #include <stdint.h>
  
 +#define SYS_debug 0
@@ -1158,6 +1184,7 @@ index f421220..7b7728b 100644
 +#define SYS_mkdirat 29
 +#define SYS_fchmodat 30
 +#define SYS_sleep 31
++#define SYS_ppoll 32
 +
  struct __syscall_ret {
  	uint64_t ret;
