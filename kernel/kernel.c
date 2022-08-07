@@ -7,6 +7,7 @@
 #include <dev/ps2.h>
 #include <lib/elf.h>
 #include <lib/print.h>
+#include <lib/random.h>
 #include <mm/pmm.h>
 #include <mm/slab.h>
 #include <mm/vmm.h>
@@ -50,6 +51,7 @@ void _start(void) {
 }
 
 void kmain_thread(void) {
+    random_init();
     vfs_init();
     tmpfs_init();
     devtmpfs_init();

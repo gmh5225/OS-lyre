@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <lib/errno.h>
 #include <lib/libc.h>
+#include <lib/random.h>
 #include <lib/resource.h>
 #include <fs/devtmpfs.h>
 #include <dev/char/streams.h>
@@ -57,6 +58,22 @@ static ssize_t zero_write(struct resource *this, struct f_description *descripti
     return count;
 }
 
+static ssize_t urandom_read(struct resource *this, struct f_description *description, void *buf, off_t offset, size_t count) {
+    (void)this;
+    (void)description;
+    (void)offset;
+    random_fill(buf, count);
+    return count;
+}
+
+static ssize_t urandom_write(struct resource *this, struct f_description *description, const void *buf, off_t offset, size_t count) {
+    (void)this;
+    (void)description;
+    (void)buf;
+    (void)offset;
+    return count;
+}
+
 void streams_init(void) {
     struct resource *null = resource_create(sizeof(struct resource));
     null->read = null_read;
@@ -87,4 +104,14 @@ void streams_init(void) {
 	zero->stat.st_rdev = resource_create_dev_id();
 	zero->stat.st_mode = 0666 | S_IFCHR;
     devtmpfs_add_device(zero, "zero");
+
+    struct resource *urandom = resource_create(sizeof(struct resource));
+    urandom->read = urandom_read;
+    urandom->write = urandom_write;
+    urandom->stat.st_size = 0;
+    urandom->stat.st_blocks = 0;
+    urandom->stat.st_blksize = 4096;
+    urandom->stat.st_rdev = resource_create_dev_id();
+    urandom->stat.st_mode = 0666 | S_IFCHR;
+    devtmpfs_add_device(urandom, "urandom");
 }
