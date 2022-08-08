@@ -1,8 +1,8 @@
 name=binutils
-version=2.38
+version=2.39
 source_method=git
 clone_url="https://sourceware.org/git/binutils-gdb.git"
-tag="binutils-2_38"
+tag="binutils-2_39"
 hostdeps="automake"
 
 regenerate() {
