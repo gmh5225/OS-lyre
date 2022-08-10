@@ -30,6 +30,8 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
         goto halt;
     }
 
+    uint64_t cr2 = read_cr2();
+    uint64_t cr3 = read_cr3();
     kernel_print("CPU context at panic:\n");
     kernel_print("  RAX=%016lx  RBX=%016lx\n"
                  "  RCX=%016lx  RDX=%016lx\n"
@@ -41,6 +43,7 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
                  "  R14=%016lx  R15=%016lx\n"
                  "  RIP=%016lx  RFLAGS=%08lx\n"
                  "  CS=%04lx DS=%04lx ES=%04lx SS=%04lx\n"
+                 "  CR2=%016lx  CR3=%016lx\n"
                  "  ERR=%016lx",
                  ctx->rax, ctx->rbx, ctx->rcx, ctx->rdx,
                  ctx->rsi, ctx->rdi, ctx->rbp, ctx->rsp,
@@ -48,12 +51,12 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
                  ctx->r12, ctx->r13, ctx->r14, ctx->r15,
                  ctx->rip, ctx->rflags,
                  ctx->cs, ctx->ds, ctx->es, ctx->ss,
-                 ctx->err);
+                 cr2, cr3, ctx->err);
 
     kernel_print("\n\n");
 
 halt:
-    if (trace && ctx != NULL && ctx->cs == 0x28) {
+    if (trace && (ctx == NULL || ctx->cs == 0x28)) {
         kernel_print("Stacktrace follows:\n");
         trace_printstack(ctx == NULL ? 0 : ctx->rbp);
         kernel_print("\n");
