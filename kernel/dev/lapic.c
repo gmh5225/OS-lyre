@@ -35,12 +35,10 @@ static inline void lapic_timer_stop(void) {
     lapic_write(LAPIC_REG_LVT_TIMER, 1 << 16);
 }
 
-static void (*timer_function)(int, struct cpu_ctx *) = NULL;
-
 static void lapic_timer_handler(int vector, struct cpu_ctx *ctx) {
     lapic_eoi();
-    if (timer_function != NULL) {
-        timer_function(vector, ctx);
+    if (this_cpu()->timer_function != NULL) {
+        this_cpu()->timer_function(vector, ctx);
     }
 }
 
@@ -69,7 +67,9 @@ void lapic_eoi(void) {
 void lapic_timer_oneshot(uint32_t us, void *function) {
     lapic_timer_stop();
 
-    timer_function = function;
+    bool old_int_state = interrupt_toggle(false);
+    this_cpu()->timer_function = function;
+    interrupt_toggle(old_int_state);
 
     uint32_t ticks = us * (this_cpu()->lapic_freq / 1000000);
     lapic_write(LAPIC_REG_LVT_TIMER, timer_vec);

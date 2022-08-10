@@ -3,14 +3,16 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdnoreturn.h>
+#include <dev/lapic.h>
 #include <lib/panic.h>
 #include <lib/print.h>
 #include <lib/trace.h>
 #include <sys/cpu.h>
+#include <sys/idt.h>
 
 noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
-    // TODO replace with some abort IPI and whatnot
     interrupt_toggle(false);
+    lapic_send_ipi(0, IDT_PANIC_IPI_VEC | 0b10 << 18);
 
     kernel_print("\n\n*** LYRE PANIC ***\n\n");
     kernel_print("The Lyre kernel panicked with the following message:\n  ");

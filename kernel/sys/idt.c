@@ -76,11 +76,14 @@ void idt_reload(void) {
 extern void *isr_thunks[];
 
 extern void syscall_ud_entry(void);
+extern void panic_ipi_entry(void);
 
 void idt_init(void) {
     for (size_t i = 0; i < 256; i++) {
         if (i == 0x6) {
             register_handler(i, syscall_ud_entry, 0x8e);
+        } else if (i == IDT_PANIC_IPI_VEC) {
+            register_handler(i, panic_ipi_entry, 0x8e);
         } else {
             register_handler(i, isr_thunks[i], 0x8e);
         }

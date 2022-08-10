@@ -14,7 +14,7 @@ static void int_events_handler(uint8_t vector, struct cpu_ctx *ctx) {
 }
 
 void int_events_init(void) {
-    for (size_t i = 32; i < 256; i++) {
+    for (size_t i = 32; i < 0xef; i++) {
         isr[i] = int_events_handler;
     }
 }

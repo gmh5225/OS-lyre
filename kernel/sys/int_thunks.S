@@ -97,3 +97,9 @@ isr_thunks:
     THUNK %i
     .set i,i+1
 .endr
+
+.global panic_ipi_entry
+panic_ipi_entry:
+    cli
+    hlt
+    jmp panic_ipi_entry
