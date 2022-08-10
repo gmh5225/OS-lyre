@@ -23,6 +23,7 @@ jobs:
       - name: Patch mlibc for Lyre
         run: |
           cd mlibc
+          git apply ../patches/mlibc/*
           for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done
           for file in $(find . -type f); do sed -i 's/VINIX/LYRE/g' "$file"; done
           for file in $(find . -type f); do sed -i 's/Vinix/Lyre/g' "$file"; done
