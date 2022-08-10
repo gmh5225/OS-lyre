@@ -16,9 +16,9 @@ static spinlock_t vfs_lock = SPINLOCK_INIT;
 
 struct vfs_node *vfs_create_node(struct vfs_filesystem *fs, struct vfs_node *parent,
                                  const char *name, bool dir) {
-    struct vfs_node *node = ALLOC(struct vfs_node);
+    struct vfs_node *node = ALLOC(struct vfs_node, ALLOC_RESOURCE);
 
-    node->name = alloc(strlen(name) + 1);
+    node->name = alloc(strlen(name) + 1, ALLOC_STRING);
     strcpy(node->name, name);
 
     node->parent = parent;
@@ -105,7 +105,7 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
 
         bool last = index == path_len;
 
-        char *elem_str = alloc(elem_len + 1);
+        char *elem_str = alloc(elem_len + 1, ALLOC_STRING);
         memcpy(elem_str, elem, elem_len);
 
         current_node = reduce_node(current_node, false);
@@ -207,7 +207,7 @@ struct vfs_node *vfs_get_node(struct vfs_node *parent, const char *path, bool fo
 
 cleanup:
     if (r.basename != NULL) {
-        free(r.basename);
+        free(r.basename, strlen(r.basename) + 1, ALLOC_STRING);
     }
     spinlock_release(&vfs_lock);
     return ret;
@@ -231,7 +231,7 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
         struct path2node_res rr = path2node(parent, source);
         source_node = rr.target;
         if (rr.basename != NULL) {
-            free(rr.basename);
+            free(rr.basename, strlen(rr.basename) + 1, ALLOC_STRING);
         }
         if (source_node == NULL) {
             goto cleanup;
@@ -271,7 +271,7 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
 
 cleanup:
     if (r.basename != NULL) {
-        free(r.basename);
+        free(r.basename, strlen(r.basename) + 1, ALLOC_STRING);
     }
     spinlock_release(&vfs_lock);
     return ret;
@@ -305,7 +305,7 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
 
 cleanup:
     if (r.basename != NULL) {
-        free(r.basename);
+        free(r.basename, strlen(r.basename) + 1, ALLOC_STRING);
     }
     spinlock_release(&vfs_lock);
     return ret;
@@ -340,7 +340,7 @@ struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode)
 
 cleanup:
     if (r.basename != NULL) {
-        free(r.basename);
+        free(r.basename, strlen(r.basename) + 1, ALLOC_STRING);
     }
     spinlock_release(&vfs_lock);
     return ret;

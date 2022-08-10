@@ -87,5 +87,6 @@ void kmain_thread(void) {
     sched_new_user_thread(bash_proc, (void *)ld_auxv.at_entry,
                           NULL, NULL, argv, envp, &bash_auxv, true);
 
+    alloc_dump_info();
     sched_dequeue_and_die();
 }

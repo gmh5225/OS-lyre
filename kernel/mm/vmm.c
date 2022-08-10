@@ -52,7 +52,7 @@ static uint64_t *get_next_level(uint64_t *top_level, size_t idx, bool allocate) 
 void vmm_init(void) {
     ASSERT(kaddr_request.response != NULL);
 
-    vmm_kernel_pagemap = ALLOC(struct pagemap);
+    vmm_kernel_pagemap = ALLOC(struct pagemap, ALLOC_PAGEMAP);
     vmm_kernel_pagemap->lock = (typeof(vmm_kernel_pagemap->lock))SMARTLOCK_INIT;
     vmm_kernel_pagemap->top_level = pmm_alloc(1);
 
@@ -117,7 +117,7 @@ void vmm_init(void) {
 }
 
 struct pagemap *vmm_new_pagemap(void) {
-    struct pagemap *pagemap = ALLOC(struct pagemap);
+    struct pagemap *pagemap = ALLOC(struct pagemap, ALLOC_PAGEMAP);
     if (pagemap == NULL) {
         errno = ENOMEM;
         goto cleanup;
@@ -139,7 +139,7 @@ struct pagemap *vmm_new_pagemap(void) {
 
 cleanup:
     if (pagemap != NULL) {
-        free(pagemap);
+        FREE(pagemap, ALLOC_PAGEMAP);
     }
 
     return NULL;
@@ -157,7 +157,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
         struct mmap_range_local *local_range = *it;
         struct mmap_range_global *global_range = local_range->global;
 
-        struct mmap_range_local *new_local_range = ALLOC(struct mmap_range_local);
+        struct mmap_range_local *new_local_range = ALLOC(struct mmap_range_local, ALLOC_PAGEMAP);
         if (new_local_range == NULL) {
             goto cleanup;
         }
@@ -185,7 +185,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
                 *new_pte = *old_pte;
             }
         } else {
-            struct mmap_range_global *new_global_range = ALLOC(struct mmap_range_global);
+            struct mmap_range_global *new_global_range = ALLOC(struct mmap_range_global, ALLOC_PAGEMAP);
             if (new_global_range == NULL) {
                 goto cleanup;
             }
@@ -275,7 +275,7 @@ void vmm_destroy_pagemap(struct pagemap *pagemap) {
     }
 
     destroy_level(pagemap->top_level, 0, 256, 4);
-    free(pagemap);
+    FREE(pagemap, ALLOC_PAGEMAP);
 }
 
 void vmm_switch_to(struct pagemap *pagemap) {

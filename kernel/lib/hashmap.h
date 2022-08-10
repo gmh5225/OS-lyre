@@ -86,7 +86,7 @@ out: \
     __auto_type HASHMAP_INSERT_hashmap = HASHMAP; \
     if (HASHMAP_INSERT_hashmap->buckets == NULL) { \
         HASHMAP_INSERT_hashmap->buckets = \
-            alloc(HASHMAP_INSERT_hashmap->cap * sizeof(*HASHMAP_INSERT_hashmap->buckets)); \
+            alloc(HASHMAP_INSERT_hashmap->cap * sizeof(*HASHMAP_INSERT_hashmap->buckets), ALLOC_HASHMAP); \
     } \
     \
     size_t HASHMAP_INSERT_hash = hash(HASHMAP_INSERT_key_data, HASHMAP_INSERT_key_length); \
@@ -97,14 +97,15 @@ out: \
     if (HASHMAP_INSERT_bucket->cap == 0) { \
         HASHMAP_INSERT_bucket->cap = 16; \
         HASHMAP_INSERT_bucket->items = \
-            alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items)); \
-    } \
-    \
-    if (HASHMAP_INSERT_bucket->filled == HASHMAP_INSERT_bucket->cap) { \
+            alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
+    } else if (HASHMAP_INSERT_bucket->filled == HASHMAP_INSERT_bucket->cap) { \
+        __auto_type HASHMAP_INSERT_old_items = HASHMAP_INSERT_bucket->items; \
         HASHMAP_INSERT_bucket->cap *= 2; \
-        HASHMAP_INSERT_bucket->items = \
-            realloc(HASHMAP_INSERT_bucket->items, \
-                    HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items)); \
+        HASHMAP_INSERT_bucket->items = alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
+        if (HASHMAP_INSERT_old_items != NULL) { \
+            memcpy(HASHMAP_INSERT_bucket->items, HASHMAP_INSERT_old_items, HASHMAP_INSERT_bucket->filled * sizeof(*HASHMAP_INSERT_bucket->items)); \
+            free(HASHMAP_INSERT_old_items, HASHMAP_INSERT_bucket->filled * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
+        } \
     } \
     \
     __auto_type HASHMAP_INSERT_item = &HASHMAP_INSERT_bucket->items[HASHMAP_INSERT_bucket->filled]; \

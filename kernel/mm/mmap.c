@@ -123,7 +123,7 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
     struct mmap_range_global *global_range = NULL;
     struct mmap_range_local *local_range = NULL;
 
-    global_range = ALLOC(struct mmap_range_global);
+    global_range = ALLOC(struct mmap_range_global, ALLOC_PAGEMAP);
     if (global_range == NULL) {
         errno = ENOMEM;
         goto cleanup;
@@ -137,7 +137,7 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
     global_range->base = aligned_virt;
     global_range->length = aligned_length;
 
-    local_range = ALLOC(struct mmap_range_local);
+    local_range = ALLOC(struct mmap_range_local, ALLOC_PAGEMAP);
     if (local_range == NULL) {
         errno = ENOMEM;
         goto cleanup;
@@ -169,14 +169,14 @@ bool mmap_range(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys,
 
 cleanup:
     if (local_range != NULL) {
-        free(local_range);
+        FREE(local_range, ALLOC_PAGEMAP);
     }
     if (global_range != NULL) {
         if (global_range->shadow_pagemap != NULL) {
             vmm_destroy_pagemap(global_range->shadow_pagemap);
         }
 
-        free(global_range);
+        FREE(global_range, ALLOC_PAGEMAP);
     }
     return false;
 }
@@ -210,7 +210,7 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
         process->mmap_anon_base += length + PAGE_SIZE;
     }
 
-    global_range = ALLOC(struct mmap_range_global);
+    global_range = ALLOC(struct mmap_range_global, ALLOC_PAGEMAP);
     if (global_range == NULL) {
         errno = ENOMEM;
         goto cleanup;
@@ -226,7 +226,7 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
     global_range->res = res;
     global_range->offset = offset;
 
-    local_range = ALLOC(struct mmap_range_local);
+    local_range = ALLOC(struct mmap_range_local, ALLOC_PAGEMAP);
     if (local_range == NULL) {
         goto cleanup;
     }
@@ -255,14 +255,14 @@ void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
 
 cleanup:
     if (local_range != NULL) {
-        free(local_range);
+        FREE(local_range, ALLOC_PAGEMAP);
     }
     if (global_range != NULL) {
         if (global_range->shadow_pagemap != NULL) {
             vmm_destroy_pagemap(global_range->shadow_pagemap);
         }
 
-        free(global_range);
+        FREE(global_range, ALLOC_PAGEMAP);
     }
     return MAP_FAILED;
 }
@@ -297,7 +297,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
         smartlock_acquire(&pagemap->lock);
 
         if (snip_begin > local_range->base && snip_end < local_range->base + local_range->length) {
-            struct mmap_range_local *postsplit_range = ALLOC(struct mmap_range_local);
+            struct mmap_range_local *postsplit_range = ALLOC(struct mmap_range_local, ALLOC_PAGEMAP);
             if (postsplit_range == NULL) {
                 // FIXME: Page map is in inconsistent state at this point!
                 errno = ENOMEM;
@@ -347,7 +347,7 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
                 // TODO: res->unmap();
             }
 
-            free(local_range);
+            FREE(local_range, ALLOC_PAGEMAP);
         } else {
             if (snip_begin == local_range->base) {
                 local_range->offset += snip_length;

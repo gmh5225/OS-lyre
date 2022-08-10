@@ -159,7 +159,7 @@ struct resource *pipe_create(void) {
     pipe->write = pipe_write;
     pipe->unref = pipe_unref;
     pipe->capacity = PIPE_BUF;
-    pipe->data = alloc(pipe->capacity);
+    pipe->data = alloc(pipe->capacity, ALLOC_RESOURCE);
     pipe->stat.st_mode = S_IFIFO;
     if (pipe->data == NULL) {
         goto fail;
@@ -170,9 +170,9 @@ struct resource *pipe_create(void) {
 fail:
     if (pipe != NULL) {
         if (pipe->data != NULL) {
-            free(pipe->data);
+            free(pipe->data, pipe->capacity, ALLOC_RESOURCE);
         }
-        free(pipe);
+        FREE(pipe, ALLOC_RESOURCE);
     }
     return NULL;
 }
@@ -192,13 +192,13 @@ int syscall_pipe(void *_, int pipe_fdnums[static 2], int flags) {
 
     int read_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
     if (read_fd < 0) {
-        free(pipe);
+        free(pipe, sizeof(struct pipe), ALLOC_RESOURCE);
         return -1;
     }
 
     int write_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
     if (write_fd < 0) {
-        free(pipe);
+        free(pipe, sizeof(struct pipe), ALLOC_RESOURCE);
         return -1;
     }
 

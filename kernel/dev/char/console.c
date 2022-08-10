@@ -151,11 +151,12 @@ static ssize_t tty_write(struct resource *_this, struct f_description *descripti
     (void)offset;
     (void)_this;
 
-    char *local = alloc(count);
-    memcpy(local, buf, count);
-
     uint64_t cr3 = read_cr3();
+
+    const char *local_buf = buf;
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
+        local_buf = alloc(count, ALLOC_STRING);
+        memcpy((char *)local_buf, buf, count);
         vmm_switch_to(vmm_kernel_pagemap);
     }
 
@@ -164,10 +165,9 @@ static ssize_t tty_write(struct resource *_this, struct f_description *descripti
     spinlock_release(&terminal_lock);
 
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
+        free((void *)local_buf, count, ALLOC_STRING);
         write_cr3(cr3);
     }
-
-    free(local);
 
     return count;
 }

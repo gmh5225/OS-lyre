@@ -2,20 +2,28 @@
 #define _LIB__ALLOC_H
 
 #include <stddef.h>
-#include <mm/slab.h>
 
-#define ALLOC(TYPE) (alloc(sizeof(TYPE)))
+#define ALLOC(TYPE, TAG) alloc(sizeof(TYPE), TAG)
+#define FREE(ADDR, TAG) free(ADDR, sizeof(*ADDR), TAG)
 
-static inline void *alloc(size_t size) {
-    return slab_alloc(size);
-}
+enum {
+    ALLOC_UNKNOWN,
+    ALLOC_VECTOR,
+    ALLOC_HASHMAP,
+    ALLOC_STRING,
+    ALLOC_PAGEMAP,
+    ALLOC_PROCESS,
+    ALLOC_THREAD,
+    ALLOC_RESOURCE,
+    ALLOC_MISC,
 
-static inline void *realloc(void *addr, size_t size) {
-    return slab_realloc(addr, size);
-}
+    // Keep this variant always at the end
+    ALLOC_TAG_MAX,
+};
 
-static inline void free(void *addr) {
-    slab_free(addr);
-}
+void *alloc(size_t size, int tag);
+void free(void *addr, size_t size, int tag);
+
+void alloc_dump_info(void);
 
 #endif
