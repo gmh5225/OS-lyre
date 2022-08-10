@@ -14,6 +14,9 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     interrupt_toggle(false);
     lapic_send_ipi(0, IDT_PANIC_IPI_VEC | 0b10 << 18);
 
+    // Force unlock the print lock
+    print_lock = SPINLOCK_INIT;
+
     kernel_print("\n\n*** LYRE PANIC ***\n\n");
     kernel_print("The Lyre kernel panicked with the following message:\n  ");
 

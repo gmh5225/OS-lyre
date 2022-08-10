@@ -283,18 +283,17 @@ size_t snprint(char *buffer, size_t size, const char *fmt, ...) {
     return ret;
 }
 
-static spinlock_t kernel_print_lock = SPINLOCK_INIT;
-static spinlock_t debug_print_lock = SPINLOCK_INIT;
+spinlock_t print_lock = SPINLOCK_INIT;
 
 void kernel_vprint(const char *fmt, va_list args) {
-    spinlock_acquire(&kernel_print_lock);
+    spinlock_acquire(&print_lock);
 
     char buffer[1024];
     size_t length = vsnprint(buffer, sizeof(buffer), fmt, args);
 
     serial_outstr(buffer);
     console_write(buffer, length);
-    spinlock_release(&kernel_print_lock);
+    spinlock_release(&print_lock);
 }
 
 void kernel_print(const char *fmt, ...) {
@@ -306,12 +305,12 @@ void kernel_print(const char *fmt, ...) {
 
 void debug_vprint(const char *fmt, va_list args) {
     if (debug) {
-        spinlock_acquire(&debug_print_lock);
+        spinlock_acquire(&print_lock);
 
         char buffer[1024];
         vsnprint(buffer, sizeof(buffer), fmt, args);
         serial_outstr(buffer);
-        spinlock_release(&debug_print_lock);
+        spinlock_release(&print_lock);
     }
 }
 

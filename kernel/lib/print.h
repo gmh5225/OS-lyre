@@ -3,6 +3,9 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <lib/lock.h>
+
+extern spinlock_t print_lock;
 
 size_t vsnprint(char *buffer, size_t size, const char *fmt, va_list args);
 size_t snprint(char *buffer, size_t size, const char *fmt, ...);
