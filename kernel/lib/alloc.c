@@ -3,7 +3,9 @@
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
 #include <mm/slab.h>
+#include <mm/vmm.h>
 
 static size_t tagged_allocations[ALLOC_TAG_MAX] = {0};
 
@@ -27,58 +29,20 @@ void free(void *addr, size_t size, int tag) {
     slab_free(addr);
 }
 
-#define KIB (1024)
-#define MIB (1024 * KIB)
-#define GIB (1024 * MIB)
+int syscall_getmemstat(void *_, struct lyre_kmemstat *buf) {
+    (void)_;
 
-static const char *tag_names[] = {
-    [ALLOC_UNKNOWN] = "Untagged",
-    [ALLOC_VECTOR] = "Vectors",
-    [ALLOC_HASHMAP] = "Hash maps",
-    [ALLOC_STRING] = "Strings",
-    [ALLOC_PAGEMAP] = "Page maps",
-    [ALLOC_PROCESS] = "Processes",
-    [ALLOC_THREAD] = "Threads",
-    [ALLOC_RESOURCE] = "Resources",
-    [ALLOC_MISC] = "Miscellaneous"
-};
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
 
-static void dump_tagged_allocation_info(int tag) {
-    char unit[4] = "XiB";
+    debug_print("syscall (%d %s): getmemstat(%lx)", proc->pid, proc->name, buf);
 
-    size_t total = tagged_allocations[tag], amount = 0, fraction = 0;
-    if (total >= GIB) {
-        unit[0] = 'G';
-        amount = total / GIB;
-        fraction = (total % GIB) / MIB;
-    } else if (total >= MIB) {
-        unit[0] = 'M';
-        amount = total / MIB;
-        fraction = (total % MIB) / KIB;
-    } else if (total >= KIB) {
-        unit[0] = 'K';
-        amount = total / KIB;
-        fraction = total % KIB;
-    } else {
-        unit[0] = 'B';
-        unit[1] = 0;
-        amount = total;
-    }
-
-    // Keep only 2 decimal places
-    fraction /= 100;
-
-    if (fraction > 0) {
-        kernel_print("   %s: %lu.%lu%s (%luB)\n", tag_names[tag], amount, fraction, unit, total);
-    } else {
-        kernel_print("   %s: %lu%s (%luB)\n", tag_names[tag], amount, unit, total);
-    }
-}
-
-void alloc_dump_info(void) {
-    kernel_print("alloc: Allocation info:\n");
+    buf->n_phys_total = pmm_total_pages() * PAGE_SIZE;
+    buf->n_phys_free = pmm_free_pages() * PAGE_SIZE;
 
     for (int tag = 0; tag < ALLOC_TAG_MAX; tag++) {
-        dump_tagged_allocation_info(tag);
+        buf->n_heap_used[tag] = tagged_allocations[tag];
     }
+
+    return 0;
 }

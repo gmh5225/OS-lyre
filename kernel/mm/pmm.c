@@ -148,3 +148,11 @@ void pmm_free(void *addr, size_t pages) {
 
     spinlock_release(&lock);
 }
+
+uint64_t pmm_total_pages(void) {
+    return total_page_count;
+}
+
+uint64_t pmm_free_pages(void) {
+    return free_pages;
+}

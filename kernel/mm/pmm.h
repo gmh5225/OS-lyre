@@ -11,4 +11,7 @@ void *pmm_alloc(size_t pages);
 void *pmm_alloc_nozero(size_t pages);
 void pmm_free(void *addr, size_t pages);
 
+uint64_t pmm_total_pages(void);
+uint64_t pmm_free_pages(void);
+
 #endif
