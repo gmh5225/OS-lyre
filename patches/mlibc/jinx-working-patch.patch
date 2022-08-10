@@ -1185,10 +1185,10 @@ index f421220..0000000
 -}
 diff --git mlibc-workdir/sysdeps/vinix/include/lyre/memstat.h mlibc-workdir/sysdeps/vinix/include/lyre/memstat.h
 new file mode 100644
-index 0000000..485fbce
+index 0000000..bfa76ca
 --- /dev/null
 +++ mlibc-workdir/sysdeps/vinix/include/lyre/memstat.h
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,28 @@
 +#ifndef _LYRE__MEMSTAT_H
 +#define _LYRE__MEMSTAT_H
 +
@@ -1210,7 +1210,9 @@ index 0000000..485fbce
 +
 +struct lyre_kmemstat {
 +    uint64_t n_phys_total;
++    uint64_t n_phys_used;
 +    uint64_t n_phys_free;
++    uint64_t n_phys_reserved;
 +    uint64_t n_heap_used[KMEM_ALLOC_TAG_MAX];
 +};
 +

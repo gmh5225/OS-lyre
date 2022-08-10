@@ -83,7 +83,9 @@ int main(int argc, char *argv[]) {
 
     printf("Physical memory statistics:\n");
     print_stat("Total physical memory", memstat.n_phys_total);
+    print_stat("Used physical memory", memstat.n_phys_used);
     print_stat("Free physical memory", memstat.n_phys_free);
+    print_stat("Reserved physical memory", memstat.n_phys_reserved);
 
     printf("\nKernel heap statistics:\n");
     for (int i = 0; i < KMEM_ALLOC_TAG_MAX; i++) {

@@ -38,7 +38,9 @@ int syscall_getmemstat(void *_, struct lyre_kmemstat *buf) {
     debug_print("syscall (%d %s): getmemstat(%lx)", proc->pid, proc->name, buf);
 
     buf->n_phys_total = pmm_total_pages() * PAGE_SIZE;
+    buf->n_phys_used = pmm_used_pages() * PAGE_SIZE;
     buf->n_phys_free = pmm_free_pages() * PAGE_SIZE;
+    buf->n_phys_reserved = pmm_reserved_pages() * PAGE_SIZE;
 
     for (int tag = 0; tag < ALLOC_TAG_MAX; tag++) {
         buf->n_heap_used[tag] = tagged_allocations[tag];

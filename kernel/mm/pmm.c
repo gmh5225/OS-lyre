@@ -17,9 +17,11 @@ volatile struct limine_memmap_request memmap_request = {
 
 static spinlock_t lock = SPINLOCK_INIT;
 static uint8_t *bitmap = NULL;
-static uint64_t total_page_count = 0;
+static uint64_t highest_page_index = 0;
 static uint64_t last_used_index = 0;
-static uint64_t free_pages = 0;
+static uint64_t usable_pages = 0;
+static uint64_t used_pages = 0;
+static uint64_t reserved_pages = 0;
 
 void pmm_init(void) {
     // TODO: Check if memmap and hhdm responses are null and panic
@@ -36,19 +38,25 @@ void pmm_init(void) {
         kernel_print("pmm: Memory map entry: base=%lx, length=%lx, type=%lx\n",
             entry->base, entry->length, entry->type);
 
-        if (entry->type != LIMINE_MEMMAP_USABLE && entry->type != LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE) {
-            continue;
-        }
-
-        uint64_t top = entry->base + entry->length;
-        if (top > highest_addr) {
-            highest_addr = top;
+        switch (entry->type) {
+            case LIMINE_MEMMAP_USABLE:
+                if (entry->base + entry->length > highest_addr) {
+                    highest_addr = entry->base + entry->length;
+                }
+                break;
+            case LIMINE_MEMMAP_RESERVED:
+            case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
+            case LIMINE_MEMMAP_ACPI_NVS:
+            case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
+            case LIMINE_MEMMAP_KERNEL_AND_MODULES:
+                reserved_pages += DIV_ROUNDUP(entry->length, PAGE_SIZE);
+                break;
         }
     }
 
     // Calculate the needed size for the bitmap in bytes and align it to page size.
-    total_page_count = highest_addr / PAGE_SIZE;
-    size_t bitmap_size = ALIGN_UP(total_page_count / 8, PAGE_SIZE);
+    highest_page_index = highest_addr / PAGE_SIZE;
+    uint64_t bitmap_size = ALIGN_UP(highest_page_index / 8, PAGE_SIZE);
 
     kernel_print("pmm: Highest address: %lx\n", highest_addr);
     kernel_print("pmm: Bitmap size: %lu bytes\n", bitmap_size);
@@ -84,11 +92,12 @@ void pmm_init(void) {
 
         for (uint64_t j = 0; j < entry->length; j += PAGE_SIZE) {
             bitmap_reset(bitmap, (entry->base + j) / PAGE_SIZE);
-            free_pages++;
+            usable_pages++;
         }
     }
 
-    kernel_print("pmm: Free pages: %lu\n", free_pages);
+    kernel_print("pmm: Usable memory: %luMiB\n", usable_pages / 1024 / 1024);
+    kernel_print("pmm: Reserved memory: %luMiB\n", reserved_pages / 1024 / 1024);
 }
 
 static void *inner_alloc(size_t pages, uint64_t limit) {
@@ -124,7 +133,7 @@ void *pmm_alloc_nozero(size_t pages) {
     spinlock_acquire(&lock);
 
     size_t last = last_used_index;
-    void *ret = inner_alloc(pages, total_page_count);
+    void *ret = inner_alloc(pages, highest_page_index);
 
     if (ret == NULL) {
         last_used_index = 0;
@@ -132,7 +141,7 @@ void *pmm_alloc_nozero(size_t pages) {
     }
 
     // TODO: Check if ret is null and panic
-    free_pages -= pages;
+    used_pages += pages;
 
     spinlock_release(&lock);
     return ret;
@@ -145,14 +154,23 @@ void pmm_free(void *addr, size_t pages) {
     for (size_t i = page; i < page + pages; i++) {
         bitmap_reset(bitmap, i);
     }
+    used_pages -= pages;
 
     spinlock_release(&lock);
 }
 
 uint64_t pmm_total_pages(void) {
-    return total_page_count;
+    return usable_pages;;
+}
+
+uint64_t pmm_used_pages(void) {
+    return used_pages;
 }
 
 uint64_t pmm_free_pages(void) {
-    return free_pages;
+    return usable_pages - used_pages;
+}
+
+uint64_t pmm_reserved_pages(void) {
+    return reserved_pages;
 }
