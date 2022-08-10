@@ -39,7 +39,8 @@ struct console {
     bool decckm;
 };
 
-static spinlock_t read_lock;
+static spinlock_t read_lock = SPINLOCK_INIT;
+static spinlock_t terminal_lock = SPINLOCK_INIT;
 static struct event console_event;
 static struct console *console_res = NULL;
 
@@ -158,7 +159,9 @@ static ssize_t tty_write(struct resource *_this, struct f_description *descripti
         vmm_switch_to(vmm_kernel_pagemap);
     }
 
-    terminal_request.response->write(terminal_request.response->terminals[0], local, count);
+    spinlock_acquire(&terminal_lock);
+    terminal_request.response->write(terminal_request.response->terminals[0], local_buf, count);
+    spinlock_release(&terminal_lock);
 
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
         write_cr3(cr3);
