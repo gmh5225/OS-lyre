@@ -146,6 +146,24 @@ static inline void fxrstor(void *ctx) {
         : "memory");
 }
 
+static inline uint64_t rdtsc(void) {
+    uint32_t edx, eax;
+    asm volatile ("rdtsc" : "=d"(edx), "=a"(eax));
+    return ((uint64_t)edx << 32) | edx;
+}
+
+static inline uint64_t rdrand(void) {
+    uint64_t result;
+    asm volatile ("rdrand %0" : "=r"(result));
+    return result;
+}
+
+static inline uint64_t rdseed(void) {
+    uint64_t result;
+    asm volatile ("rdseed %0" : "=r"(result));
+    return result;
+}
+
 static inline uint64_t rdmsr(uint32_t msr) {
     uint32_t edx = 0, eax = 0;
     asm volatile (

@@ -2,8 +2,10 @@
 #include <stdint.h>
 #include <lib/lock.h>
 #include <lib/panic.h>
+#include <lib/print.h>
 #include <lib/random.h>
 #include <time/time.h>
+#include <sys/cpu.h>
 
 // Default parameters as per https://en.wikipedia.org/wiki/Mersenne_Twister
 // Implemenation inspired by the pseudo code found on the linked page.
@@ -57,8 +59,19 @@ static uint64_t generate(void) {
 }
 
 void random_init(void) {
-    // XXX don't use time to seed the PRNG!!
-    random_seed(time_realtime.tv_sec);
+    uint64_t seed = (0x9cf3ed8e4ebfb137 * rdtsc()) * 0xafc9f54a2fe9fbdb ^ (0xfad8da40a3a48b8c * rdtsc());
+    uint32_t eax, ebx, ecx, edx;
+    if (cpuid(0x07, 0, &eax, &ebx, &ecx, &edx) && (ebx & (1 << 18)) != 0) {
+        kernel_print("random: Seeding using rdseed\n");
+        seed *= seed ^ rdseed();
+    } else if (cpuid(0x01, 0, &eax, &ebx, &ecx, &edx) && (ecx & (1 << 30)) != 0) {
+        kernel_print("random: Seeding using rdrand\n");
+        seed *= seed ^ rdrand();
+    } else {
+        kernel_print("random: rdseed and rdrand unavailable!\n");
+    }
+
+    random_seed(seed);
 }
 
 void random_seed(uint64_t seed) {
