@@ -1,0 +1,17 @@
+name=utils
+from_source=utils
+revision=1
+deps="mlibc"
+hostdeps="gcc"
+
+configure() {
+    cp -r ${source_dir}/. ./
+}
+
+build() {
+    make -j${parallelism} CC=x86_64-lyre-gcc
+}
+
+install() {
+    make install DESTDIR="${dest_dir}"
+}

@@ -63,29 +63,28 @@ void kmain_thread(void) {
     streams_init();
     initramfs_init();
 
-    struct pagemap *bash_vm = vmm_new_pagemap();
-    struct auxval bash_auxv, ld_auxv;
+    struct pagemap *init_vm = vmm_new_pagemap();
+    struct auxval init_auxv, ld_auxv;
     const char *ld_path;
 
-    struct vfs_node *bin_bash = vfs_get_node(vfs_root, "/bin/bash", true);
-    elf_load(bash_vm, bin_bash->resource, 0x0, &bash_auxv, &ld_path);
+    struct vfs_node *init_node = vfs_get_node(vfs_root, "/usr/sbin/init", true);
+    elf_load(init_vm, init_node->resource, 0x0, &init_auxv, &ld_path);
 
     struct vfs_node *ld = vfs_get_node(vfs_root, ld_path, true);
-    elf_load(bash_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
+    elf_load(init_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
 
-    const char *argv[] = {"/bin/bash", "-l", NULL};
-    const char *envp[] = {"USER=root", "HOME=/root", "TERM=linux", NULL};
+    const char *argv[] = {"/usr/sbin/init", NULL};
+    const char *envp[] = {NULL};
 
-    struct process *bash_proc = sched_new_process(NULL, bash_vm);
-    struct vfs_node *dev_tty1 = vfs_get_node(vfs_root, "/dev/console", true);
+    struct process *init_proc = sched_new_process(NULL, init_vm);
+    struct vfs_node *console_node = vfs_get_node(vfs_root, "/dev/console", true);
 
-    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 0, true);
-    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 1, true);
-    fdnum_create_from_resource(bash_proc, dev_tty1->resource, 0, 2, true);
+    fdnum_create_from_resource(init_proc, console_node->resource, 0, 0, true);
+    fdnum_create_from_resource(init_proc, console_node->resource, 0, 1, true);
+    fdnum_create_from_resource(init_proc, console_node->resource, 0, 2, true);
 
-    vfs_pathname(bin_bash, bash_proc->name, sizeof(bash_proc->name) - 1);
-    sched_new_user_thread(bash_proc, (void *)ld_auxv.at_entry,
-                          NULL, NULL, argv, envp, &bash_auxv, true);
+    vfs_pathname(init_node, init_proc->name, sizeof(init_proc->name) - 1);
+    sched_new_user_thread(init_proc, (void *)ld_auxv.at_entry, NULL, NULL, argv, envp, &init_auxv, true);
 
     alloc_dump_info();
     sched_dequeue_and_die();
