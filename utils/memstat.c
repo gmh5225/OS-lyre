@@ -30,7 +30,7 @@ static void print_stat(const char *name, uint64_t amount) {
     size_t total = amount, fraction = 0;
 
     if (human_readable_sizes) {
-        if (total >= GIB) {
+        if (amount >= GIB) {
             strcpy(unit, "GiB");
             total = amount / GIB;
             fraction = (amount % GIB) / MIB;
