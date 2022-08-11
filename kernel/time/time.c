@@ -11,6 +11,7 @@
 #include <time/time.h>
 #include <dev/pit.h>
 #include <sched/sched.h>
+#include <time.h> // XXX brings in a bunch of libc crap, beware
 
 static volatile struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,
@@ -63,9 +64,7 @@ cleanup:
 
 void time_init(void) {
     struct limine_boot_time_response *boot_time_resp = boot_time_request.response;
-    ASSERT(boot_time_resp != NULL);
 
-    time_monotonic.tv_sec = boot_time_resp->boot_time;
     time_realtime.tv_sec = boot_time_resp->boot_time;
 
     pit_init();
@@ -140,4 +139,33 @@ int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining
 cleanup:
     FREE(timer, ALLOC_MISC);
     return ret;
+}
+
+int syscall_getclock(void *_, int which, struct timespec *out) {
+    (void)_;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    debug_print("syscall (%d %s): getclock(%d, %lx)", proc->pid, proc->name, which, out);
+
+    switch (which) {
+        case CLOCK_REALTIME:
+        case CLOCK_REALTIME_COARSE:
+            *out = time_realtime;
+            return 0;
+        case CLOCK_BOOTTIME:
+        case CLOCK_MONOTONIC:
+        case CLOCK_MONOTONIC_RAW:
+        case CLOCK_MONOTONIC_COARSE:
+            *out = time_monotonic;
+            return 0;
+        case CLOCK_PROCESS_CPUTIME_ID:
+        case CLOCK_THREAD_CPUTIME_ID:
+            *out = (struct timespec){.tv_sec = 0, .tv_nsec = 0};
+            return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
 }

@@ -50,7 +50,7 @@ index 5cf1f7b..4fb0179 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..dabc273 100644
+index 877ff63..7c0366a 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,20 @@
@@ -480,7 +480,7 @@ index 877ff63..dabc273 100644
  	return 0;
  }
  
-@@ -345,186 +340,142 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +340,147 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -657,16 +657,18 @@ index 877ff63..dabc273 100644
 -	__syscall_ret ret = __syscall(50, clock, &ts);
 -
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++	struct timespec buf = {0};
++	__syscall_ret ret = __syscall(SYS_getclock, clock, &buf);
++    if ((int)ret.ret == -1) {
+ 		return ret.errno;
+ 	}
 -
 -	*secs = ts.tv_sec;
 -	*nanos = ts.tv_nsec;
 -
--	return 0;
-+    *secs = 0;
-+    *nanos = 0;
-+    return 0;
++	*secs = buf.tv_sec;
++	*nanos = buf.tv_nsec;
+ 	return 0;
  }
  
  int sys_stat(fsfd_target fsfdt, int fd, const char *path, int flags, struct stat *statbuf) {
@@ -725,7 +727,7 @@ index 877ff63..dabc273 100644
  	return 0;
  }
  
-@@ -533,22 +484,18 @@ int sys_access(const char *path, int mode) {
+@@ -533,22 +489,18 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -752,7 +754,7 @@ index 877ff63..dabc273 100644
  	return 0;
  }
  
-@@ -557,332 +504,163 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +509,163 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
@@ -776,7 +778,8 @@ index 877ff63..dabc273 100644
  
 -int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) {
 -	__syscall_ret ret = __syscall(46, domain, type_and_flags, proto, fds);
--
++int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
+ 
 -	return ret.errno;
 -}
 -
@@ -788,22 +791,21 @@ index 877ff63..dabc273 100644
 -
 -int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
-+int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
 -
 -int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
 -	__syscall_ret ret = __syscall(61, fd);
--
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
--	*newfd = ret.ret;
 +int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
  
+-	*newfd = ret.ret;
+-
 -	if(addr_ptr && addr_length) {
 -		if(int e = mlibc::sys_peername(*newfd, addr_ptr, *addr_length, addr_length); e) {
 -			return e;
@@ -887,26 +889,26 @@ index 877ff63..dabc273 100644
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
++		const void *buffer, socklen_t size) STUB_ONLY
  
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
  
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_listen(int fd, int backlog) STUB_ONLY
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
  
 -	*actual_length = max_addr_length;
 -	return 0;
 -}
--
++int sys_listen(int fd, int backlog) STUB_ONLY
+ 
 -int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
 -
@@ -1050,19 +1052,19 @@ index 877ff63..dabc273 100644
  
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+ 
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
- 
+-
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
 +int sys_umount2(const char *target, int flags) STUB_ONLY
@@ -1219,10 +1221,10 @@ index 0000000..bfa76ca
 +#endif
 diff --git mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
 new file mode 100644
-index 0000000..25d3b1e
+index 0000000..fd16561
 --- /dev/null
 +++ mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,99 @@
 +#ifndef _LYRE__SYSCALL_H
 +#define _LYRE__SYSCALL_H
 +
@@ -1263,6 +1265,7 @@ index 0000000..25d3b1e
 +#define SYS_ppoll 32
 +#define SYS_umask 33
 +#define SYS_getmemstat 34
++#define SYS_getclock 35
 +
 +struct __syscall_ret {
 +	uint64_t ret;

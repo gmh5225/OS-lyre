@@ -37,6 +37,7 @@ syscall_table:
     .quad syscall_ppoll       // 32
     .quad syscall_umask       // 33
     .quad syscall_getmemstat  // 34
+    .quad syscall_getclock    // 35
 syscall_table_end:
 
 .global syscall_count
