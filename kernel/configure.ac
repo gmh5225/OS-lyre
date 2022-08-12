@@ -20,6 +20,7 @@ if test "$werror_state" = "yes"; then
     AC_SUBST(WERROR, [-Werror])
 fi
 
+AC_PROG_MKDIR_P
 AC_PROG_INSTALL
 AC_PROG_GREP
 AC_PROG_SED
@@ -55,7 +56,7 @@ AC_ARG_VAR(CROSS_STRINGS, [cross strings command])
 AC_ARG_VAR(CROSS_STRIP, [cross strip command])
 
 rm -rf "$BUILDDIR/cross-files"
-mkdir -p "$BUILDDIR/cross-files"
+$MKDIR_P "$BUILDDIR/cross-files"
 (
 cd "$BUILDDIR/cross-files"
 TRIPLET="$ARCH"-elf "$SRCDIR/cross-detect/configure"

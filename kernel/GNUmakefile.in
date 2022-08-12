@@ -3,6 +3,7 @@ override ARCH := @ARCH@
 override SRCDIR := @SRCDIR@
 override BUILDDIR := @BUILDDIR@
 override CROSS_FILE := @CROSS_FILE@
+override MKDIR_P := @MKDIR_P@
 override INSTALL := @INSTALL@
 override PREFIX := @prefix@
 LYRE_DEBUG ?= @LYRE_DEBUG@
@@ -43,46 +44,46 @@ endif
 CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 
 # Internal C flags that should not be changed by the user.
-override INTERNALCFLAGS := \
-    -Ddebug=$(LYRE_DEBUG)  \
+override CROSS_CFLAGS += \
+    -Ddebug=$(LYRE_DEBUG) \
     -I'$(call SHESCAPE,$(SRCDIR))' \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
-    -std=gnu11             \
-    -fms-extensions        \
+    -std=gnu11 \
+    -fms-extensions \
     -fno-omit-frame-pointer \
-    -fno-strict-aliasing   \
+    -fno-strict-aliasing \
     -Wno-microsoft-anon-tag \
-    -Wvla                  \
-    -Wshadow               \
-    -ffreestanding         \
-    -fno-stack-protector   \
-    -fno-stack-check       \
-    -fno-pie               \
-    -fno-pic               \
+    -Wvla \
+    -Wshadow \
+    -ffreestanding \
+    -fno-stack-protector \
+    -fno-stack-check \
+    -fno-pie \
+    -fno-pic \
     -MMD
 
 # Internal linker flags that should not be changed by the user.
-override INTERNALLDFLAGS :=     \
-    -nostdlib                   \
-    -static                     \
-    -z max-page-size=0x1000     \
+override CROSS_LDFLAGS += \
+    -nostdlib \
+    -static \
+    -z max-page-size=0x1000 \
     -T '$(call SHESCAPE,$(SRCDIR)/linker-$(ARCH).ld)'
 
 # Set archtecture specific variables (and check that the architecture is supported).
 ifeq ($(ARCH),x86_64)
-    override INTERNALCFLAGS += \
-        -m64                   \
-        -march=x86-64          \
-        -mabi=sysv             \
-        -mno-80387             \
-        -mno-mmx               \
-        -mno-sse               \
-        -mno-sse2              \
-        -mno-red-zone          \
+    override CROSS_CFLAGS += \
+        -m64 \
+        -march=x86-64 \
+        -mabi=sysv \
+        -mno-80387 \
+        -mno-mmx \
+        -mno-sse \
+        -mno-sse2 \
+        -mno-red-zone \
         -mcmodel=kernel
-    override INTERNALLDFLAGS += \
+    override CROSS_LDFLAGS += \
         -m elf_x86_64
-    override INTERNALNASMFLAGS := \
+    override CROSS_NASMFLAGS += \
         -f elf64
     override LIBGCC := x86_64-no-red-zone
 else
@@ -105,29 +106,29 @@ all: $(KERNEL)
 
 # Link rules for the final kernel executable.
 $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o $@
 	'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' $@ > symtab.map
-	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -x c -c symtab.map -o symtab.o
-	$(CROSS_LD) '$(call OBJESCAPE,$^)' symtab.o $(CROSS_LDFLAGS) $(INTERNALLDFLAGS) -o $@
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) -x c -c symtab.map -o symtab.o
+	$(CROSS_LD) '$(call OBJESCAPE,$^)' symtab.o $(CROSS_LDFLAGS) -o $@
 
 # Include header dependencies.
 -include $(HEADER_DEPS)
 
 # Compilation rules for *.c files.
 $(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.c
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 # Compilation rules for *.S files.
 $(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.S
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) $(INTERNALCFLAGS) -c '$(call SHESCAPE,$<)' -o $@
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o $@
 
 ifeq ($(ARCH),x86_64)
 # Compilation rules for *.asm files.
 $(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.asm
-	mkdir -p "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm $(CROSS_NASMFLAGS) $(INTERNALNASMFLAGS) '$(call SHESCAPE,$<)' -o $@
+	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
+	nasm $(CROSS_NASMFLAGS) '$(call SHESCAPE,$<)' -o $@
 endif
 
 # Remove object files and the final executable.
