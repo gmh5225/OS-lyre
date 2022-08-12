@@ -12,7 +12,7 @@
 
 noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     interrupt_toggle(false);
-    lapic_send_ipi(0, IDT_PANIC_IPI_VEC | 0b10 << 18);
+    lapic_send_ipi(0, idt_panic_ipi_vector | 0b10 << 18);
 
     // Force unlock the print lock
     print_lock = SPINLOCK_INIT;

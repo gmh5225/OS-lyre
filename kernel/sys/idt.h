@@ -4,8 +4,7 @@
 #include <stdint.h>
 
 extern void *isr[];
-
-#define IDT_PANIC_IPI_VEC 0xff
+extern uint8_t idt_panic_ipi_vector;
 
 uint8_t idt_allocate_vector(void);
 void idt_set_ist(uint8_t vector, uint8_t ist);
