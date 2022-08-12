@@ -1,15 +1,17 @@
-override INTERNALCFLAGS := -std=gnu11
+CFLAGS ?= -g -O2 -pipe -Wall -Wextra
+
+override CFLAGS += -std=gnu11
 
 all: init lfetch memstat
 
 init: init.c
-	$(CC) $(INTERNALCFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 lfetch: lfetch.c
-	$(CC) $(INTERNALCFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 memstat: memstat.c
-	$(CC) $(INTERNALCFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 .PHONY: install
 install: all
