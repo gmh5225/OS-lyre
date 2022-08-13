@@ -724,7 +724,7 @@ int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_f
     }
 
     struct vfs_filesystem *fs = new_res.target_parent->filesystem;
-    struct vfs_node *node = fs->link(fs, new_res.target_parent, new_path, old_node);
+    struct vfs_node *node = fs->link(fs, new_res.target_parent, new_res.basename, old_node);
     if (node == NULL) {
         return -1;
     }
