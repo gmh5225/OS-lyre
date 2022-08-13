@@ -1,0 +1,11 @@
+name=libxfont2
+version=2.0.5
+source_method=git
+clone_url="https://gitlab.freedesktop.org/xorg/lib/libxfont.git"
+tag="libXfont2-${version}"
+hostdeps="automake autoconf libtool pkg-config xorg-macros xtrans"
+imagedeps="git"
+
+regenerate() {
+    NOCONFIGURE=yes ./autogen.sh
+}
