@@ -5,7 +5,6 @@
 #include <lib/event.h>
 #include <lib/print.h>
 #include <lib/resource.h>
-#include <ipc/pipe.h>
 #include <abi-bits/stat.h>
 
 #define PIPE_BUF 4096
@@ -21,7 +20,7 @@ struct pipe {
 
 static bool pipe_unref(struct resource *this, struct f_description *description) {
     (void)description;
-    this->refcount--; // XXX should be atomic
+    __atomic_fetch_sub(&this->refcount, 1, __ATOMIC_SEQ_CST); // XXX should be atomic
     event_trigger(&this->event, false);
     return true;
 }
@@ -149,7 +148,7 @@ cleanup:
     return ret;
 }
 
-struct resource *pipe_create(void) {
+static struct resource *pipe_create(void) {
     struct pipe *pipe = (struct pipe *)resource_create(sizeof(struct pipe));
     if (pipe == NULL) {
         goto fail;
