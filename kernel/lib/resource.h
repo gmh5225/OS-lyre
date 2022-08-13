@@ -14,6 +14,7 @@ struct process;
 struct f_description;
 
 struct resource {
+    int res_size;
     int status;
     struct event event;
     size_t refcount;
@@ -44,6 +45,7 @@ struct f_descriptor {
 };
 
 void *resource_create(size_t size);
+void resource_free(struct resource *res);
 dev_t resource_create_dev_id(void);
 
 bool fdnum_close(struct process *proc, int fdnum);

@@ -38,6 +38,11 @@ syscall_table:
     .quad syscall_umask       // 33
     .quad syscall_getmemstat  // 34
     .quad syscall_getclock    // 35
+    .quad syscall_socket      // 36
+    .quad syscall_bind        // 37
+    .quad syscall_connect     // 38
+    .quad syscall_listen      // 39
+    .quad syscall_accept      // 40
 syscall_table_end:
 
 .global syscall_count

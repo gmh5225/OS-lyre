@@ -26,6 +26,41 @@ index 80f1afd..9980826 100644
  	}
  	return const_cast<char *>(s);
  }
+diff --git mlibc-clean/options/glibc/generic/execinfo.cpp mlibc-workdir/options/glibc/generic/execinfo.cpp
+index 3474615..de088e9 100644
+--- mlibc-clean/options/glibc/generic/execinfo.cpp
++++ mlibc-workdir/options/glibc/generic/execinfo.cpp
+@@ -1,17 +1,18 @@
+ #include <execinfo.h>
+ #include <bits/ensure.h>
++// #include <mlibc/debug.hpp>
+ 
+-int backtrace(void **, int) {
+-	__ensure(!"Not implemented");
+-	__builtin_unreachable();
+-}
++// int backtrace(void **, int) {
++// 	mlibc::infoLogger() << "backtrace() is a stub" << frg::endlog;
++// 	return 0;
++// }
+ 
+-char **backtrace_symbols(void *const *, int) {
+-	__ensure(!"Not implemented");
+-	__builtin_unreachable();
+-}
++// char **backtrace_symbols(void *const *, int) {
++// 	__ensure(!"Not implemented");
++// 	__builtin_unreachable();
++// }
+ 
+-void backtrace_symbols_fd(void *const *, int, int) {
+-	__ensure(!"Not implemented");
+-	__builtin_unreachable();
+-}
++// void backtrace_symbols_fd(void *const *, int, int) {
++// 	__ensure(!"Not implemented");
++// 	__builtin_unreachable();
++// }
 diff --git mlibc-clean/sysdeps/vinix/generic/entry.cpp mlibc-workdir/sysdeps/vinix/generic/entry.cpp
 index 5cf1f7b..4fb0179 100644
 --- mlibc-clean/sysdeps/vinix/generic/entry.cpp
@@ -50,7 +85,7 @@ index 5cf1f7b..4fb0179 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..7c0366a 100644
+index 877ff63..a3c6178 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -7,18 +7,20 @@
@@ -146,18 +181,19 @@ index 877ff63..7c0366a 100644
  int sys_epoll_pwait(int epfd, struct epoll_event *ev, int n,
 -					int timeout, const sigset_t *sigmask, int *raised) {
 -	__syscall_ret ret = __syscall(49, epfd, ev, n, timeout, sigmask);
--
++					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_epoll_create(int flags, int *fd) STUB_ONLY
+ 
 -	*raised = (int)ret.ret;
 -	return 0;
 -}
 -
 -int sys_epoll_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(37, flags);
-+					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
@@ -167,8 +203,7 @@ index 877ff63..7c0366a 100644
 -
 -int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) {
 -	__syscall_ret ret = __syscall(47, epfd, mode, fd, ev);
-+int sys_epoll_create(int flags, int *fd) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
 +int sys_epoll_ctl(int epfd, int mode, int fd, struct epoll_event *ev) STUB_ONLY
@@ -526,12 +561,12 @@ index 877ff63..7c0366a 100644
 -	return 0;
 +int sys_fchmod(int fd, mode_t mode) {
 +	return sys_fchmodat(fd, "", mode, AT_EMPTY_PATH);
-+}
-+
-+int sys_chmod(const char *pathname, mode_t mode) {
-+	return sys_fchmodat(AT_FDCWD, pathname, mode, 0);
  }
  
++int sys_chmod(const char *pathname, mode_t mode) {
++	return sys_fchmodat(AT_FDCWD, pathname, mode, 0);
++}
++
 +int sys_rmdir(const char *path) STUB_ONLY
 +
  int sys_vm_map(void *hint, size_t size, int prot, int flags,
@@ -754,56 +789,74 @@ index 877ff63..7c0366a 100644
  	return 0;
  }
  
-@@ -557,332 +509,163 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +509,254 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
 -	__syscall_ret ret = __syscall(22, dirfd, path, mode);
 -
 -	return ret.errno;
--}
--
--int sys_socket(int domain, int type_and_flags, int proto, int *fd) {
++	__syscall_ret ret = __syscall(SYS_mkdirat, dirfd, path, mode);
++	if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
+ }
+ 
+ int sys_socket(int domain, int type_and_flags, int proto, int *fd) {
 -	__syscall_ret ret = __syscall(39, domain, type_and_flags, proto);
 -
 -	if (ret.errno != 0)
-+	__syscall_ret ret = __syscall(SYS_mkdirat, dirfd, path, mode);
-+	if ((int)ret.ret == -1) {
++	__syscall_ret ret = __syscall(SYS_socket, domain, type_and_flags, proto);
++	int ret_value = (int)ret.ret;
++	if (ret_value == -1) {
  		return ret.errno;
 -
 -	*fd = (int)ret.ret;
 +	}
++	*fd = ret_value;
  	return 0;
  }
  
 -int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) {
 -	__syscall_ret ret = __syscall(46, domain, type_and_flags, proto, fds);
-+int sys_socket(int domain, int type_and_flags, int proto, int *fd) STUB_ONLY
- 
+-
 -	return ret.errno;
 -}
--
--int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
++int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
+ 
+ int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(40, fd, addr_ptr, addr_length);
 -
 -	return ret.errno;
--}
--
--int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
++	__syscall_ret ret = __syscall(SYS_bind, fd, addr_ptr, addr_length);
++	if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
+ }
+ 
+ int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) {
 -	__syscall_ret ret = __syscall(59, fd, addr_ptr, addr_length);
 -
 -	return ret.errno;
--}
--
--int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
++	__syscall_ret ret = __syscall(SYS_connect, fd, addr_ptr, addr_length);
++	if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
+ }
+ 
+ int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) {
 -	__syscall_ret ret = __syscall(61, fd);
-+int sys_socketpair(int domain, int type_and_flags, int proto, int *fds) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
-+int sys_bind(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
- 
++	__syscall_ret ret = __syscall(SYS_accept, fd, addr_ptr, addr_length);
++	int ret_value = (int)ret.ret;
++	if (ret_value == -1) {
+ 		return ret.errno;
+ 	}
+-
 -	*newfd = ret.ret;
 -
 -	if(addr_ptr && addr_length) {
@@ -811,81 +864,115 @@ index 877ff63..7c0366a 100644
 -			return e;
 -		}
 -	}
-+int sys_connect(int fd, const struct sockaddr *addr_ptr, socklen_t addr_length) STUB_ONLY
+-
++	*newfd = ret_value;
+ 	return 0;
+ }
  
--	return 0;
--}
-+int sys_accept(int fd, int *newfd, struct sockaddr *addr_ptr, socklen_t *addr_length) STUB_ONLY
- 
- int sys_getsockopt(int fd, int layer, int number,
+-int sys_getsockopt(int fd, int layer, int number,
 -		void *__restrict buffer, socklen_t *__restrict size) {
 -	(void)fd; (void)size;
 -	if(layer == SOL_SOCKET && number == SO_PEERCRED) {
 -		mlibc::infoLogger() << "\e[31mmlibc: getsockopt() call with SOL_SOCKET and SO_PEERCRED is unimplemented\e[39m" << frg::endlog;
--		*(int *)buffer = 0;
--		return 0;
++int sys_getsockopt(int fd, int layer, int number, void *__restrict buffer, socklen_t *__restrict size) {
++	(void)fd;
++	(void)size;
++	if (layer == SOL_SOCKET && number == SO_PEERCRED) {
++		mlibc::infoLogger() << "mlibc: getsockopt() call with SOL_SOCKET and SO_PEERCRED is unimplemented" << frg::endlog;
+ 		*(int *)buffer = 0;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_SNDBUF) {
 -		mlibc::infoLogger() << "\e[31mmlibc: getsockopt() call with SOL_SOCKET and SO_SNDBUF is unimplemented\e[39m" << frg::endlog;
--		*(int *)buffer = 4096;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_SNDBUF) {
++		mlibc::infoLogger() << "mlibc: getsockopt() call with SOL_SOCKET and SO_SNDBUF is unimplemented" << frg::endlog;
+ 		*(int *)buffer = 4096;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_TYPE) {
 -		mlibc::infoLogger() << "\e[31mmlibc: getsockopt() call with SOL_SOCKET and SO_TYPE is unimplemented, hardcoding SOCK_STREAM\e[39m" << frg::endlog;
--		*(int *)buffer = SOCK_STREAM;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_TYPE) {
++		mlibc::infoLogger() << "mlibc: getsockopt() call with SOL_SOCKET and SO_TYPE is unimplemented, hardcoding SOCK_STREAM" << frg::endlog;
+ 		*(int *)buffer = SOCK_STREAM;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_ERROR) {
 -		mlibc::infoLogger() << "\e[31mmlibc: getsockopt() call with SOL_SOCKET and SO_ERROR is unimplemented, hardcoding 0\e[39m" << frg::endlog;
--		*(int *)buffer = 0;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_ERROR) {
++		mlibc::infoLogger() << "mlibc: getsockopt() call with SOL_SOCKET and SO_ERROR is unimplemented, hardcoding 0" << frg::endlog;
+ 		*(int *)buffer = 0;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_KEEPALIVE) {
 -		mlibc::infoLogger() << "\e[31mmlibc: getsockopt() call with SOL_SOCKET and SO_KEEPALIVE is unimplemented, hardcoding 0\e[39m" << frg::endlog;
--		*(int *)buffer = 0;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_KEEPALIVE) {
++		mlibc::infoLogger() << "mlibc: getsockopt() call with SOL_SOCKET and SO_KEEPALIVE is unimplemented, hardcoding 0" << frg::endlog;
+ 		*(int *)buffer = 0;
+ 		return 0;
 -	}else{
 -		mlibc::panicLogger() << "\e[31mmlibc: Unexpected getsockopt() call, layer: " << layer << " number: " << number << "\e[39m" << frg::endlog;
 -		__builtin_unreachable();
--	}
--
--	return 0;
--}
--
-+		void *__restrict buffer, socklen_t *__restrict size) STUB_ONLY
++	} else {
++		mlibc::panicLogger() << "mlibc: Unexpected getsockopt() call, layer: " << layer << " number: " << number << frg::endlog;
+ 	}
  
- int sys_setsockopt(int fd, int layer, int number,
+ 	return 0;
+ }
+ 
+ 
+-int sys_setsockopt(int fd, int layer, int number,
 -		const void *buffer, socklen_t size) {
 -	(void)fd; (void)buffer; (void)size;
 -	if(layer == SOL_SOCKET && number == SO_PASSCRED) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt(SO_PASSCRED) is not implemented"
 -				" correctly\e[39m" << frg::endlog;
--		return 0;
++int sys_setsockopt(int fd, int layer, int number, const void *buffer, socklen_t size) {
++	(void)fd;
++	(void)buffer;
++	(void)size;
++	if (layer == SOL_SOCKET && number == SO_PASSCRED) {
++		mlibc::infoLogger() << "mlibc: setsockopt(SO_PASSCRED) is not implemented correctly" << frg::endlog;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_ATTACH_FILTER) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt(SO_ATTACH_FILTER) is not implemented"
 -				" correctly\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_ATTACH_FILTER) {
++		mlibc::infoLogger() << "mlibc: setsockopt(SO_ATTACH_FILTER) is not implemented correctly" << frg::endlog;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_RCVBUFFORCE) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt(SO_RCVBUFFORCE) is not implemented"
 -				" correctly\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_RCVBUFFORCE) {
++		mlibc::infoLogger() << "mlibc: setsockopt(SO_RCVBUFFORCE) is not implemented correctly" << frg::endlog;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_SNDBUF) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt() call with SOL_SOCKET and SO_SNDBUF is unimplemented\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_SNDBUF) {
++		mlibc::infoLogger() << "mlibc: setsockopt() call with SOL_SOCKET and SO_SNDBUF is unimplemented" << frg::endlog;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_KEEPALIVE) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt() call with SOL_SOCKET and SO_KEEPALIVE is unimplemented\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_KEEPALIVE) {
++		mlibc::infoLogger() << "mlibc: setsockopt() call with SOL_SOCKET and SO_KEEPALIVE is unimplemented" << frg::endlog;
+ 		return 0;
 -	}else if(layer == SOL_SOCKET && number == SO_REUSEADDR) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt() call with SOL_SOCKET and SO_REUSEADDR is unimplemented\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == SOL_SOCKET && number == SO_REUSEADDR) {
++		mlibc::infoLogger() << "mlibc: setsockopt() call with SOL_SOCKET and SO_REUSEADDR is unimplemented" << frg::endlog;
+ 		return 0;
 -	}else if(layer == AF_NETLINK && number == SO_ACCEPTCONN) {
 -		mlibc::infoLogger() << "\e[31mmlibc: setsockopt() call with AF_NETLINK and SO_ACCEPTCONN is unimplemented\e[39m" << frg::endlog;
--		return 0;
++	} else if (layer == AF_NETLINK && number == SO_ACCEPTCONN) {
++		mlibc::infoLogger() << "mlibc: setsockopt() call with AF_NETLINK and SO_ACCEPTCONN is unimplemented" << frg::endlog;
+ 		return 0;
 -	}else{
 -		mlibc::panicLogger() << "\e[31mmlibc: Unexpected setsockopt() call, layer: " << layer << " number: " << number << "\e[39m" << frg::endlog;
 -		__builtin_unreachable();
--	}
--}
--
++	} else {
++		mlibc::panicLogger() << "mlibc: Unexpected setsockopt() call, layer: " << layer << " number: " << number << frg::endlog;
+ 	}
+ }
+ 
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -893,23 +980,20 @@ index 877ff63..7c0366a 100644
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
-+		const void *buffer, socklen_t size) STUB_ONLY
- 
+-
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
- 
+-
 -	*actual_length = max_addr_length;
 -	return 0;
 -}
-+int sys_listen(int fd, int backlog) STUB_ONLY
++int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
  
--int sys_listen(int fd, int backlog) {
+ int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
 -
 -	return ret.errno;
@@ -919,18 +1003,21 @@ index 877ff63..7c0366a 100644
 -	__syscall_ret ret = __syscall(42, flags);
 -
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++	__syscall_ret ret = __syscall(SYS_listen, fd, backlog);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
+ 	}
 -
 -	*fd = (int)ret.ret;
--	return 0;
--}
+ 	return 0;
+ }
+ 
+-int sys_fork(pid_t *child) {
+-	__syscall_ret ret = __syscall(14);
 +int sys_inotify_create(int flags, int *fd) STUB_ONLY
  
- int sys_fork(pid_t *child) {
--	__syscall_ret ret = __syscall(14);
--
 -	if (ret.errno != 0) {
++int sys_fork(pid_t *child) {
 +	__syscall_ret ret = __syscall(SYS_fork);
 +	pid_t ret_value = (pid_t)ret.ret;
 +    if (ret_value == -1) {
@@ -1000,7 +1087,8 @@ index 877ff63..7c0366a 100644
 -		return ret.errno;
 -
 -	return 0;
-+    return ENOSYS;
++    mlibc::infoLogger() << "mlibc: sys_sigprocmask() is a stub" << frg::endlog;
++    return 0;
  }
  
  int sys_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact) {
@@ -1010,7 +1098,8 @@ index 877ff63..7c0366a 100644
 -		return ret.errno;
 -
 -	return 0;
-+    return ENOSYS;
++    mlibc::infoLogger() << "mlibc: sys_sigaction() is a stub" << frg::endlog;
++    return 0;
  }
  
 -int sys_signalfd_create(sigset_t mask, int flags, int *fd) {
@@ -1052,19 +1141,19 @@ index 877ff63..7c0366a 100644
  
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
- 
+-
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
--
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
 +int sys_umount2(const char *target, int flags) STUB_ONLY
@@ -1221,10 +1310,10 @@ index 0000000..bfa76ca
 +#endif
 diff --git mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
 new file mode 100644
-index 0000000..fd16561
+index 0000000..1e167eb
 --- /dev/null
 +++ mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,104 @@
 +#ifndef _LYRE__SYSCALL_H
 +#define _LYRE__SYSCALL_H
 +
@@ -1266,6 +1355,11 @@ index 0000000..fd16561
 +#define SYS_umask 33
 +#define SYS_getmemstat 34
 +#define SYS_getclock 35
++#define SYS_socket 36
++#define SYS_bind 37
++#define SYS_connect 38
++#define SYS_listen 39
++#define SYS_accept 40
 +
 +struct __syscall_ret {
 +	uint64_t ret;

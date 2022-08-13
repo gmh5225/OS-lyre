@@ -74,12 +74,17 @@ void *resource_create(size_t size) {
         return NULL;
     }
 
+    res->res_size = size;
     res->read = stub_read;
     res->write = stub_write;
     res->ioctl = resource_default_ioctl;
     res->mmap = stub_mmap;
     res->unref = stub_unref;
     return res;
+}
+
+void resource_free(struct resource *res) {
+    free(res, res->res_size, ALLOC_RESOURCE);
 }
 
 dev_t resource_create_dev_id(void) {
