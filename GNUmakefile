@@ -20,7 +20,7 @@ distro-full: jinx
 
 .PHONY: distro-base
 distro-base: jinx
-	./jinx build bash coreutils
+	./jinx build bash coreutils utils
 
 .PHONY: run-kvm
 run-kvm: lyre.iso
