@@ -87,9 +87,9 @@ syscall_ud_entry:
     cmpw $0x340f, (%rax)
     pop %rax
     jne 2f
+    addq $2, (%rsp)
     THUNK
     add $8, %rsp
-    addq $2, (%rsp)
     iretq
 2:
     jmp *(isr_thunks + 0x6 * 0x8)
