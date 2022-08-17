@@ -58,6 +58,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
+    pci_init();
     ps2_init();
     console_init();
     streams_init();
