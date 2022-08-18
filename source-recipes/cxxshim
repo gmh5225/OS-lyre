@@ -1,0 +1,10 @@
+name=cxxshim
+version=0.0
+source_method=git
+clone_url="https://github.com/managarm/cxxshim.git"
+tag="master"
+commit="334fdb17aa26194eb839eee5b20ad94712c6e1f4"
+
+regenerate() {
+    true
+}
