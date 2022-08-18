@@ -23,6 +23,7 @@
 #include <sched/sched.h>
 #include <acpi/acpi.h>
 #include <time/time.h>
+#include <dev/pci.h>
 
 void kmain_thread(void);
 
