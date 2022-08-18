@@ -40,9 +40,8 @@ void pmm_init(void) {
 
         switch (entry->type) {
             case LIMINE_MEMMAP_USABLE:
-                if (entry->base + entry->length > highest_addr) {
-                    highest_addr = entry->base + entry->length;
-                }
+                usable_pages += DIV_ROUNDUP(entry->length, PAGE_SIZE);
+                highest_addr = MAX(highest_addr, entry->base + entry->length);
                 break;
             case LIMINE_MEMMAP_RESERVED:
             case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
@@ -92,12 +91,11 @@ void pmm_init(void) {
 
         for (uint64_t j = 0; j < entry->length; j += PAGE_SIZE) {
             bitmap_reset(bitmap, (entry->base + j) / PAGE_SIZE);
-            usable_pages++;
         }
     }
 
-    kernel_print("pmm: Usable memory: %luMiB\n", usable_pages / 1024 / 1024);
-    kernel_print("pmm: Reserved memory: %luMiB\n", reserved_pages / 1024 / 1024);
+    kernel_print("pmm: Usable memory: %luMiB\n", (usable_pages * 4096) / 1024 / 1024);
+    kernel_print("pmm: Reserved memory: %luMiB\n", (reserved_pages * 4096) / 1024 / 1024);
 }
 
 static void *inner_alloc(size_t pages, uint64_t limit) {
