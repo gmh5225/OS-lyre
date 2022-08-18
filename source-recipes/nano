@@ -3,7 +3,6 @@ version=6.4
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/nano/nano-${version}.tar.xz"
 hostdeps="automake autoconf libtool pkg-config"
-imagedeps="git"
 
 regenerate() {
     autoreconf -fvi
