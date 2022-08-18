@@ -31,6 +31,11 @@ newline:
 
     cld
 
+    mov $0x30, %eax
+    mov %eax, %ds
+    mov %eax, %es
+    mov %eax, %ss
+
     mov %rdi, %rbx
     mov %rsp, %rdi
 

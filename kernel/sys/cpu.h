@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+extern bool sysenter;
+
 struct thread;
 
 struct cpu_ctx {

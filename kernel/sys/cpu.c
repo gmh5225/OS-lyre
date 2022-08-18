@@ -14,6 +14,8 @@
 #include <sched/sched.h>
 #include <limine.h>
 
+bool sysenter = false;
+
 size_t fpu_storage_size = 0;
 void (*fpu_save)(void *ctx) = NULL;
 void (*fpu_restore)(void *ctx) = NULL;
@@ -88,6 +90,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
         if (cpu_local->bsp) {
             kernel_print("cpu: Using SYSENTER\n");
+            sysenter = true;
         }
 
         wrmsr(0x174, 0x28); // CS
