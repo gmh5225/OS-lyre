@@ -78,6 +78,8 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
 
     size_t path_len = strlen(path);
 
+    bool ask_for_dir = path[path_len - 1] == '/';
+
     size_t index = 0;
     struct vfs_node *current_node = reduce_node(parent, false);
 
@@ -124,6 +126,10 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
         new_node = reduce_node(new_node, false);
 
         if (last) {
+            if (ask_for_dir && !S_ISDIR(new_node->resource->stat.st_mode)) {
+                errno = ENOTDIR;
+                return (struct path2node_res){current_node, NULL, elem_str};
+            }
             return (struct path2node_res){current_node, new_node, elem_str};
         }
 
