@@ -1,11 +1,9 @@
 name=limine
 version=3.16.1
-source_method=git
-clone_url="https://github.com/limine-bootloader/limine.git"
-tag="v${version}"
+source_method=tarball
+tarball_url="https://github.com/limine-bootloader/limine/releases/download/v${version}/limine-${version}.tar.xz"
 hostdeps="autoconf automake"
-imagedeps="git"
 
 regenerate() {
-    ./bootstrap
+    autoreconf -fvi
 }
