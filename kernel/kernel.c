@@ -23,6 +23,7 @@
 #include <sched/sched.h>
 #include <acpi/acpi.h>
 #include <time/time.h>
+#include <dev/pci.h>
 
 void kmain_thread(void);
 
@@ -58,6 +59,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
+    pci_init();
     ps2_init();
     console_init();
     streams_init();
