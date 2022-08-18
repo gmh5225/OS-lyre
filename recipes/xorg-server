@@ -13,6 +13,7 @@ configure() {
         --localstatedir=/var \
         --disable-static \
         --with-xkb-output=/var/lib/xkb \
+        --with-fontrootdir=/usr/share/fonts/X11 \
         --enable-xorg \
         --enable-xv \
         --enable-xvfb \
