@@ -1,8 +1,7 @@
 name=libepoxy
 version=1.5.10
-source_method=git
-clone_url="https://github.com/anholt/libepoxy.git"
-tag="${version}"
+source_method=tarball
+tarball_url="https://download.gnome.org/sources/libepoxy/1.5/libepoxy-${version}.tar.xz"
 
 regenerate() {
     true
