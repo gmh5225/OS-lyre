@@ -1,11 +1,9 @@
 name=xorg-proto
-version=2022.1
-source_method=git
-clone_url="https://gitlab.freedesktop.org/xorg/proto/xorgproto.git"
-tag="xorgproto-${version}"
+version=2022.2
+source_method=tarball
+tarball_url="https://www.x.org/releases/individual/proto/xorgproto-${version}.tar.xz"
 hostdeps="automake autoconf libtool pkg-config xorg-macros"
-imagedeps="git"
 
 regenerate() {
-    NOCONFIGURE=yes ./autogen.sh
+    autoreconf -fvi
 }

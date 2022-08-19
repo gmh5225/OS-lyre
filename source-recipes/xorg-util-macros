@@ -1,11 +1,9 @@
 name=xorg-util-macros
 version=1.19.3
-source_method=git
-clone_url="https://gitlab.freedesktop.org/xorg/util/macros.git"
-tag="util-macros-${version}"
+source_method=tarball
+tarball_url="https://www.x.org/archive/individual/util/util-macros-${version}.tar.gz"
 hostdeps="automake autoconf libtool pkg-config"
-imagedeps="git"
 
 regenerate() {
-    NOCONFIGURE=yes ./autogen.sh
+    autoreconf -fvi
 }

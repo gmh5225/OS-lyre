@@ -1,8 +1,7 @@
 name=nasm
 version=2.15.05
-source_method=git
-clone_url="https://github.com/netwide-assembler/nasm.git"
-tag="nasm-${version}"
+source_method=tarball
+tarball_url="https://www.nasm.us/pub/nasm/releasebuilds/${version}/nasm-${version}.tar.xz"
 hostdeps="automake autoconf libtool pkg-config"
 
 regenerate() {

@@ -1,5 +1,5 @@
 name=tzdata
-version=2022a
+version=2022c
 source_method=tarball
 tarball_url="https://data.iana.org/time-zones/releases/tzdata${version}.tar.gz"
 

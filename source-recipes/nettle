@@ -1,11 +1,10 @@
 name=nettle
-version=3.7.3
-source_method=git
-clone_url="https://github.com/gnutls/nettle.git"
-tag="nettle_${version}_release_20210606"
+version=3.8.1
+source_method=tarball
+tarball_url="https://ftp.gnu.org/gnu/nettle/nettle-${version}.tar.gz"
 hostdeps="automake autoconf libtool pkg-config"
 
 regenerate() {
-    ./.bootstrap
+    autoreconf -fvi
     cp /usr/local/share/automake-1.16/config.sub ./
 }

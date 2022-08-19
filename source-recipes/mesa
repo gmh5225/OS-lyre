@@ -1,8 +1,7 @@
 name=mesa
-version=21.3.8
-source_method=git
-clone_url="https://gitlab.freedesktop.org/mesa/mesa.git"
-tag="mesa-${version}"
+version=21.3.9
+source_method=tarball
+tarball_url="https://archive.mesa3d.org/mesa-${version}.tar.xz"
 
 regenerate() {
     true

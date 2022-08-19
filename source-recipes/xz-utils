@@ -1,11 +1,9 @@
 name=xz-utils
-version=5.2.5
-source_method=git
-clone_url="https://git.tukaani.org/xz.git"
-shallow=no
-tag="v${version}"
+version=5.2.6
+source_method=tarball
+tarball_url="https://tukaani.org/xz/xz-${version}.tar.gz"
 hostdeps="automake autoconf libtool pkg-config"
 
 regenerate() {
-    NOCONFIGURE=yes ./autogen.sh --no-po4a
+    autoreconf -fvi
 }

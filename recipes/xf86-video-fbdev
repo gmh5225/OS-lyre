@@ -12,8 +12,7 @@ configure() {
         --sysconfdir=/etc \
         --localstatedir=/var \
         --disable-static \
-        --disable-pciaccess \
-        --disable-malloc0returnsnull
+        --disable-pciaccess
 }
 
 build() {
