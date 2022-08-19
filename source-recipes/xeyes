@@ -1,0 +1,9 @@
+name=xeyes
+version=1.2.0
+source_method=tarball
+tarball_url="https://xorg.freedesktop.org/archive/individual/app/xeyes-${version}.tar.gz"
+hostdeps="automake autoconf libtool pkg-config xorg-macros"
+
+regenerate() {
+    autoreconf -fvi
+}
