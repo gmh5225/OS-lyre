@@ -503,7 +503,7 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
         stat_src = &node->resource->stat;
     }
 
-    memcpy(stat_buf, stat_src, sizeof(struct stat));
+    *stat_buf = *stat_src;
     return 0;
 }
 

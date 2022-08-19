@@ -317,7 +317,7 @@ ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, buf, count, count);
+    debug_print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
 
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
