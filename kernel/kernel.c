@@ -3,6 +3,7 @@
 #include <dev/char/serial.h>
 #include <dev/char/console.h>
 #include <dev/char/streams.h>
+#include <dev/video/fbdev.h>
 #include <dev/lapic.h>
 #include <dev/ps2.h>
 #include <lib/elf.h>
@@ -63,6 +64,7 @@ void kmain_thread(void) {
     ps2_init();
     console_init();
     streams_init();
+    fbdev_init();
     initramfs_init();
 
     struct pagemap *init_vm = vmm_new_pagemap();
