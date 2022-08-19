@@ -2,8 +2,9 @@ name=binutils
 version=2.39
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/binutils/binutils-${version}.tar.xz"
-hostdeps="automake"
+hostdeps="autoconf automake libtool pkg-config"
 
 regenerate() {
+    autoreconf -fvi
     cp /usr/local/share/automake-1.16/config.sub ./
 }
