@@ -85,15 +85,23 @@ index 5cf1f7b..4fb0179 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..a3c6178 100644
+index 877ff63..6cfd10f 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-@@ -7,18 +7,20 @@
+@@ -1,4 +1,5 @@
+ #include <bits/ensure.h>
++#include <mlibc/allocator.hpp>
+ #include <mlibc/debug.hpp>
+ #include <mlibc/all-sysdeps.hpp>
+ #include <errno.h>
+@@ -7,18 +8,22 @@
  #include <limits.h>
  #include <asm/ioctls.h>
  #include <stdlib.h>
 +#include <abi-bits/fcntl.h>
 +#include <lyre/syscall.h>
++#include <frg/hash.hpp>
++#include <frg/hash_map.hpp>
  
 -#include "syscall.h"
 -
@@ -115,7 +123,7 @@ index 877ff63..a3c6178 100644
  }
  
  void sys_libc_panic() {
-@@ -28,32 +30,22 @@ void sys_libc_panic() {
+@@ -28,32 +33,22 @@ void sys_libc_panic() {
  }
  
  void sys_exit(int status) {
@@ -150,7 +158,7 @@ index 877ff63..a3c6178 100644
  	switch (optional_action) {
  		case TCSANOW:
  			optional_action = TCSETS; break;
-@@ -73,18 +65,18 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
+@@ -73,18 +68,18 @@ int sys_tcsetattr(int fd, int optional_action, const struct termios *attr) {
  }
  
  int sys_tcb_set(void *pointer) {
@@ -175,7 +183,7 @@ index 877ff63..a3c6178 100644
  	return 0;
  }
  
-@@ -96,67 +88,48 @@ int sys_poll(struct pollfd *fds, nfds_t count, int timeout, int *num_events) {
+@@ -96,67 +91,48 @@ int sys_poll(struct pollfd *fds, nfds_t count, int timeout, int *num_events) {
  }
  
  int sys_epoll_pwait(int epfd, struct epoll_event *ev, int n,
@@ -262,7 +270,7 @@ index 877ff63..a3c6178 100644
  	FD_ZERO(&res_read_set);
  	FD_ZERO(&res_write_set);
  	FD_ZERO(&res_except_set);
-@@ -164,48 +137,45 @@ int sys_pselect(int nfds, fd_set *read_set, fd_set *write_set,
+@@ -164,48 +140,45 @@ int sys_pselect(int nfds, fd_set *read_set, fd_set *write_set,
  	for (int i = 0; i < nfds; i++) {
  		struct pollfd *fd = &fds[i];
  
@@ -327,7 +335,7 @@ index 877ff63..a3c6178 100644
  		return ret.errno;
  
  	int num_woken = ret.ret;
-@@ -214,20 +184,12 @@ int sys_futex_wake(int *pointer) {
+@@ -214,20 +187,12 @@ int sys_futex_wake(int *pointer) {
  	return num_woken;
  }
  
@@ -351,7 +359,7 @@ index 877ff63..a3c6178 100644
  		return ret.errno;
  
  	*result = (int)ret.ret;
-@@ -245,18 +207,18 @@ int sys_isatty(int fd) {
+@@ -245,18 +210,18 @@ int sys_isatty(int fd) {
  }
  
  int sys_getcwd(char *buffer, size_t size) {
@@ -374,7 +382,7 @@ index 877ff63..a3c6178 100644
  		return ret.errno;
  
  	*fd = (int)ret.ret;
-@@ -268,75 +230,108 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
+@@ -268,75 +233,116 @@ int sys_open(const char *path, int flags, mode_t mode, int *fd) {
  }
  
  int sys_open_dir(const char *path, int *handle) {
@@ -382,39 +390,47 @@ index 877ff63..a3c6178 100644
 +	return sys_openat(AT_FDCWD, path, O_DIRECTORY, 0, handle);
  }
  
-+#ifndef MLIBC_BUILDING_RTDL
- int sys_read_entries(int fd, void *buffer, size_t max_size, size_t *bytes_read) {
+-int sys_read_entries(int fd, void *buffer, size_t max_size, size_t *bytes_read) {
 -	(void)max_size;
 -	__syscall_ret ret = __syscall(19, fd, buffer);
-+	static int last_fd = -1; // FIXME: for the love of god let's NOT do that
-+	static size_t dir_offset = 0;
-+	static size_t dir_capacity = 4096;
-+	static void *dir_buffer = malloc(dir_capacity);
-+
-+	if (last_fd != -1 && last_fd != fd && dir_offset != 0) {
-+		sys_libc_log("sys_read_entries memes");
-+		sys_libc_panic();
-+		__builtin_unreachable();
-+	}
++struct ReadDirState {
++	size_t offset;
++	size_t capacity;
++	void *buffer;
++};
  
 -	if (ret.ret == (uint64_t)-1 && ret.errno == 0) {
 -		// End of directory.
-+	if (last_fd == -1 && dir_offset != 0) {
-+		dir_offset = 0;
- 		*bytes_read = 0;
- 		return 0;
+-		*bytes_read = 0;
+-		return 0;
 -	} else if (ret.errno != 0) {
 -		return ret.errno;
- 	}
- 
--	*bytes_read = sizeof(struct dirent);
-+	last_fd = fd;
++
++#ifndef MLIBC_BUILDING_RTDL
++static frg::hash_map<int, ReadDirState *, frg::hash<int>, MemoryAllocator> open_dirs{frg::hash<int>{}, getAllocator()};
++
++static ReadDirState *get_dir_state(int fdnum) {
++	ReadDirState *result;
++	if (auto value = open_dirs.get(fdnum)) {
++		result = *value;
++	} else {
++		result = (ReadDirState *)malloc(sizeof(ReadDirState));
++		result->offset = 0;
++		result->capacity = 1024;
++		result->buffer = malloc(result->capacity);
++		open_dirs.insert(fdnum, result);
++	}
++	return result;
++}
++
++int sys_read_entries(int fdnum, void *buffer, size_t max_size, size_t *bytes_read) {
++	ReadDirState *state = get_dir_state(fdnum);
 +
 +retry:
-+	__syscall_ret ret = __syscall(SYS_readdir, fd, dir_buffer, &dir_capacity);
++	__syscall_ret ret = __syscall(SYS_readdir, fdnum, state->buffer, &state->capacity);
 +	if ((int)ret.ret == -1) {
 +		if (ret.errno == ENOBUFS) {
-+			dir_buffer = realloc(dir_buffer, dir_capacity);
++			state->buffer = realloc(state->buffer, state->capacity);
 +			goto retry;
 +		} else {
 +			return ret.errno;
@@ -423,9 +439,8 @@ index 877ff63..a3c6178 100644
 +
 +	size_t offset = 0;
 +	while (offset < max_size) {
-+		struct dirent *ent = (struct dirent *)(dir_buffer + dir_offset);
++		struct dirent *ent = (struct dirent *)(state->buffer + state->offset);
 +		if (ent->d_reclen == 0) {
-+			last_fd = -1;
 +			break;
 +		}
 +
@@ -435,9 +450,10 @@ index 877ff63..a3c6178 100644
 +
 +		memcpy(buffer + offset, ent, ent->d_reclen);
 +		offset += ent->d_reclen;
-+		dir_offset += ent->d_reclen;
-+	}
-+
++		state->offset += ent->d_reclen;
+ 	}
+ 
+-	*bytes_read = sizeof(struct dirent);
 +	*bytes_read = offset;
  	return 0;
  }
@@ -452,6 +468,9 @@ index 877ff63..a3c6178 100644
  		return ret.errno;
 -
 +	}
++#ifndef MLIBC_BUILDING_RTDL
++	open_dirs.remove(fd);
++#endif
  	return 0;
  }
  
@@ -515,7 +534,7 @@ index 877ff63..a3c6178 100644
  	return 0;
  }
  
-@@ -345,186 +340,147 @@ int sys_link(const char *old_path, const char *new_path) {
+@@ -345,186 +351,147 @@ int sys_link(const char *old_path, const char *new_path) {
  }
  
  int sys_linkat(int olddirfd, const char *old_path, int newdirfd, const char *new_path, int flags) {
@@ -561,12 +580,12 @@ index 877ff63..a3c6178 100644
 -	return 0;
 +int sys_fchmod(int fd, mode_t mode) {
 +	return sys_fchmodat(fd, "", mode, AT_EMPTY_PATH);
- }
- 
-+int sys_chmod(const char *pathname, mode_t mode) {
-+	return sys_fchmodat(AT_FDCWD, pathname, mode, 0);
 +}
 +
++int sys_chmod(const char *pathname, mode_t mode) {
++	return sys_fchmodat(AT_FDCWD, pathname, mode, 0);
+ }
+ 
 +int sys_rmdir(const char *path) STUB_ONLY
 +
  int sys_vm_map(void *hint, size_t size, int prot, int flags,
@@ -762,7 +781,7 @@ index 877ff63..a3c6178 100644
  	return 0;
  }
  
-@@ -533,22 +489,18 @@ int sys_access(const char *path, int mode) {
+@@ -533,22 +500,18 @@ int sys_access(const char *path, int mode) {
  }
  
  int sys_pipe(int *fds, int flags) {
@@ -789,7 +808,7 @@ index 877ff63..a3c6178 100644
  	return 0;
  }
  
-@@ -557,332 +509,254 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +520,253 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
@@ -915,7 +934,7 @@ index 877ff63..a3c6178 100644
  	return 0;
  }
  
- 
+-
 -int sys_setsockopt(int fd, int layer, int number,
 -		const void *buffer, socklen_t size) {
 -	(void)fd; (void)buffer; (void)size;
@@ -971,8 +990,7 @@ index 877ff63..a3c6178 100644
  
 -int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
- 
+-
 -	if (ret.errno != 0) {
 -		return ret.errno;
 -	}
@@ -980,7 +998,8 @@ index 877ff63..a3c6178 100644
 -	*length = (ssize_t)ret.ret;
 -	return 0;
 -}
--
++int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
+ 
 -int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
 -
@@ -1144,20 +1163,20 @@ index 877ff63..a3c6178 100644
 -
 -	if (ret.errno != 0)
 -		return ret.errno;
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
  
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
++int sys_umount2(const char *target, int flags) STUB_ONLY
  
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_umount2(const char *target, int flags) STUB_ONLY
- 
+-
 -	return 0;
 +#ifndef MLIBC_BUILDING_RTDL
 +int sys_gethostname(char *buffer, size_t bufsize) {
