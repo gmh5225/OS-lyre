@@ -1,8 +1,7 @@
 name=binutils
 version=2.39
-source_method=git
-clone_url="https://sourceware.org/git/binutils-gdb.git"
-tag="binutils-2_39"
+source_method=tarball
+tarball_url="https://ftp.gnu.org/gnu/binutils/binutils-${version}.tar.xz"
 hostdeps="automake"
 
 regenerate() {
