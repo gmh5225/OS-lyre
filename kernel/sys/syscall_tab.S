@@ -43,6 +43,8 @@ syscall_table:
     .quad syscall_connect     // 38
     .quad syscall_listen      // 39
     .quad syscall_accept      // 40
+    .quad syscall_getpeername // 41
+    .quad syscall_recvmsg     // 42
 syscall_table_end:
 
 .global syscall_count

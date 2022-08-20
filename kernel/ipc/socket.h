@@ -32,14 +32,16 @@ struct socket {
     int type;
     int protocol;
 
-    bool (*bind)(struct socket *this, void *addr, size_t len);
-    bool (*connect)(struct socket *this, void *addr, size_t len);
-    bool (*peername)(struct socket *this, void *addr, size_t *len);
-    bool (*listen)(struct socket *this, int backlog);
-    struct resource *(*accept)(struct socket *this);
+    bool (*bind)(struct socket *this, struct f_description *description, void *addr, socklen_t len);
+    bool (*connect)(struct socket *this, struct f_description *description, void *addr, socklen_t len);
+    bool (*getpeername)(struct socket *this, struct f_description *description, void *addr, socklen_t *len);
+    bool (*listen)(struct socket *this, struct f_description *description, int backlog);
+    struct socket *(*accept)(struct socket *this, struct f_description *description, struct socket *other, void *addr, socklen_t *len);
+    ssize_t (*recvmsg)(struct socket *this, struct f_description *description, struct msghdr *msg, int flags);
 };
 
 void *socket_create(int family, int type, int protocol, int size);
 struct socket *socket_create_unix(int type, int protocol);
+bool socket_add_to_backlog(struct socket *sock, struct socket *other);
 
 #endif

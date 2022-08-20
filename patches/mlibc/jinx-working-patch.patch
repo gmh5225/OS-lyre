@@ -85,7 +85,7 @@ index 5cf1f7b..4fb0179 100644
  	// TODO: call __dlapi_enter, otherwise static builds will break (see Linux sysdeps)
  	auto result = main_fn(__mlibc_stack_data.argc, __mlibc_stack_data.argv, environ);
 diff --git mlibc-clean/sysdeps/vinix/generic/generic.cpp mlibc-workdir/sysdeps/vinix/generic/generic.cpp
-index 877ff63..6cfd10f 100644
+index 877ff63..3c1b411 100644
 --- mlibc-clean/sysdeps/vinix/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/vinix/generic/generic.cpp
 @@ -1,4 +1,5 @@
@@ -189,19 +189,19 @@ index 877ff63..6cfd10f 100644
  int sys_epoll_pwait(int epfd, struct epoll_event *ev, int n,
 -					int timeout, const sigset_t *sigmask, int *raised) {
 -	__syscall_ret ret = __syscall(49, epfd, ev, n, timeout, sigmask);
-+					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_epoll_create(int flags, int *fd) STUB_ONLY
- 
+-
 -	*raised = (int)ret.ret;
 -	return 0;
 -}
--
++					int timeout, const sigset_t *sigmask, int *raised) STUB_ONLY
+ 
 -int sys_epoll_create(int flags, int *fd) {
 -	__syscall_ret ret = __syscall(37, flags);
--
++int sys_epoll_create(int flags, int *fd) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
@@ -419,7 +419,7 @@ index 877ff63..6cfd10f 100644
 +		result->capacity = 1024;
 +		result->buffer = malloc(result->capacity);
 +		open_dirs.insert(fdnum, result);
-+	}
+ 	}
 +	return result;
 +}
 +
@@ -443,7 +443,8 @@ index 877ff63..6cfd10f 100644
 +		if (ent->d_reclen == 0) {
 +			break;
 +		}
-+
+ 
+-	*bytes_read = sizeof(struct dirent);
 +		if (offset + ent->d_reclen >= max_size) {
 +			break;
 +		}
@@ -451,9 +452,8 @@ index 877ff63..6cfd10f 100644
 +		memcpy(buffer + offset, ent, ent->d_reclen);
 +		offset += ent->d_reclen;
 +		state->offset += ent->d_reclen;
- 	}
- 
--	*bytes_read = sizeof(struct dirent);
++	}
++
 +	*bytes_read = offset;
  	return 0;
  }
@@ -808,7 +808,7 @@ index 877ff63..6cfd10f 100644
  	return 0;
  }
  
-@@ -557,332 +520,253 @@ int sys_mkdir(const char *path, mode_t mode) {
+@@ -557,332 +520,274 @@ int sys_mkdir(const char *path, mode_t mode) {
  }
  
  int sys_mkdirat(int dirfd, const char *path, mode_t mode) {
@@ -988,29 +988,33 @@ index 877ff63..6cfd10f 100644
  	}
  }
  
--int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
+ int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) {
 -	__syscall_ret ret = __syscall(62, sockfd, hdr, flags);
 -
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++	__syscall_ret ret = __syscall(SYS_recvmsg, sockfd, hdr, flags);
++	ssize_t ret_value = (ssize_t)ret.ret;
++	if (ret_value == -1) {
+ 		return ret.errno;
+ 	}
 -
 -	*length = (ssize_t)ret.ret;
--	return 0;
--}
-+int sys_msg_recv(int sockfd, struct msghdr *hdr, int flags, ssize_t *length) STUB_ONLY
++	*length = ret_value;
+ 	return 0;
+ }
  
--int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
+ int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) {
 -	__syscall_ret ret = __syscall(60, fd, addr_ptr, &max_addr_length);
 -
 -	if (ret.errno != 0) {
--		return ret.errno;
--	}
++	__syscall_ret ret = __syscall(SYS_getpeername, fd, addr_ptr, &max_addr_length);
++	if ((int)ret.ret == -1) {
+ 		return ret.errno;
+ 	}
 -
--	*actual_length = max_addr_length;
--	return 0;
--}
-+int sys_peername(int fd, struct sockaddr *addr_ptr, socklen_t max_addr_length, socklen_t *actual_length) STUB_ONLY
+ 	*actual_length = max_addr_length;
+ 	return 0;
+ }
  
  int sys_listen(int fd, int backlog) {
 -	__syscall_ret ret = __syscall(41, fd, backlog);
@@ -1160,26 +1164,43 @@ index 877ff63..6cfd10f 100644
  
 -int sys_getgroups(size_t size, const gid_t *list, int *_ret) {
 -	__syscall_ret ret = __syscall(38, size, list);
--
++int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
+ 
 -	if (ret.errno != 0)
 -		return ret.errno;
-+int sys_getgroups(size_t size, const gid_t *list, int *_ret) STUB_ONLY
++int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
  
 -	*_ret = (int)ret.ret;
 -	return 0;
 -}
-+int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) STUB_ONLY
- 
+-
 -int sys_mount(const char *source, const char *target, const char *fstype, unsigned long flags, const void *data) {
 -	__syscall_ret ret = __syscall(43, source, target, fstype, flags, data);
-+int sys_umount2(const char *target, int flags) STUB_ONLY
- 
+-
 -	if (ret.errno != 0)
 -		return ret.errno;
 -
 -	return 0;
+-}
+-
+-int sys_umount2(const char *target, int flags) {
+-	__syscall_ret ret = __syscall(44, target, flags);
+-
+-	if (ret.errno != 0)
+-		return ret.errno;
+-
+-	return 0;
+-}
++int sys_umount2(const char *target, int flags) STUB_ONLY
+ 
 +#ifndef MLIBC_BUILDING_RTDL
-+int sys_gethostname(char *buffer, size_t bufsize) {
+ int sys_gethostname(char *buffer, size_t bufsize) {
+-	__syscall_ret ret = __syscall(51, buffer, bufsize);
+-
+-	if (ret.errno != 0)
+-		return ret.errno;
+-
+-	return 0;
 +	struct utsname utsname = {0};
 +	if (int err = sys_uname(&utsname)) {
 +		return err;
@@ -1192,52 +1213,17 @@ index 877ff63..6cfd10f 100644
  }
 +#endif
  
--int sys_umount2(const char *target, int flags) {
--	__syscall_ret ret = __syscall(44, target, flags);
-+int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
- 
--	if (ret.errno != 0)
-+int sys_sleep(time_t *secs, long *nanos) {
-+	struct timespec time = {.tv_sec = *secs, .tv_nsec = *nanos};
-+	struct timespec rem = {.tv_sec = 0, .tv_nsec = 0};
-+	__syscall_ret ret = __syscall(SYS_sleep, &time, &rem);
-+    if ((int)ret.ret == -1) {
- 		return ret.errno;
--
-+	}
-+	*secs = rem.tv_sec;
-+	*nanos = rem.tv_nsec;
- 	return 0;
- }
- 
--int sys_gethostname(char *buffer, size_t bufsize) {
--	__syscall_ret ret = __syscall(51, buffer, bufsize);
-+int sys_getitimer(int which, struct itimerval *curr_value) STUB_ONLY
- 
--	if (ret.errno != 0)
--		return ret.errno;
-+int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) STUB_ONLY
- 
-+int sys_umask(mode_t mode, mode_t *old) {
-+    __syscall_ret ret = __syscall(SYS_umask, mode);
-+	*old = (mode_t)ret.ret;
- 	return 0;
- }
- 
 -int sys_sethostname(const char *buffer, size_t bufsize) {
 -	__syscall_ret ret = __syscall(52, buffer, bufsize);
 -
 -	if (ret.errno != 0)
-+int sys_uname(struct utsname *buf) {
-+	__syscall_ret ret = __syscall(SYS_uname, buf);
-+    if ((int)ret.ret == -1) {
- 		return ret.errno;
+-		return ret.errno;
 -
-+	}
- 	return 0;
- }
+-	return 0;
+-}
++int sys_sethostname(const char *buffer, size_t bufsize) STUB_ONLY
  
--int sys_sleep(time_t *secs, long *nanos) {
+ int sys_sleep(time_t *secs, long *nanos) {
 -	struct timespec req = {
 -		.tv_sec = *secs,
 -		.tv_nsec = *nanos
@@ -1247,29 +1233,53 @@ index 877ff63..6cfd10f 100644
 -	__syscall_ret ret = __syscall(53, &req, &rem);
 -
 -	if (ret.errno != 0)
--		return ret.errno;
++	struct timespec time = {.tv_sec = *secs, .tv_nsec = *nanos};
++	struct timespec rem = {.tv_sec = 0, .tv_nsec = 0};
++	__syscall_ret ret = __syscall(SYS_sleep, &time, &rem);
++    if ((int)ret.ret == -1) {
+ 		return ret.errno;
 -
--	*secs = rem.tv_sec;
--	*nanos = rem.tv_nsec;
-+int sys_fsync(int fd) {
-+	mlibc::infoLogger() << "sys_fsync is a stub" << frg::endlog;
++	}
+ 	*secs = rem.tv_sec;
+ 	*nanos = rem.tv_nsec;
  	return 0;
  }
  
 -
--int sys_getitimer(int which, struct itimerval *curr_value) {
+ int sys_getitimer(int which, struct itimerval *curr_value) {
 -	__syscall_ret ret = __syscall(63, which, curr_value);
--
++	mlibc::infoLogger() << "mlibc: sys_getitimer() is unimplemented" << frg::endlog;
++	return ENOSYS;
++}
+ 
 -	return ret.errno;
--}
--
--
++int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) {
++	mlibc::infoLogger() << "mlibc: sys_setitimer() is unimplemented" << frg::endlog;
++	return ENOSYS;
+ }
+ 
++int sys_umask(mode_t mode, mode_t *old) {
++    __syscall_ret ret = __syscall(SYS_umask, mode);
++	*old = (mode_t)ret.ret;
++	return 0;
++}
+ 
 -int sys_setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value) {
 -	__syscall_ret ret = __syscall(64, which, new_value, old_value);
--
++int sys_uname(struct utsname *buf) {
++	__syscall_ret ret = __syscall(SYS_uname, buf);
++    if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
++}
+ 
 -	return ret.errno;
--}
--
++int sys_fsync(int fd) {
++	mlibc::infoLogger() << "sys_fsync is a stub" << frg::endlog;
++	return 0;
+ }
+ 
  } // namespace mlibc
 diff --git mlibc-clean/sysdeps/vinix/generic/syscall.h mlibc-clean/sysdeps/vinix/generic/syscall.h
 deleted file mode 100644
@@ -1329,10 +1339,10 @@ index 0000000..bfa76ca
 +#endif
 diff --git mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
 new file mode 100644
-index 0000000..1e167eb
+index 0000000..af8e0cb
 --- /dev/null
 +++ mlibc-workdir/sysdeps/vinix/include/lyre/syscall.h
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,106 @@
 +#ifndef _LYRE__SYSCALL_H
 +#define _LYRE__SYSCALL_H
 +
@@ -1379,6 +1389,8 @@ index 0000000..1e167eb
 +#define SYS_connect 38
 +#define SYS_listen 39
 +#define SYS_accept 40
++#define SYS_getpeername 41
++#define SYS_recvmsg 42
 +
 +struct __syscall_ret {
 +	uint64_t ret;
