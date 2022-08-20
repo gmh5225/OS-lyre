@@ -485,6 +485,8 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
     return 0;
 }
 
+#define MAX_PPOLL_FDS 32
+
 int syscall_ppoll(void *_, struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, sigset_t *sigmask) {
     (void)_;
 
@@ -494,14 +496,14 @@ int syscall_ppoll(void *_, struct pollfd *fds, nfds_t nfds, const struct timespe
     debug_print("syscall (%d %s): ppoll(%lx, %lu, %lx, %lx)", proc->pid, proc->name, fds, nfds, timeout, sigmask);
 
     int fd_count = 0, event_count = 0, ret = 0;
-    int fd_nums[RLIMIT_NOFILE];
-    struct f_descriptor *fd_list[RLIMIT_NOFILE];
-    struct event *events[RLIMIT_NOFILE];
+    int fd_nums[MAX_PPOLL_FDS];
+    struct f_descriptor *fd_list[MAX_PPOLL_FDS];
+    struct event *events[MAX_PPOLL_FDS];
     struct timer *timer = NULL;
 
     // XXX no signals yet
 
-    if (nfds > RLIMIT_NOFILE) {
+    if (nfds > MAX_PPOLL_FDS) {
         ret = -1;
         errno = EINVAL;
         goto cleanup;
