@@ -72,6 +72,13 @@ void *socket_create(int family, int type, int protocol, int size) {
     }
 
     sock->stat.st_mode = S_IFSOCK;
+
+    // XXX the following line should be uncommented, or even
+    // better, it should be moved to resource_create... why is it not
+    // like that already? we need to go over that one day and fix all
+    // oversights related to refcounting resources
+
+    // sock->refcount = 1;
     sock->state = SOCKET_CREATED;
     sock->family = family;
     sock->type = type;
@@ -274,25 +281,25 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
                 spinlock_acquire(&sock->lock);
             }
 
-            struct socket *other = sock->backlog[0];
+            struct socket *peer = sock->backlog[0];
             for (size_t i = 1; i < sock->backlog_i; i++) {
                 sock->backlog[i - 1] = sock->backlog[i];
             }
             sock->backlog_i--;
 
-            struct socket *peer = sock->accept(sock, desc, other, addr, len);
-            if (peer == NULL) {
+            struct socket *connection_socket = sock->accept(sock, desc, peer, addr, len);
+            if (connection_socket == NULL) {
                 goto cleanup;
             }
 
-            other->refcount++;
-            other->peer = peer;
-            other->state = SOCKET_CONNECTED;
+            peer->refcount++;
+            peer->peer = connection_socket;
+            peer->state = SOCKET_CONNECTED;
             if (sock->backlog_i == 0) {
                 sock->status &= ~POLLIN;
             }
 
-            event_trigger(&other->connect_event, false);
+            event_trigger(&peer->connect_event, false);
 
             struct event *conn_event = &sock->connect_event;
             ssize_t index = event_await(&conn_event, 1, true);
@@ -301,7 +308,7 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
                 goto cleanup;
             }
 
-            ret = fdnum_create_from_resource(proc, (struct resource *)peer, 0, 0, false);
+            ret = fdnum_create_from_resource(proc, (struct resource *)connection_socket, 0, 0, false);
 
 cleanup:
             spinlock_release(&sock->lock);

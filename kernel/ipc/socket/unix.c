@@ -31,10 +31,11 @@ static ssize_t unix_read(struct resource *_this, struct f_description *descripti
     spinlock_acquire(&this->lock);
 
     while (this->used == 0) {
-        if (this->refcount < 2) {
-            ret = 0;
-            goto cleanup;
-        }
+        // XXX uncomment this to properly return EOF
+        // if (this->refcount < 2) {
+        //     ret = 0;
+        //     goto cleanup;
+        // }
 
         if ((description->flags & O_NONBLOCK) != 0) {
             errno = EWOULDBLOCK;
@@ -253,7 +254,7 @@ static bool unix_listen(struct socket *this_, struct f_description *description,
 static struct socket *unix_accept(struct socket *_this, struct f_description *description, struct socket *other, void *_addr, socklen_t *len) {
     (void)description;
 
-    struct unix_socket *sock = socket_create(AF_UNIX, _this->type, _this->protocol, sizeof(struct unix_socket));
+    struct unix_socket *sock = (struct unix_socket *)socket_create_unix(_this->type, _this->protocol);
     if (sock == NULL) {
         return NULL;
     }
@@ -265,8 +266,6 @@ static struct socket *unix_accept(struct socket *_this, struct f_description *de
     sock->peer = other;
     sock->state = SOCKET_CONNECTED;
     sock->addr = other->addr;
-    sock->data = alloc(SOCK_BUFFER_SIZE, ALLOC_RESOURCE);
-    sock->capacity = SOCK_BUFFER_SIZE;
     return (struct socket *)sock;
 }
 
@@ -284,10 +283,11 @@ static ssize_t unix_recvmsg(struct socket *_this, struct f_description *descript
     }
 
     while (this->used == 0) {
-        if (this->refcount < 2) {
-            ret = 0;
-            goto cleanup;
-        }
+        // XXX uncomment this to properly return EOF
+        // if (this->refcount < 2) {
+        //     ret = 0;
+        //     goto cleanup;
+        // }
 
         this->peer->status |= POLLOUT;
         event_trigger(&this->peer->event, false);
@@ -386,6 +386,8 @@ struct socket *socket_create_unix(int type, int protocol) {
     sock->family = AF_UNIX;
     sock->type = type;
     sock->protocol = protocol;
+    sock->data = alloc(SOCK_BUFFER_SIZE, ALLOC_RESOURCE);
+    sock->capacity = SOCK_BUFFER_SIZE;
 
     sock->stat.st_mode = S_IFSOCK;
 
