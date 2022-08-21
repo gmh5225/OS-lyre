@@ -1,11 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <dev/char/serial.h>
-#include <dev/char/console.h>
-#include <dev/char/streams.h>
-#include <dev/video/fbdev.h>
 #include <dev/lapic.h>
-#include <dev/ps2.h>
+#include <dev/dev.h>
 #include <lib/elf.h>
 #include <lib/print.h>
 #include <lib/random.h>
@@ -24,7 +21,6 @@
 #include <sched/sched.h>
 #include <acpi/acpi.h>
 #include <time/time.h>
-#include <dev/pci.h>
 
 void kmain_thread(void);
 
@@ -60,11 +56,7 @@ void kmain_thread(void) {
     vfs_mount(vfs_root, NULL, "/", "tmpfs");
     vfs_create(vfs_root, "/dev", 0755 | S_IFDIR);
     vfs_mount(vfs_root, NULL, "/dev", "devtmpfs");
-    pci_init();
-    ps2_init();
-    console_init();
-    streams_init();
-    fbdev_init();
+    dev_init();
     initramfs_init();
 
     struct pagemap *init_vm = vmm_new_pagemap();

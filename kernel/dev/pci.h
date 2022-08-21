@@ -28,6 +28,21 @@ struct pci_bar {
     bool is_mmio;
 };
 
+struct pci_driver {
+    const char *name;
+    int match;
+
+    void (*init)(struct pci_device *);
+
+    uint8_t pci_class, subclass, prog_if;
+    uint16_t vendor, device;
+};
+
+#define PCI_MATCH_CLASS (1 << 0)
+#define PCI_MATCH_SUBCLASS (1 << 1)
+#define PCI_MATCH_PROG_IF (1 << 2)
+#define PCI_MATCH_DEVICE (1 << 3)
+
 #define PCI_PRIV_PIO 0x1
 #define PCI_PRIV_MMIO 0x2
 #define PCI_PRIV_BUSMASTER 0x4

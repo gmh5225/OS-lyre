@@ -41,6 +41,12 @@ SECTIONS
         *(.rodata .rodata.*)
     } :rodata
 
+    .drivers : {
+        drivers_start = .;
+        KEEP(*(.drivers*))
+        drivers_end = .;
+    } :rodata
+
     rodata_end_addr = .;
 
     /* Move to the next memory page for .data */

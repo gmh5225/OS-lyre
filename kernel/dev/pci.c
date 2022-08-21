@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <dev/pci.h>
+#include <dev/dev.h>
 #include <acpi/acpi.h>
 #include <mm/vmm.h>
 #include <lib/vector.h>
@@ -190,6 +191,38 @@ static void scan_root_bus(void) {
     );
 }
 
+static void dispatch_drivers(void) {
+    DRIVER_FOR_EACH(DRIVER_PCI, dev,
+        struct pci_driver *p = dev->pci_dev;
+
+        VECTOR_FOR_EACH(&devlist, device,
+            struct pci_device *d = *device; 
+      
+            if (p->match & PCI_MATCH_DEVICE) {
+                if ((d->vendor_id != p->vendor) || (d->device_id != p->device)) {
+                    continue;
+                }
+
+                p->init(d);
+            } else {
+                if ((p->match & PCI_MATCH_CLASS) && (d->pci_class != p->pci_class)) {
+                    continue;
+                }
+
+                if ((p->match & PCI_MATCH_SUBCLASS) && (d->subclass != p->subclass)) {
+                    continue;
+                }
+
+                if ((p->match & PCI_MATCH_PROG_IF) && (d->prog_if != p->prog_if)) {
+                    continue;
+                }
+
+                p->init(d);
+            }
+        );
+    );
+}
+
 void pci_init(void) {
     // Try to use the MCFG when possible
     struct sdt *mcfg = acpi_find_sdt("MCFG", 0);
@@ -212,6 +245,7 @@ void pci_init(void) {
     pci_read = mcfg_read;
     pci_write = mcfg_write;
     scan_root_bus();
+    dispatch_drivers();
 
 legacy:
     // TODO: Support PCI access mechanism 1 (legacy PIO)
