@@ -158,7 +158,7 @@ void pmm_free(void *addr, size_t pages) {
 }
 
 uint64_t pmm_total_pages(void) {
-    return usable_pages;;
+    return usable_pages;
 }
 
 uint64_t pmm_used_pages(void) {
