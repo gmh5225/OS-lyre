@@ -1,8 +1,7 @@
 name=automake
 version=1.16.5
-source_method=git
-clone_url="https://git.savannah.gnu.org/git/automake.git"
-tag="v${version}"
+source_method=tarball
+tarball_url="https://ftp.gnu.org/gnu/automake/automake-${version}.tar.gz"
 hostdeps="autoconf"
 
 regenerate() {
