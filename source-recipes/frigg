@@ -1,9 +1,7 @@
 name=frigg
-version=0.0
-source_method=git
-clone_url="https://github.com/managarm/frigg.git"
-tag="master"
-commit="49c4d02bcd4155bdc55260372aa5e1a9b8767fa7"
+version=49c4d02bcd4155bdc55260372aa5e1a9b8767fa7
+source_method=tarball
+tarball_url="https://github.com/managarm/frigg/archive/${version}.tar.gz"
 
 regenerate() {
     true

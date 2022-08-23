@@ -1,9 +1,7 @@
 name=mlibc
-version=0.0
-source_method=git
-clone_url="https://github.com/managarm/mlibc.git"
-tag="master"
-commit="54f8d502bc4319461e08537a4dc70d7752e1478a"
+version=b587536d4ba6c7994e090b7ed6ccb9562463b39e
+source_method=tarball
+tarball_url="https://github.com/managarm/mlibc/archive/${version}.tar.gz"
 
 regenerate() {
     for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done

@@ -1,9 +1,7 @@
 name=cxxshim
-version=0.0
-source_method=git
-clone_url="https://github.com/managarm/cxxshim.git"
-tag="master"
-commit="334fdb17aa26194eb839eee5b20ad94712c6e1f4"
+version=334fdb17aa26194eb839eee5b20ad94712c6e1f4
+source_method=tarball
+tarball_url="https://github.com/managarm/cxxshim/archive/${version}.tar.gz"
 
 regenerate() {
     true
