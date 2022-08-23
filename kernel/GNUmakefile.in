@@ -36,8 +36,8 @@ CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
 CROSS_CPPFLAGS ?= @CROSS_CPPFLAGS@
 
 ifeq ($(ARCH),x86_64)
-# User controllable NASMFLAGS.
-CROSS_NASMFLAGS ?= @CROSS_NASMFLAGS@ @WERROR@
+    # User controllable NASMFLAGS.
+    CROSS_NASMFLAGS ?= @CROSS_NASMFLAGS@ @WERROR@
 endif
 
 # User controllable linker flags.
@@ -95,8 +95,8 @@ override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -na
 override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.S')
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(CFILES:.c=.o) $(ASFILES:.S=.o))
 ifeq ($(ARCH),x86_64)
-override NASMFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.asm')
-override OBJ += $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(NASMFILES:.asm=.o))
+    override NASMFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.asm')
+    override OBJ += $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(NASMFILES:.asm=.o))
 endif
 override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
 
