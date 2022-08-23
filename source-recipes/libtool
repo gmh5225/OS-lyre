@@ -2,8 +2,6 @@ name=libtool
 version=2.4.7
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/libtool/libtool-${version}.tar.gz"
-hostdeps="autoconf automake"
-imagedeps="git help2man"
 
 regenerate() {
     true
