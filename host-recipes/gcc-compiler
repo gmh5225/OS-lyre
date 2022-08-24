@@ -1,5 +1,5 @@
 name=gcc-compiler
-from_source=gcc
+from_source=gcc-host
 revision=1
 imagedeps="gcc"
 hostdeps="autoconf automake"

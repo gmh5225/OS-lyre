@@ -1,0 +1,19 @@
+name=gcc-host
+version=12.2.0
+source_method=tarball
+tarball_url="https://ftp.gnu.org/gnu/gcc/gcc-${version}/gcc-${version}.tar.xz"
+hostdeps="automake autoconf"
+
+regenerate() {
+    for i in "${base_dir}"/patches/gcc/*; do
+        patch -p1 < "$i"
+    done
+    ./contrib/download_prerequisites
+    cp /usr/local/share/automake-1.16/config.sub ./
+    cp /usr/local/share/automake-1.16/config.sub ./gmp-6.2.1/configfsf.sub
+    cp /usr/local/share/automake-1.16/config.sub ./isl-0.24/
+    cp /usr/local/share/automake-1.16/config.sub ./mpc-1.2.1/build-aux/
+    cp /usr/local/share/automake-1.16/config.sub ./mpfr-4.1.0/
+    ( cd gcc && autoconf )
+    ( cd libstdc++-v3 && autoconf )
+}

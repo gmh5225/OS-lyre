@@ -1,0 +1,10 @@
+name=mpc
+version=1.2.1
+source_method=tarball
+tarball_url="https://ftp.gnu.org/gnu/mpc/mpc-${version}.tar.gz"
+hostdeps="automake autoconf libtool pkg-config"
+imagedeps="git"
+
+regenerate() {
+    autoreconf -fvi
+}
