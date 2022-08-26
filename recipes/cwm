@@ -1,0 +1,19 @@
+name=cwm
+from_source=cwm
+revision=1
+hostdeps="gcc libtool pkg-config"
+deps="mlibc libx11 libxmu libxaw libxrender libxrandr libxft libxt libxkbfile libiconv dejavu"
+
+configure() {
+    cp -r ${source_dir}/. .
+}
+
+build() {
+    make -j${parallelism} \
+        CC=x86_64-lyre-gcc \
+        PKG_CONFIG=x86_64-lyre-pkg-config
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install
+}
