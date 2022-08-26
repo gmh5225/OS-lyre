@@ -1,0 +1,9 @@
+name=xclock
+version=1.1.1
+source_method=tarball
+tarball_url="https://xorg.freedesktop.org/archive/individual/app/xclock-${version}.tar.gz"
+hostdeps="automake autoconf autoconf-archive libtool pkg-config xorg-macros"
+
+regenerate() {
+    autoreconf -fvi
+}
