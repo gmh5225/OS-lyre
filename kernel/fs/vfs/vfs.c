@@ -649,7 +649,7 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
     return 0;
 }
 
-int syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, size_t length) {
+ssize_t syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, size_t length) {
     (void)_;
 
     struct thread *thread = sched_current_thread();
