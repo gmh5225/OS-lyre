@@ -47,7 +47,6 @@ CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 override CROSS_CFLAGS += \
     -g \
     -std=gnu11 \
-    -nostdinc \
     -fms-extensions \
     -fno-omit-frame-pointer \
     -fno-strict-aliasing \
