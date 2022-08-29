@@ -20,14 +20,12 @@ if test "$werror_state" = "yes"; then
     AC_SUBST(WERROR, [-Werror])
 fi
 
+m4_define([DEFAULT_ARCH], [x86_64])
+AC_ARG_VAR(ARCH, [target architecture @<:@default: ]DEFAULT_ARCH[@:>@])
+test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
+
 AC_PROG_MKDIR_P
-case "$MKDIR_P" in
-    .*) MKDIR_P="$(cd "$(dirname "$MKDIR_P")" && pwd -P)/$(basename "$MKDIR_P")" ;;
-esac
 AC_PROG_INSTALL
-case "$INSTALL" in
-    .*) INSTALL="$(cd "$(dirname "$INSTALL")" && pwd -P)/$(basename "$INSTALL")" ;;
-esac
 AC_PROG_GREP
 AC_PROG_SED
 AC_PROG_AWK
@@ -37,14 +35,12 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
-AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
-if ! test "x$NASM_FOUND" = "xyes"; then
-    AC_MSG_ERROR([nasm not found, please install nasm before configuring])
-fi
-
-m4_define([DEFAULT_ARCH], [x86_64])
-AC_ARG_VAR(ARCH, [target architecture @<:@default: ]DEFAULT_ARCH[@:>@])
-test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
+#if test "x$ARCH" = "xx86_64"; then
+#    AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
+#    if ! test "x$NASM_FOUND" = "xyes"; then
+#        AC_MSG_ERROR([nasm not found, please install nasm before configuring])
+#    fi
+#fi
 
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative cross toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [cross C compiler command])

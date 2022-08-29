@@ -3,7 +3,6 @@ from_source=kernel
 revision=1
 deps="mlibc"
 hostdeps="gcc binutils"
-imagedeps="nasm"
 
 configure() {
     ${source_dir}/configure CROSS_TOOLCHAIN=x86_64-lyre
