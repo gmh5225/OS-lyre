@@ -45,22 +45,25 @@ CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 
 # Internal C flags that should not be changed by the user.
 override CROSS_CFLAGS += \
-    -Ddebug=$(LYRE_DEBUG) \
-    -I'$(call SHESCAPE,$(SRCDIR))' \
-    -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
+    -g \
     -std=gnu11 \
+    -nostdinc \
     -fms-extensions \
     -fno-omit-frame-pointer \
     -fno-strict-aliasing \
-    -Wno-microsoft-anon-tag \
-    -Wvla \
-    -Wshadow \
     -ffreestanding \
     -fno-stack-protector \
     -fno-stack-check \
     -fno-pie \
     -fno-pic \
-    -MMD
+    -fno-lto \
+    -Wno-microsoft-anon-tag \
+    -Wvla \
+    -Wshadow \
+    -MMD \
+    -Ddebug=$(LYRE_DEBUG) \
+    -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
+    -I'$(call SHESCAPE,$(SRCDIR))'
 
 # Internal linker flags that should not be changed by the user.
 override CROSS_LDFLAGS += \
@@ -68,6 +71,10 @@ override CROSS_LDFLAGS += \
     -static \
     -z max-page-size=0x1000 \
     -T '$(call SHESCAPE,$(SRCDIR)/linker-$(ARCH).ld)'
+
+ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+    override CROSS_LDFLAGS += -no-pie
+endif
 
 # Set archtecture specific variables (and check that the architecture is supported).
 ifeq ($(ARCH),x86_64)

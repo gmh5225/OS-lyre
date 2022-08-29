@@ -8,8 +8,8 @@ AC_CONFIG_SUBDIRS([cross-detect])
 SRCDIR="$(cd "$srcdir" && pwd -P)"
 BUILDDIR="$(pwd -P)"
 
-AC_SUBST(SRCDIR, [$SRCDIR])
-AC_SUBST(BUILDDIR, [$BUILDDIR])
+AC_SUBST(SRCDIR)
+AC_SUBST(BUILDDIR)
 
 werror_state="no"
 AC_ARG_ENABLE([werror],
