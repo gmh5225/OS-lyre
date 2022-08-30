@@ -3,6 +3,7 @@ version=0.0
 source_dir="kernel"
 hostdeps="automake autoconf"
 imagedeps="git"
+allow_network="yes"
 
 regenerate() {
     ./bootstrap

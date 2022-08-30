@@ -1,8 +1,0 @@
-name=cwm
-version=7.1
-source_method=tarball
-tarball_url="https://github.com/leahneukirchen/cwm/archive/v${version}.tar.gz"
-
-regenerate() {
-    true
-}

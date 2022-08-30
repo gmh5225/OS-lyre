@@ -2,6 +2,8 @@ name=tzdata
 version=2022c
 source_method=tarball
 tarball_url="https://data.iana.org/time-zones/releases/tzdata${version}.tar.gz"
+tarball_blake2b="087a0e728c6052f91142ef11ad2092e573de99d787ed1e8ff62476b870ff2e3d222a19df01ad624cf06e543aa7e40df89dcd888b9e5fd12f8b5af90bdffc9ac9"
+allow_network="yes"
 
 regenerate() {
     curl -o tzcode${version}.tar.gz https://data.iana.org/time-zones/releases/tzcode${version}.tar.gz

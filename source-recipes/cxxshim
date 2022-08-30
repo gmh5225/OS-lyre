@@ -2,6 +2,7 @@ name=cxxshim
 version=334fdb17aa26194eb839eee5b20ad94712c6e1f4
 source_method=tarball
 tarball_url="https://github.com/managarm/cxxshim/archive/${version}.tar.gz"
+tarball_blake2b="ac29d7ee30955c70293da849ca591524dad5735a99f30226c1d325f1d980e06c7f22441d3d6cd5b766d9852700cc86a510b8d84ef151bbe7c74bb825953fc975"
 
 regenerate() {
     true

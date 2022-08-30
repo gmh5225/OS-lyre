@@ -2,6 +2,7 @@ name=frigg
 version=49c4d02bcd4155bdc55260372aa5e1a9b8767fa7
 source_method=tarball
 tarball_url="https://github.com/managarm/frigg/archive/${version}.tar.gz"
+tarball_blake2b="2b3b7cd867000774e582f1399ffb558f3036347900d6659bf211bd5da4624aca07a203370549a7d0fa88269371622e3664f761b5f0eb9cab94d6f13abe6f692c"
 
 regenerate() {
     true

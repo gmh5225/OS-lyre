@@ -2,6 +2,7 @@ name=less
 version=590
 source_method=tarball
 tarball_url="https://www.greenwoodsoftware.com/less/less-590.tar.gz"
+tarball_blake2b="0f640f1b6b4d4925c4904ee77460e8becd2dae168fe5c1483bf6a9cfabe9eb0abdc4d4811507ba88a2b4cff6c238158bd8b4463b63d3d7863b44ce8538d32adb"
 
 regenerate() {
     true
