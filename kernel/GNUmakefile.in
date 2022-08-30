@@ -71,7 +71,7 @@ override CROSS_LDFLAGS += \
     -z max-page-size=0x1000 \
     -T '$(call SHESCAPE,$(SRCDIR)/linker-$(ARCH).ld)'
 
-ifneq ($(CROSS_LD_NO_PIE_BUG),1)
+ifeq ($(CROSS_LD_HAS_NO_PIE),yes)
     override CROSS_LDFLAGS += -no-pie
 endif
 
