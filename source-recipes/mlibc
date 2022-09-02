@@ -1,8 +1,8 @@
 name=mlibc
-version=b587536d4ba6c7994e090b7ed6ccb9562463b39e
+version=a5f052bb0a1c469a0dd5876b20042bdbffdd2eca
 source_method=tarball
 tarball_url="https://github.com/managarm/mlibc/archive/${version}.tar.gz"
-tarball_blake2b="ae8b5355f582e3edbd4cf6e77cb0dfb46e17fa22c54a77c93422b6238da17a7efd617d3fa0567a9921d4a7d77b2f350c66bc118eb6d4a504fbd049bbaa73f025"
+tarball_blake2b="9823c3e955e39222e931b18f77cb24c31c8fe294fe7072d759a5f9abeb2bad4e2ec58bcba78910f335435ecb91033c6c0fa8183e35d1c04594f8ea9c9954098b"
 
 regenerate() {
     for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done
