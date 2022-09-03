@@ -114,6 +114,39 @@ cleanup:
     return ret;
 }
 
+static bool devtmpfs_truncate(struct resource *this_, struct f_description *description, size_t length) {
+    (void)description;
+
+    struct devtmpfs_resource *this = (struct devtmpfs_resource *)this_;
+
+    if (length > this->capacity) {
+        size_t new_capacity = this->capacity;
+        while (new_capacity < length) {
+            new_capacity *= 2;
+        }
+
+        void *new_data = alloc(new_capacity, ALLOC_RESOURCE);
+        if (new_data == NULL) {
+            errno = ENOMEM;
+            goto fail;
+        }
+
+        memcpy(new_data, this->data, this->capacity);
+        free(this->data, this->capacity, ALLOC_RESOURCE);
+
+        this->data = new_data;
+        this->capacity = new_capacity;
+    }
+
+    this->stat.st_size = (off_t)length;
+    this->stat.st_blocks = DIV_ROUNDUP(this->stat.st_size, this->stat.st_blksize);
+
+    return true;
+
+fail:
+    return false;
+}
+
 static inline struct devtmpfs_resource *create_devtmpfs_resource(struct devtmpfs *this, int mode) {
     struct devtmpfs_resource *resource = resource_create(sizeof(struct devtmpfs_resource));
     if (resource == NULL) {
@@ -129,6 +162,7 @@ static inline struct devtmpfs_resource *create_devtmpfs_resource(struct devtmpfs
     resource->read = devtmpfs_resource_read;
     resource->write = devtmpfs_resource_write;
     resource->mmap = devtmpfs_resource_mmap;
+    resource->truncate = devtmpfs_truncate;
 
     resource->stat.st_size = 0;
     resource->stat.st_blocks = 0;

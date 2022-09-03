@@ -449,9 +449,18 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
         return -1;
     }
 
+    if (!S_ISREG(node->resource->stat.st_mode) && (flags & O_TRUNC) != 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
     struct f_descriptor *fd = fd_create_from_resource(node->resource, flags);
     if (fd == NULL) {
         return -1;
+    }
+
+    if ((flags & O_TRUNC) != 0) {
+        node->resource->truncate(node->resource, fd->description, 0);
     }
 
     fd->description->node = node;
