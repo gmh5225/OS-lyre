@@ -1,8 +1,8 @@
 name=less
-version=590
+version=608
 source_method=tarball
-tarball_url="https://www.greenwoodsoftware.com/less/less-590.tar.gz"
-tarball_blake2b="0f640f1b6b4d4925c4904ee77460e8becd2dae168fe5c1483bf6a9cfabe9eb0abdc4d4811507ba88a2b4cff6c238158bd8b4463b63d3d7863b44ce8538d32adb"
+tarball_url="https://www.greenwoodsoftware.com/less/less-${version}.tar.gz"
+tarball_blake2b="988940745fef1222c43b0bf4edec7cc7206ded0ac5d89d3faf4dab706a249913581c2fe7aa6063cf3d717176ed07b69299d3e791ba8a60358483fe9d1bf7f7c6"
 
 regenerate() {
     true
