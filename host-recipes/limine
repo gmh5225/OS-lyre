@@ -9,7 +9,8 @@ configure() {
         --prefix="${prefix}" \
         CROSS_TOOLCHAIN=x86_64-lyre \
         LDFLAGS="-static" \
-        --enable-all
+        --enable-all \
+        --disable-uefi-aarch64
 }
 
 build() {
