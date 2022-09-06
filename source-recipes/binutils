@@ -17,5 +17,4 @@ regenerate() {
     ( cd binutils && autoreconf -fvi && libtoolize -cfvi )
     ( cd gprof && autoreconf -fvi && libtoolize -cfvi )
     ( cd ld && autoreconf -fvi && libtoolize -cfvi )
-    cp /usr/local/share/automake-1.16/depcomp ./
 }
