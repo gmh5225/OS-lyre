@@ -13,6 +13,7 @@ configure() {
         --with-sysroot=/              \
         --disable-nls                 \
         --disable-werror              \
+        --disable-dependency-tracking \
         --with-system-zlib            \
         --with-gmp=${sysroot_dir}/usr \
         --enable-shared               \
@@ -20,11 +21,11 @@ configure() {
 }
 
 build() {
-    make -j${parallelism} all-binutils all-gas all-ld
+    make -j${parallelism} all
 }
 
 install() {
-    DESTDIR="${dest_dir}" make install-strip-binutils install-strip-gas install-strip-ld
+    DESTDIR="${dest_dir}" make install-strip
     # Remove static libraries
     rm -rf "${dest_dir}${prefix}"/lib/*.a
 }
