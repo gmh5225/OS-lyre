@@ -1,3 +1,16 @@
+diff --git libtool-clean/build-aux/ltmain.in libtool-workdir/build-aux/ltmain.in
+index a5f21a1..c06d55c 100644
+--- libtool-clean/build-aux/ltmain.in
++++ libtool-workdir/build-aux/ltmain.in
+@@ -6497,7 +6497,7 @@ func_mode_link ()
+ 	      fi
+ 	    else
+ 	      # We cannot seem to hardcode it, guess we'll fake it.
+-	      add_dir=-L$libdir
++	      add_dir=-L$lt_sysroot$libdir
+ 	      # Try looking first in the location we're being installed to.
+ 	      if test -n "$inst_prefix_dir"; then
+ 		case $libdir in
 diff --git libtool-clean/m4/libtool.m4 libtool-workdir/m4/libtool.m4
 index 79a2451..6101192 100644
 --- libtool-clean/m4/libtool.m4
