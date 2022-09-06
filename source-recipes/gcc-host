@@ -3,19 +3,33 @@ version=12.2.0
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/gcc/gcc-${version}/gcc-${version}.tar.xz"
 tarball_blake2b="715574af9ad678f9dc8cfd19c866bf910c7edfd479e7e9681337feaa9b54e5d304ddb85483816b8d89754d502405823ae2eff0d1e444538763f40be8e428d8da"
-hostdeps="automake autoconf"
+hostdeps="automake autoconf libtool pkg-config"
 allow_network="yes"
 
 regenerate() {
-    for i in "${base_dir}"/patches/gcc/*; do
-        patch -p1 < "$i"
-    done
     ./contrib/download_prerequisites
-    cp /usr/local/share/automake-1.16/config.sub ./
-    cp /usr/local/share/automake-1.16/config.sub ./gmp-6.2.1/configfsf.sub
-    cp /usr/local/share/automake-1.16/config.sub ./isl-0.24/
-    cp /usr/local/share/automake-1.16/config.sub ./mpc-1.2.1/build-aux/
-    cp /usr/local/share/automake-1.16/config.sub ./mpfr-4.1.0/
-    ( cd gcc && autoconf )
-    ( cd libstdc++-v3 && autoconf )
+    autoreconf -fvi && libtoolize -cfvi
+    cp /usr/local/share/aclocal/libtool.m4 ./
+    ( cd intl && autoreconf -fvi && libtoolize -cfvi )
+    ( cd zlib && autoreconf -fvi && libtoolize -cfvi )
+    ( cd gcc && autoconf -f -v && libtoolize -cfvi )
+    ( cd libcc1 && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libcpp && autoreconf -fvi && libtoolize -cfvi )
+    ( cd gotools && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libgfortran && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libobjc && autoconf -f -v && libtoolize -cfvi )
+    ( cd libphobos && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libbacktrace && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libdecnumber && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libquadmath && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libffi && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libatomic && autoreconf -fvi && libtoolize -cfvi )
+    ( cd lto-plugin && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libgomp && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libitm && autoreconf -fvi && libtoolize -cfvi )
+    ( cd liboffloadmic && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libsanitizer && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libssp && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libvtv && autoreconf -fvi && libtoolize -cfvi )
+    ( cd libstdc++-v3 && autoreconf -fvi && libtoolize -cfvi )
 }

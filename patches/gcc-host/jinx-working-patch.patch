@@ -154,38 +154,6 @@ index ae5283b7a..4245f14d3 100644
    *-fuchsia*)
      SECTION_FLAGS='-ffunction-sections -fdata-sections'
      AC_SUBST(SECTION_FLAGS)
-diff --git a/libtool.m4 b/libtool.m4
-index 17f8e5f30..f6daabc68 100644
---- a/libtool.m4
-+++ b/libtool.m4
-@@ -2491,6 +2491,16 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu* | uclinuxfdpiceabi)
-   dynamic_linker='GNU/Linux ld.so'
-   ;;
- 
-+lyre*)
-+  version_type=linux
-+  need_lib_prefix=no
-+  need_version=no
-+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
-+  soname_spec='${libname}${release}${shared_ext}$major'
-+  shlibpath_var=LD_LIBRARY_PATH
-+  hardcode_into_libs=yes
-+  ;;
-+
- netbsd*)
-   version_type=sunos
-   need_lib_prefix=no
-@@ -3090,6 +3100,10 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | uclinuxfdpiceabi)
-   lt_cv_deplibs_check_method=pass_all
-   ;;
- 
-+lyre*)
-+  lt_cv_deplibs_check_method=pass_all
-+  ;;
-+
- netbsd*)
-   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
-     lt_cv_deplibs_check_method='match_pattern /lib[[^/]]+(\.so\.[[0-9]]+\.[[0-9]]+|_pic\.a)$'
 -- 
 2.35.1
 
