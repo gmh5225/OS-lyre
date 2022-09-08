@@ -10,7 +10,7 @@ configure() {
         --host=x86_64-lyre           \
         --prefix=${prefix}            \
         --target=x86_64-lyre         \
-        --with-sysroot=/              \
+        --with-sysroot=${sysroot_dir} \
         --disable-nls                 \
         --disable-werror              \
         --disable-dependency-tracking \
