@@ -118,19 +118,6 @@ index 8c56fcae5..f4fcf8bfc 100644
  i[34567]86-*-dragonfly*)
  	tmake_file="${tmake_file} i386/t-dragonfly i386/t-crtstuff"
  	md_unwind_header=i386/dragonfly-unwind.h
-diff --git a/libgcc/libgcov.h b/libgcc/libgcov.h
-index 40e845ce3..cd4802bff 100644
---- a/libgcc/libgcov.h
-+++ b/libgcc/libgcov.h
-@@ -37,6 +37,8 @@
- /* About the target.  */
- /* This path will be used by libgcov runtime.  */
- 
-+#include <stdint.h>
-+
- #include "tconfig.h"
- #include "auto-target.h"
- #include "tsystem.h"
 diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
 index ae5283b7a..4245f14d3 100644
 --- a/libstdc++-v3/crossconfig.m4

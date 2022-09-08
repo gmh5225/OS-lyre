@@ -20,4 +20,6 @@ install() {
     # Hack to continue gcc build
     cd "${base_dir}"/host-builds/gcc-compiler
     DESTDIR="${dest_dir}" make install-strip-target-libgcc
+    rm "${dest_dir}${prefix}"/lib/gcc/x86_64-lyre/12.2.0/crti.o
+    rm "${dest_dir}${prefix}"/lib/gcc/x86_64-lyre/12.2.0/crtn.o
 }

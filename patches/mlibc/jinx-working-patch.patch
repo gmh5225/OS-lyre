@@ -61,6 +61,38 @@ index 3474615..de088e9 100644
 +// 	__ensure(!"Not implemented");
 +// 	__builtin_unreachable();
 +// }
+diff --git mlibc-workdir/sysdeps/vinix/crt-x86-64/crti.S mlibc-workdir/sysdeps/vinix/crt-x86-64/crti.S
+new file mode 100644
+index 0000000..911b078
+--- /dev/null
++++ mlibc-workdir/sysdeps/vinix/crt-x86-64/crti.S
+@@ -0,0 +1,11 @@
++.section .init
++.global _init
++_init:
++	push %rax
++
++.section .fini
++.global _fini
++_fini:
++	push %rax
++.section .note.GNU-stack,"",%progbits
++
+diff --git mlibc-workdir/sysdeps/vinix/crt-x86-64/crtn.S mlibc-workdir/sysdeps/vinix/crt-x86-64/crtn.S
+new file mode 100644
+index 0000000..0187e50
+--- /dev/null
++++ mlibc-workdir/sysdeps/vinix/crt-x86-64/crtn.S
+@@ -0,0 +1,9 @@
++.section .init
++	pop %rax
++	ret
++
++.section .fini
++	pop %rax
++	ret
++.section .note.GNU-stack,"",%progbits
++
 diff --git mlibc-clean/sysdeps/vinix/generic/entry.cpp mlibc-workdir/sysdeps/vinix/generic/entry.cpp
 index 5cf1f7b..4fb0179 100644
 --- mlibc-clean/sysdeps/vinix/generic/entry.cpp
@@ -1450,7 +1482,7 @@ index 0000000..af8e0cb
 +
 +#endif
 diff --git mlibc-clean/sysdeps/vinix/meson.build mlibc-workdir/sysdeps/vinix/meson.build
-index 513e30a..7528ee9 100644
+index 513e30a..6d1a401 100644
 --- mlibc-clean/sysdeps/vinix/meson.build
 +++ mlibc-workdir/sysdeps/vinix/meson.build
 @@ -52,6 +52,12 @@ if not no_headers
@@ -1466,3 +1498,27 @@ index 513e30a..7528ee9 100644
  endif
  
  if not headers_only
+@@ -63,5 +69,23 @@ if not headers_only
+ 		install: true,
+ 		install_dir: get_option('libdir')
+ 	)
++
++    custom_target('crti',
++        build_by_default: true,
++        command: c_compiler.cmd_array() + ['-c', '-o', '@OUTPUT@', '@INPUT@'],
++        input: 'crt-x86-64/crti.S',
++        output: 'crti.o',
++        install: true,
++        install_dir: get_option('libdir')
++    )
++
++    custom_target('crtn',
++        build_by_default: true,
++        command: c_compiler.cmd_array() + ['-c', '-o', '@OUTPUT@', '@INPUT@'],
++        input: 'crt-x86-64/crtn.S',
++        output: 'crtn.o',
++        install: true,
++        install_dir: get_option('libdir')
++    )
+ endif
+ 

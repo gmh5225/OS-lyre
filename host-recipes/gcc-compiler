@@ -7,6 +7,8 @@ hostrundeps="binutils"
 deps="mlibc-headers"
 
 configure() {
+        CXXFLAGS_FOR_TARGET="$CFLAGS" \
+        CFLAGS_FOR_TARGET="$CFLAGS" \
     "${source_dir}"/configure \
         --prefix="${prefix}" \
         --target=x86_64-lyre \
