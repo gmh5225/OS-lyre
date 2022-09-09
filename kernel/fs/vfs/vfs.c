@@ -317,6 +317,42 @@ cleanup:
     return ret;
 }
 
+bool vfs_unlink(struct vfs_node *parent, const char *path) {
+    bool ret = false;
+
+    spinlock_acquire(&vfs_lock);
+
+    struct path2node_res r = path2node(parent, path);
+
+    if (r.target_parent == NULL) {
+        goto cleanup;
+    }
+
+    if (r.target == NULL) {
+        goto cleanup;
+    }
+
+    smartlock_acquire(&r.target_parent->children_lock);
+    if (!HASHMAP_SREMOVE(&r.target_parent->children, r.basename)) {
+        smartlock_release(&r.target_parent->children_lock);
+        goto cleanup;
+    }
+    smartlock_release(&r.target_parent->children_lock);
+
+    if (!r.target->resource->unref(r.target->resource, NULL)) {
+        goto cleanup;
+    }
+
+    ret = true;
+
+cleanup:
+    if (r.basename != NULL) {
+        free(r.basename, strlen(r.basename) + 1, ALLOC_STRING);
+    }
+    spinlock_release(&vfs_lock);
+    return ret;
+}
+
 struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode) {
     spinlock_acquire(&vfs_lock);
 
@@ -759,7 +795,8 @@ int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
     debug_print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
 
     struct vfs_node *parent = NULL, *node = NULL;
-    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, &node, NULL)) {
+    char *basename = NULL;
+    if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, &node, &basename)) {
         return -1;
     }
 
@@ -768,9 +805,7 @@ int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
         return -1;
     }
 
-    // XXX implement hashmap remove @@@mint
-
-    node->resource->unref(node->resource, NULL);
+    vfs_unlink(parent, basename);
     return 0;
 }
 
