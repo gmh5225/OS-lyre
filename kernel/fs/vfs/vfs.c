@@ -12,7 +12,7 @@
 #include <dirent.h> // XXX this unfortunately brings in some libc function declarations, be careful
 #include <limits.h>
 
-static spinlock_t vfs_lock = SPINLOCK_INIT;
+spinlock_t vfs_lock = SPINLOCK_INIT;
 
 struct vfs_node *vfs_create_node(struct vfs_filesystem *fs, struct vfs_node *parent,
                                  const char *name, bool dir) {
@@ -38,10 +38,8 @@ static void create_dotentries(struct vfs_node *node, struct vfs_node *parent) {
     dot->redir = node;
     dotdot->redir = parent;
 
-    smartlock_acquire(&node->children_lock);
     HASHMAP_SINSERT(&node->children, ".", dot);
     HASHMAP_SINSERT(&node->children, "..", dotdot);
-    smartlock_release(&node->children_lock);
 }
 
 static HASHMAP_TYPE(struct vfs_filesystem *) filesystems;
@@ -303,9 +301,7 @@ struct vfs_node *vfs_symlink(struct vfs_node *parent, const char *dest,
     struct vfs_filesystem *target_fs = r.target_parent->filesystem;
     struct vfs_node *target_node = target_fs->symlink(target_fs, r.target_parent, r.basename, dest);
 
-    smartlock_acquire(&r.target_parent->children_lock);
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
-    smartlock_release(&r.target_parent->children_lock);
 
     ret = target_node;
 
@@ -332,15 +328,26 @@ bool vfs_unlink(struct vfs_node *parent, const char *path) {
         goto cleanup;
     }
 
-    smartlock_acquire(&r.target_parent->children_lock);
-    if (!HASHMAP_SREMOVE(&r.target_parent->children, r.basename)) {
-        smartlock_release(&r.target_parent->children_lock);
+    if (r.target->mountpoint != NULL) {
+        errno = EBUSY;
         goto cleanup;
     }
-    smartlock_release(&r.target_parent->children_lock);
+
+    if (!HASHMAP_SREMOVE(&r.target_parent->children, r.basename)) {
+        goto cleanup;
+    }
 
     if (!r.target->resource->unref(r.target->resource, NULL)) {
         goto cleanup;
+    }
+
+    free(r.target->name, strlen(r.target->name) + 1, ALLOC_STRING);
+    if (r.target->symlink_target != NULL) {
+        free(r.target->symlink_target, strlen(r.target->symlink_target) + 1, ALLOC_STRING);
+    }
+
+    if (S_ISDIR(r.target->resource->stat.st_mode)) {
+        HASHMAP_DELETE(&r.target->children);
     }
 
     ret = true;
@@ -623,8 +630,6 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
         return -1;
     }
 
-    smartlock_acquire(&dir_node->children_lock);
-
     size_t entries_length = 0;
     for (size_t i = 0; i < dir_node->children.cap; i++) {
         typeof(dir_node->children.buckets) bucket = &dir_node->children.buckets[i];
@@ -641,7 +646,6 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
     if (entries_length > *size) {
         *size = entries_length;
         errno = ENOBUFS;
-        smartlock_release(&dir_node->children_lock);
         return -1;
     }
 
@@ -686,8 +690,6 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
             offset += ent->d_reclen;
         }
     }
-
-    smartlock_release(&dir_node->children_lock);
 
     struct dirent *terminator = buffer + offset;
     terminator->d_reclen = 0;
@@ -780,9 +782,7 @@ int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_f
         return -1;
     }
 
-    smartlock_acquire(&new_res.target_parent->children_lock);
     HASHMAP_SINSERT(&new_res.target_parent->children, new_res.basename, node);
-    smartlock_release(&new_res.target_parent->children_lock);
     return 0;
 }
 

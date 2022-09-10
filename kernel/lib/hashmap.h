@@ -24,6 +24,18 @@ static inline uint32_t hash(const void *data, size_t length) {
 
 #define HASHMAP_INIT(CAP) { .cap = (CAP), .buckets = NULL }
 
+#define HASHMAP_DELETE(HASHMAP) do { \
+    __auto_type HASHMAP_DELETE_hashmap = HASHMAP; \
+    \
+    for (size_t HASHMAP_DELETE_i = 0; HASHMAP_DELETE_i < HASHMAP_DELETE_hashmap->cap; HASHMAP_DELETE_i++) { \
+        __auto_type HASHMAP_DELETE_bucket = &HASHMAP_DELETE_hashmap->buckets[HASHMAP_DELETE_i]; \
+        \
+        free(HASHMAP_DELETE_bucket->items, HASHMAP_DELETE_bucket->cap * sizeof(*HASHMAP_DELETE_bucket->items), ALLOC_HASHMAP); \
+    } \
+    \
+    free(HASHMAP_DELETE_hashmap->buckets, HASHMAP_DELETE_hashmap->cap * sizeof(*HASHMAP_DELETE_hashmap->buckets), ALLOC_HASHMAP); \
+} while (0)
+
 #define HASHMAP_TYPE(TYPE) \
     struct { \
         size_t cap; \

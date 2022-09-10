@@ -6,6 +6,8 @@
 #include <lib/hashmap.h>
 #include <lib/lock.h>
 
+extern spinlock_t vfs_lock;
+
 struct vfs_filesystem;
 
 struct vfs_node {
@@ -16,7 +18,6 @@ struct vfs_node {
     char *name;
     struct vfs_node *parent;
     HASHMAP_TYPE(struct vfs_node *) children;
-    struct smartlock children_lock;
     char *symlink_target;
 };
 
