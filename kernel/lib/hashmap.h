@@ -27,6 +27,10 @@ static inline uint32_t hash(const void *data, size_t length) {
 #define HASHMAP_DELETE(HASHMAP) do { \
     __auto_type HASHMAP_DELETE_hashmap = HASHMAP; \
     \
+    if (HASHMAP_DELETE_hashmap->buckets == NULL) { \
+        break; \
+    } \
+    \
     for (size_t HASHMAP_DELETE_i = 0; HASHMAP_DELETE_i < HASHMAP_DELETE_hashmap->cap; HASHMAP_DELETE_i++) { \
         __auto_type HASHMAP_DELETE_bucket = &HASHMAP_DELETE_hashmap->buckets[HASHMAP_DELETE_i]; \
         \

@@ -618,25 +618,30 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
 
     debug_print("syscall (%d %s): readdir(%d, %lx, %lu)", proc->pid, proc->name, dir_fdnum, buffer, *size);
 
+    int ret = -1;
+    spinlock_acquire(&vfs_lock);
+
     struct f_descriptor *dir_fd = fd_from_fdnum(proc, dir_fdnum);
     if (dir_fd == NULL) {
         errno = EBADF;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *dir_node = dir_fd->description->node;
     if (!S_ISDIR(dir_fd->description->res->stat.st_mode)) {
         errno = ENOTDIR;
-        return -1;
+        goto cleanup;
     }
 
     size_t entries_length = 0;
-    for (size_t i = 0; i < dir_node->children.cap; i++) {
-        typeof(dir_node->children.buckets) bucket = &dir_node->children.buckets[i];
+    if (dir_node->children.buckets != NULL) {
+        for (size_t i = 0; i < dir_node->children.cap; i++) {
+            __auto_type bucket = &dir_node->children.buckets[i];
 
-        for (size_t j = 0; j < bucket->filled; j++) {
-            struct vfs_node *child = bucket->items[j].item;
-            entries_length += sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
+            for (size_t j = 0; j < bucket->filled; j++) {
+                struct vfs_node *child = bucket->items[j].item;
+                entries_length += sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
+            }
         }
     }
 
@@ -646,54 +651,60 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
     if (entries_length > *size) {
         *size = entries_length;
         errno = ENOBUFS;
-        return -1;
+        goto cleanup;
     }
 
     size_t offset = 0;
-    for (size_t i = 0; i < dir_node->children.cap; i++) {
-        typeof(dir_node->children.buckets) bucket = &dir_node->children.buckets[i];
+    if (dir_node->children.buckets != NULL) {
+        for (size_t i = 0; i < dir_node->children.cap; i++) {
+            __auto_type bucket = &dir_node->children.buckets[i];
 
-        for (size_t j = 0; j < bucket->filled; j++) {
-            struct vfs_node *child = bucket->items[j].item;
-            struct vfs_node *reduced = reduce_node(child, false);
-            struct dirent *ent = buffer + offset;
+            for (size_t j = 0; j < bucket->filled; j++) {
+                struct vfs_node *child = bucket->items[j].item;
+                struct vfs_node *reduced = reduce_node(child, false);
+                struct dirent *ent = buffer + offset;
 
-            ent->d_ino = reduced->resource->stat.st_ino;
-            ent->d_reclen = sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
-            ent->d_off = 0;
+                ent->d_ino = reduced->resource->stat.st_ino;
+                ent->d_reclen = sizeof(struct dirent) - 1024 + strlen(child->name) + 1;
+                ent->d_off = 0;
 
-            switch (reduced->resource->stat.st_mode & S_IFMT) {
-                case S_IFBLK:
-                    ent->d_type = DT_BLK;
-                    break;
-                case S_IFCHR:
-                    ent->d_type = DT_CHR;
-                    break;
-                case S_IFIFO:
-                    ent->d_type = DT_FIFO;
-                    break;
-                case S_IFREG:
-                    ent->d_type = DT_REG;
-                    break;
-                case S_IFDIR:
-                    ent->d_type = DT_DIR;
-                    break;
-                case S_IFLNK:
-                    ent->d_type = DT_LNK;
-                    break;
-                case S_IFSOCK:
-                    ent->d_type = DT_SOCK;
-                    break;
+                switch (reduced->resource->stat.st_mode & S_IFMT) {
+                    case S_IFBLK:
+                        ent->d_type = DT_BLK;
+                        break;
+                    case S_IFCHR:
+                        ent->d_type = DT_CHR;
+                        break;
+                    case S_IFIFO:
+                        ent->d_type = DT_FIFO;
+                        break;
+                    case S_IFREG:
+                        ent->d_type = DT_REG;
+                        break;
+                    case S_IFDIR:
+                        ent->d_type = DT_DIR;
+                        break;
+                    case S_IFLNK:
+                        ent->d_type = DT_LNK;
+                        break;
+                    case S_IFSOCK:
+                        ent->d_type = DT_SOCK;
+                        break;
+                }
+
+                memcpy(ent->d_name, child->name, strlen(child->name) + 1);
+                offset += ent->d_reclen;
             }
-
-            memcpy(ent->d_name, child->name, strlen(child->name) + 1);
-            offset += ent->d_reclen;
         }
     }
 
     struct dirent *terminator = buffer + offset;
     terminator->d_reclen = 0;
-    return 0;
+    ret = 0;
+
+cleanup:
+    spinlock_release(&vfs_lock);
+    return ret;
 }
 
 ssize_t syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, size_t length) {
