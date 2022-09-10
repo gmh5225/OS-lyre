@@ -3,7 +3,7 @@ from_source=mpfr
 revision=1
 imagedeps="gcc"
 hostdeps="gcc autoconf automake libtool pkg-config"
-deps="mlibc libgmp"
+deps="mlibc gmp"
 
 configure() {
     ${source_dir}/configure \

@@ -2,7 +2,7 @@ name=binutils
 from_source=binutils
 revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
-deps="mlibc zlib"
+deps="mlibc zlib gmp"
 imagedeps="gcc"
 
 configure() {

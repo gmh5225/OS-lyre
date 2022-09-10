@@ -1,5 +1,5 @@
-name=libgmp
-from_source=libgmp
+name=gmp
+from_source=gmp
 revision=1
 imagedeps="gcc"
 hostdeps="gcc autoconf automake libtool pkg-config"
