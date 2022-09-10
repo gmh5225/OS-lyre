@@ -2,7 +2,7 @@ name=coreutils
 from_source=coreutils
 revision=1
 hostdeps="gcc automake autoconf libtool pkg-config"
-deps="mlibc tzdata"
+deps="mlibc libintl tzdata"
 imagedeps="gcc gperf"
 
 configure() {
@@ -14,10 +14,11 @@ configure() {
     rm -rf *
 
     # Now compile coreutils for the correct target.
+        CFLAGS="-DSLOW_BUT_NO_HACKS $CFLAGS" \
     ${source_dir}/configure    \
         --host=x86_64-lyre    \
         --prefix=${prefix}     \
-        CFLAGS="-DSLOW_BUT_NO_HACKS -Wno-error -O2 -pipe"
+        --disable-nls
 }
 
 build() {
