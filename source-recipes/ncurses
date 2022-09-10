@@ -3,8 +3,8 @@ version=6.3
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/ncurses/ncurses-${version}.tar.gz"
 tarball_blake2b="b2c174ac48d587b4d3aa054f04e4ec8bffd8a657a4aff5f090104965c741901e600712c8f8e5e98f3b8a26bc558996a1e14a746f113854832853b855e9d406c3"
-hostdeps="autoconf automake"
+hostdeps="autoconf automake libtool pkg-config"
 
 regenerate() {
-    cp /usr/local/share/automake-1.16/config.sub ./
+    libtoolize -cfvi
 }
