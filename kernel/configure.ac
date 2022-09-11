@@ -35,13 +35,6 @@ if ! test "x$FIND_FOUND" = "xyes"; then
     AC_MSG_ERROR([find not found, please install find before configuring])
 fi
 
-#if test "x$ARCH" = "xx86_64"; then
-#    AC_CHECK_PROG([NASM_FOUND], [nasm], [yes])
-#    if ! test "x$NASM_FOUND" = "xyes"; then
-#        AC_MSG_ERROR([nasm not found, please install nasm before configuring])
-#    fi
-#fi
-
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative cross toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [cross C compiler command])
 AC_ARG_VAR(CROSS_LD, [cross linker command])
@@ -64,10 +57,6 @@ test "x$CROSS_CFLAGS" = "x" && CROSS_CFLAGS="DEFAULT_CROSS_CFLAGS"
 m4_define([DEFAULT_CROSS_CPPFLAGS], [])
 AC_ARG_VAR(CROSS_CPPFLAGS, [cross C preprocessor flags @<:@default: ]DEFAULT_CROSS_CPPFLAGS[@:>@])
 test "x$CROSS_CPPFLAGS" = "x" && CROSS_CPPFLAGS="DEFAULT_CROSS_CPPFLAGS"
-
-m4_define([DEFAULT_CROSS_NASMFLAGS], [-F dwarf -g])
-AC_ARG_VAR(CROSS_NASMFLAGS, [cross nasm flags @<:@default: ]DEFAULT_CROSS_NASMFLAGS[@:>@])
-test "x$CROSS_NASMFLAGS" = "x" && CROSS_NASMFLAGS="DEFAULT_CROSS_NASMFLAGS"
 
 m4_define([DEFAULT_CROSS_LDFLAGS], [])
 AC_ARG_VAR(CROSS_LDFLAGS, [cross linker flags @<:@default: ]DEFAULT_CROSS_LDFLAGS[@:>@])

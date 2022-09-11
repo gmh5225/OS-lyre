@@ -35,11 +35,6 @@ CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
 # User controllable CPPFLAGS.
 CROSS_CPPFLAGS ?= @CROSS_CPPFLAGS@
 
-ifeq ($(ARCH),x86_64)
-    # User controllable NASMFLAGS.
-    CROSS_NASMFLAGS ?= @CROSS_NASMFLAGS@ @WERROR@
-endif
-
 # User controllable linker flags.
 CROSS_LDFLAGS ?= @CROSS_LDFLAGS@
 
@@ -89,8 +84,6 @@ ifeq ($(ARCH),x86_64)
         -mcmodel=kernel
     override CROSS_LDFLAGS += \
         -m elf_x86_64
-    override CROSS_NASMFLAGS += \
-        -f elf64
     override LIBGCC := x86_64-no-red-zone
 else
     $(error Architecture $(ARCH) not supported)
@@ -100,10 +93,6 @@ endif
 override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
 override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.S')
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(CFILES:.c=.o) $(ASFILES:.S=.o))
-ifeq ($(ARCH),x86_64)
-    override NASMFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.asm')
-    override OBJ += $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(NASMFILES:.asm=.o))
-endif
 override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
 
 # Default target.
@@ -129,13 +118,6 @@ $(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.c
 $(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.S
 	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
 	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) -c '$(call SHESCAPE,$<)' -o $@
-
-ifeq ($(ARCH),x86_64)
-# Compilation rules for *.asm files.
-$(call MKESCAPE,$(BUILDDIR))/%.o: $(call MKESCAPE,$(SRCDIR))/%.asm
-	$(MKDIR_P) "$$(dirname '$(call SHESCAPE,$@)')"
-	nasm $(CROSS_NASMFLAGS) '$(call SHESCAPE,$<)' -o $@
-endif
 
 # Remove object files and the final executable.
 .PHONY: clean
