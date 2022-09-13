@@ -10,6 +10,7 @@ configure() {
         --cross-file ${base_dir}/build-support/cross_file.txt \
         --prefix=${prefix} \
         -Dheaders_only=true \
+        -Ddisable_crypt_option=true \
         -Ddisable_iconv_option=true \
         -Ddisable_intl_option=true \
         ${source_dir}
