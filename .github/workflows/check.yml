@@ -17,17 +17,14 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install build-essential meson nasm -y
 
-      - name: Clone current mlibc
-        run: git clone https://github.com/lyre-os/mlibc.git --depth=1
+      - name: Clone mlibc
+        run: git clone https://github.com/managarm/mlibc.git
 
-      - name: Patch mlibc for Lyre
+      - name: Checkout and patch mlibc
         run: |
           cd mlibc
-          git apply ../patches/mlibc/*
-          for file in $(find . -type f); do sed -i 's/vinix/lyre/g' "$file"; done
-          for file in $(find . -type f); do sed -i 's/VINIX/LYRE/g' "$file"; done
-          for file in $(find . -type f); do sed -i 's/Vinix/Lyre/g' "$file"; done
-          mv sysdeps/vinix sysdeps/lyre
+          git checkout `grep 'version=' < ../source-recipes/mlibc | sed 's/version=//g'`
+          for f in ../patches/mlibc/*; do patch -p1 < $f; done
 
       - name: Install mlibc headers
         run: |
