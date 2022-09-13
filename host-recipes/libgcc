@@ -4,7 +4,7 @@ revision=1
 hostdeps="autoconf automake libtool pkg-config"
 imagedeps="gcc"
 hostrundeps="gcc-compiler binutils"
-deps="mlibc"
+deps="mlibc-base"
 
 configure() {
     true
