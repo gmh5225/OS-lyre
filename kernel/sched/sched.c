@@ -671,7 +671,7 @@ int syscall_exit(void *_, int status) {
 
     vmm_destroy_pagemap(old_pagemap);
 
-    proc->status = (status & 0xff) | 0x200;
+    proc->status = W_EXITCODE(status, 0);
 
     event_trigger(&proc->event, false);
     sched_dequeue_and_die();

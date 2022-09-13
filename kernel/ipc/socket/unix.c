@@ -278,7 +278,7 @@ static ssize_t unix_recvmsg(struct socket *_this, struct f_description *descript
     spinlock_acquire(&this->lock);
 
     size_t count = 0;
-    for (int i = 0; i < msg->msg_iovlen; i++) {
+    for (size_t i = 0; i < msg->msg_iovlen; i++) {
         count += msg->msg_iov[i].iov_len;
     }
 
@@ -339,7 +339,7 @@ static ssize_t unix_recvmsg(struct socket *_this, struct f_description *descript
 
     size_t transferred = 0;
     size_t remaining = before_wrap + after_wrap;
-    for (int i = 0; i < msg->msg_iovlen; i++) {
+    for (size_t i = 0; i < msg->msg_iovlen; i++) {
         size_t transfer_count = MIN(msg->msg_iov[i].iov_len, remaining);
         memcpy(msg->msg_iov[i].iov_base, tmp_buffer + transferred, transfer_count);
         transferred += transfer_count;
