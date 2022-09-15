@@ -5,6 +5,7 @@
 #include <lib/libc.h>
 #include <lib/lock.h>
 #include <lib/print.h>
+#include <lib/debug.h>
 #include <sched/sched.h>
 
 static const char *base_digits_lowercase = "0123456789abcdef";
@@ -326,12 +327,8 @@ void debug_print(const char *fmt, ...) {
 int syscall_debug(void *_, const char *str) {
     (void)_;
 
-    debug_print("%s\n", str);
-
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): debug(%lx)", proc->pid, proc->name, str);
+    DEBUG_SYSCALL_ENTER("debug(\"%s\")", str);
+    DEBUG_SYSCALL_LEAVE("%d", 0);
 
     return 0;
 }

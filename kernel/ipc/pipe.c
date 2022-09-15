@@ -5,6 +5,7 @@
 #include <lib/event.h>
 #include <lib/print.h>
 #include <lib/resource.h>
+#include <lib/debug.h>
 #include <abi-bits/stat.h>
 
 #define PIPE_BUF 4096
@@ -179,30 +180,36 @@ fail:
 int syscall_pipe(void *_, int pipe_fdnums[static 2], int flags) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("pipe(%lx, %x)", pipe_fdnums, flags);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct resource *pipe = pipe_create();
 
-    debug_print("syscall (%d %s): pipe(%lx, %x)", proc->pid, proc->name, pipe_fdnums, flags);
-
     if (pipe == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     int read_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
     if (read_fd < 0) {
         free(pipe, sizeof(struct pipe), ALLOC_RESOURCE);
-        return -1;
+        goto cleanup;
     }
 
     int write_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
     if (write_fd < 0) {
         free(pipe, sizeof(struct pipe), ALLOC_RESOURCE);
-        return -1;
+        goto cleanup;
     }
 
     pipe_fdnums[0] = read_fd;
     pipe_fdnums[1] = write_fd;
 
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }

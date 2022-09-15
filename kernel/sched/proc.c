@@ -4,6 +4,7 @@
 #include <lib/errno.h>
 #include <lib/hashmap.h>
 #include <lib/print.h>
+#include <lib/debug.h>
 #include <mm/vmm.h>
 #include <sched/proc.h>
 #include <abi-bits/utsname.h>
@@ -19,29 +20,30 @@ void proc_init(void) {
 int syscall_uname(void *_, struct utsname *buffer) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): uname(%lx)", proc->pid, proc->name, buffer);
+    DEBUG_SYSCALL_ENTER("uname(%lx)", buffer);
 
     strncpy(buffer->sysname, "Lyre", sizeof(buffer->sysname));
     strncpy(buffer->nodename, "lyre", sizeof(buffer->nodename));
     strncpy(buffer->release, "0.0.1", sizeof(buffer->release));
     strncpy(buffer->version, __DATE__ " " __TIME__, sizeof(buffer->version));
+
+    DEBUG_SYSCALL_LEAVE("%d", 0);
     return 0;
 }
 
 int syscall_futex_wait(void *_, int *ptr, int expected) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("futex_wait(%lx, %d)", ptr, expected);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): futex_wait(%lx, %d)", proc->pid, proc->name, ptr, expected);
-
     if (*ptr != expected) {
         errno = EAGAIN;
-        return -1;
+        goto cleanup;
     }
 
     uintptr_t phys = vmm_virt2phys(proc->pagemap, (uintptr_t)ptr);
@@ -56,22 +58,24 @@ int syscall_futex_wait(void *_, int *ptr, int expected) {
 
     smartlock_release(&futex_lock);
 
-    ssize_t ret = event_await(&event, 1, true);
-    if (ret == -1) {
+    ssize_t which = event_await(&event, 1, true);
+    if (which == -1) {
         errno = EINTR;
-        return -1;
+        goto cleanup;
     }
 
-    return 0;
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_futex_wake(void *_, int *ptr) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("futex_wake(%lx)", ptr);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): futex_wake(%lx)", proc->pid, proc->name, ptr);
 
     // Make sure the page isn't demand paged
     *(volatile int *)ptr;
@@ -82,24 +86,29 @@ int syscall_futex_wake(void *_, int *ptr) {
 
     struct event *event = NULL;
     if (!HASHMAP_GET(&futex_hashmap, event, &phys, sizeof(phys))) {
-        smartlock_release(&futex_lock);
-        return 0;
+        goto cleanup;
     }
 
     event_trigger(event, true);
+
+cleanup:
     smartlock_release(&futex_lock);
+
+    DEBUG_SYSCALL_LEAVE("%d", 0);
     return 0;
 }
 
 mode_t syscall_umask(void *_, mode_t mask) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("umask(%o)", mask);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): umask(%o)", proc->pid, proc->name, mask);
-
     mode_t old_mask = proc->umask;
     proc->umask = mask;
+
+    DEBUG_SYSCALL_LEAVE("%o", old_mask);
     return old_mask;
 }

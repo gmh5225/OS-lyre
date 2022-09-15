@@ -3,6 +3,7 @@
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/print.h>
+#include <lib/debug.h>
 #include <mm/pmm.h>
 #include <mm/slab.h>
 #include <mm/vmm.h>
@@ -32,10 +33,7 @@ void free(void *addr, size_t size, int tag) {
 int syscall_getmemstat(void *_, struct lyre_kmemstat *buf) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): getmemstat(%lx)", proc->pid, proc->name, buf);
+    DEBUG_SYSCALL_ENTER("getmemstat(%lx)", buf);
 
     buf->n_phys_total = pmm_total_pages() * PAGE_SIZE;
     buf->n_phys_used = pmm_used_pages() * PAGE_SIZE;
@@ -46,5 +44,6 @@ int syscall_getmemstat(void *_, struct lyre_kmemstat *buf) {
         buf->n_heap_used[tag] = tagged_allocations[tag];
     }
 
+    DEBUG_SYSCALL_LEAVE("%d", 0);
     return 0;
 }

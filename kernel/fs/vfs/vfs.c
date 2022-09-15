@@ -6,6 +6,7 @@
 #include <lib/errno.h>
 #include <lib/print.h>
 #include <lib/resource.h>
+#include <lib/debug.h>
 #include <sched/proc.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/fcntl.h>
@@ -445,19 +446,21 @@ bool vfs_fdnum_path_to_node(int dir_fdnum, const char *path, bool empty_path, bo
 int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("openat(%d, %s, %x, %o)", dir_fdnum, path, flags, mode);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): openat(%d, %s, %x, %o)", proc->pid, proc->name, dir_fdnum, path, flags, mode);
-
     struct vfs_node *parent = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
-        return -1;
+        goto cleanup;
     }
 
     if (parent == NULL) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     int create_flags = flags & FILE_CREATION_FLAGS_MASK;
@@ -469,37 +472,37 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
             node = vfs_create(parent, path, (mode & ~proc->umask) | S_IFREG);
         } else {
             errno = ENOENT;
-            return -1;
+            goto cleanup;
         }
     }
 
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     if (S_ISLNK(node->resource->stat.st_mode)) {
         errno = ELOOP;
-        return -1;
+        goto cleanup;
     }
 
     node = reduce_node(node, true);
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     if (!S_ISDIR(node->resource->stat.st_mode) && (flags & O_DIRECTORY) != 0) {
         errno = ENOTDIR;
-        return -1;
+        goto cleanup;
     }
 
     if (!S_ISREG(node->resource->stat.st_mode) && (flags & O_TRUNC) != 0) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     struct f_descriptor *fd = fd_create_from_resource(node->resource, flags);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     if ((flags & O_TRUNC) != 0) {
@@ -507,28 +510,34 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
     }
 
     fd->description->node = node;
-    return fdnum_create_from_fd(proc, fd, 0, false);
+    ret = fdnum_create_from_fd(proc, fd, 0, false);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 // XXX convert to use vfs_fdnum_path_to_node
 int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct stat *stat_buf) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("stat(%d, %s, %x, %lx)", dir_fdnum, path, flags, stat_buf);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct stat *stat_src = NULL;
 
-    debug_print("syscall (%d %s): stat(%d, %s, %x, %lx)", proc->pid, proc->name, dir_fdnum, path, flags, stat_buf);
-
     if (stat_buf == NULL) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     if (strlen(path) == 0) {
         if ((flags & AT_EMPTY_PATH) == 0) {
             errno = ENOENT;
-            return -1;
+            goto cleanup;
         }
 
         if (dir_fdnum == AT_FDCWD) {
@@ -536,7 +545,7 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
         } else {
             struct f_descriptor *fd = fd_from_fdnum(proc, dir_fdnum);
             if (fd == NULL) {
-                return -1;
+                goto cleanup;
             }
 
             stat_src = &fd->description->res->stat;
@@ -544,81 +553,98 @@ int syscall_stat(void *_, int dir_fdnum, const char *path, int flags, struct sta
     } else {
         struct vfs_node *parent = get_parent_dir(dir_fdnum, path);
         if (parent == NULL) {
-            return -1;
+            goto cleanup;
         }
 
         struct vfs_node *node = vfs_get_node(parent, path, (flags & AT_SYMLINK_NOFOLLOW) == 0);
         if (node == NULL) {
-            return -1;
+            goto cleanup;
         }
 
         stat_src = &node->resource->stat;
     }
 
     *stat_buf = *stat_src;
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_getcwd(void *_, char *buffer, size_t len) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("getcwd(%lx, %lu)", buffer, len);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): getcwd(%lx, %lu)", proc->pid, proc->name, buffer, len);
 
     char path_buffer[PATH_MAX] = {0};
     if (vfs_pathname(proc->cwd, path_buffer, PATH_MAX) >= len) {
         errno = ERANGE;
-        return -1;
+        goto cleanup;
     }
 
     strncpy(buffer, path_buffer, len);
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_chdir(void *_, const char *path) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("chdir(%s)", path);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): chdir(%s)", proc->pid, proc->name, path);
-
     if (path == NULL) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     if (strlen(path) == 0) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *node = vfs_get_node(proc->cwd, path, true);
     if (node == NULL) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     if (!S_ISDIR(node->resource->stat.st_mode)) {
         errno = ENOTDIR;
-        return -1;
+        goto cleanup;
     }
 
     proc->cwd = node;
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("readdir(%d, %lx, %lu)", dir_fdnum, buffer, *size);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): readdir(%d, %lx, %lu)", proc->pid, proc->name, dir_fdnum, buffer, *size);
-
-    int ret = -1;
     spinlock_acquire(&vfs_lock);
 
     struct f_descriptor *dir_fd = fd_from_fdnum(proc, dir_fdnum);
@@ -704,150 +730,167 @@ int syscall_readdir(void *_, int dir_fdnum, void *buffer, size_t *size) {
 
 cleanup:
     spinlock_release(&vfs_lock);
+
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 ssize_t syscall_readlinkat(void *_, int dir_fdnum, const char *path, char *buffer, size_t length) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("readlink(%s, %lx, %lu)", path, buffer, length);
 
-    debug_print("syscall (%d %s): readlink(%s, %lx, %lu)", proc->pid, proc->name, path, buffer, length);
+    ssize_t ret = -1;
 
     struct vfs_node *parent = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, NULL)) {
-        return -1;
+        goto cleanup;
     }
 
     if (parent == NULL) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *node = vfs_get_node(parent, path, false);
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     if (!S_ISLNK(node->resource->stat.st_mode)) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     node = reduce_node(node, true);
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     char path_buffer[PATH_MAX] = {0};
     if (vfs_pathname(node, path_buffer, PATH_MAX) >= length) {
         errno = ENAMETOOLONG;
-        return -1;
+        goto cleanup;
     }
 
     size_t actual_length = strlen(path_buffer);
     strncpy(buffer, path_buffer, actual_length);
-    return actual_length;
+    ret = actual_length;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%lld", ret);
+    return ret;
 }
 
 // XXX convert to vfs_fdnum_path_to_node
 int syscall_linkat(void *_, int olddir_fdnum, const char *old_path, int newdir_fdnum, const char *new_path, int flags) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("linkat(%d, %s, %d, %s, %x)", olddir_fdnum, old_path, newdir_fdnum, new_path, flags);
 
-    debug_print("syscall (%d %s): linkat(%d, %s, %d, %s, %x)", proc->pid, proc->name, olddir_fdnum, old_path, newdir_fdnum, new_path, flags);
+    int ret = -1;
 
     if (old_path == NULL || strlen(old_path) == 0) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *old_parent = get_parent_dir(olddir_fdnum, old_path);
     if (old_parent == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *new_parent = get_parent_dir(newdir_fdnum, new_path);
     if (new_parent == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct path2node_res old_res = path2node(old_parent, old_path);
     struct path2node_res new_res = path2node(new_parent, new_path);
     if (old_res.target_parent->filesystem != new_res.target_parent->filesystem) {
         errno = EXDEV;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *old_node = vfs_get_node(old_parent, old_path, (flags & AT_SYMLINK_NOFOLLOW) == 0);
     if (old_node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_filesystem *fs = new_res.target_parent->filesystem;
     struct vfs_node *node = fs->link(fs, new_res.target_parent, new_res.basename, old_node);
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     HASHMAP_SINSERT(&new_res.target_parent->children, new_res.basename, node);
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_unlinkat(void *_, int dir_fdnum, const char *path, int flags) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("unlinkat(%d, %s, %x)", dir_fdnum, path, flags);
 
-    debug_print("syscall (%d %s): unlinkat(%d, %s, %x)", proc->pid, proc->name, dir_fdnum, path, flags);
+    int ret = -1;
 
     struct vfs_node *parent = NULL, *node = NULL;
     char *basename = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, true, &parent, &node, &basename)) {
-        return -1;
+        goto cleanup;
     }
 
     if (S_ISDIR(node->resource->stat.st_mode) && (flags & AT_REMOVEDIR) == 0) {
         errno = EISDIR;
-        return -1;
+        goto cleanup;
     }
 
     vfs_unlink(parent, basename);
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_mkdirat(void *_, int dir_fdnum, const char *path, mode_t mode){
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("mkdirat(%d, %s, %04o)", dir_fdnum, path, mode);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): mkdirat(%d, %s, %04o)", proc->pid, proc->name, dir_fdnum, path, mode);
-
     if (path == NULL || strlen(path) == 0) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *parent = NULL;
     char *basename = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, false, false, &parent, NULL, &basename)) {
-        return -1;
+        goto cleanup;
     }
 
     if (parent == NULL) {
         errno = ENOENT;
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *node = vfs_create(parent, basename, (mode & ~proc->umask) | S_IFDIR);
     if (node == NULL) {
-        return -1;
+        goto cleanup;
     }
 
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }

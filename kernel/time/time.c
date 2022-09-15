@@ -8,6 +8,7 @@
 #include <lib/panic.h>
 #include <lib/print.h>
 #include <lib/vector.h>
+#include <lib/debug.h>
 #include <time/time.h>
 #include <dev/pit.h>
 #include <sched/sched.h>
@@ -100,28 +101,27 @@ void timer_handler(void) {
 int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("sleep(%lx, %lx)", duration, remaining);
 
-    debug_print("syscall (%d %s): sleep(%lx, %lx)", proc->pid, proc->name, duration, remaining);
+    int ret = -1;
 
     if (duration->tv_sec == 0 && duration->tv_nsec == 0) {
-        return 0;
+        ret = 0;
+        goto cleanup;
     }
 
     if (duration->tv_nsec < 0 || duration->tv_nsec < 0 || duration->tv_nsec > 1000000000) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     struct timer *timer = timer_new(*duration);
     if (timer == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct event *event = &timer->event;
 
-    int ret = 0;
     ssize_t which = event_await(&event, 1, true);
 
     if (which == -1) {
@@ -130,42 +130,48 @@ int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining
         }
 
         errno = EINTR;
-        ret = -1;
+        FREE(timer, ALLOC_MISC);
         goto cleanup;
     }
 
-    return 0;
+    FREE(timer, ALLOC_MISC);
+    ret = 0;
 
 cleanup:
-    FREE(timer, ALLOC_MISC);
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_getclock(void *_, int which, struct timespec *out) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("getclock(%d, %lx)", which, out);
 
-    debug_print("syscall (%d %s): getclock(%d, %lx)", proc->pid, proc->name, which, out);
+    int ret = -1;
 
     switch (which) {
         case CLOCK_REALTIME:
         case CLOCK_REALTIME_COARSE:
             *out = time_realtime;
-            return 0;
+            ret = 0;
+            goto cleanup;
         case CLOCK_BOOTTIME:
         case CLOCK_MONOTONIC:
         case CLOCK_MONOTONIC_RAW:
         case CLOCK_MONOTONIC_COARSE:
             *out = time_monotonic;
-            return 0;
+            ret = 0;
+            goto cleanup;
         case CLOCK_PROCESS_CPUTIME_ID:
         case CLOCK_THREAD_CPUTIME_ID:
             *out = (struct timespec){.tv_sec = 0, .tv_nsec = 0};
-            return 0;
+            ret = 0;
+            goto cleanup;
     }
 
     errno = EINVAL;
-    return -1;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }

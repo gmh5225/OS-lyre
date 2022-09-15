@@ -6,6 +6,7 @@
 #include <lib/alloc.h>
 #include <lib/vector.h>
 #include <lib/resource.h>
+#include <lib/debug.h>
 #include <sched/sched.h>
 #include <sys/timer.h>
 #include <sys/cpu.h>
@@ -497,39 +498,45 @@ fail:
 void syscall_set_fs_base(void *_, void *base) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("set_fs_base(%lx)", base);
 
-    debug_print("syscall (%d %s): set_fs_base(%lx)", proc->pid, proc->name, base);
     set_fs_base(base);
+
+    DEBUG_SYSCALL_LEAVE("");
 }
 
 void syscall_set_gs_base(void *_, void *base) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    DEBUG_SYSCALL_ENTER("set_gs_base(%lx)", base);
 
-    debug_print("syscall (%d %s): set_gs_base(%lx)", proc->pid, proc->name, base);
     set_gs_base(base);
+
+    DEBUG_SYSCALL_LEAVE("");
 }
 
 pid_t syscall_getpid(void *_) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("getpid()");
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): getpid()", proc->pid, proc->name);
-    return proc->pid;
+    int ret = proc->pid;
+
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_fork(struct cpu_ctx *ctx) {
+    DEBUG_SYSCALL_ENTER("fork()");
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
     struct process *new_proc = sched_new_process(proc, NULL);
-
-    debug_print("syscall (%d %s): fork()", proc->pid, proc->name);
 
     for (int i = 0; i < MAX_FDS; i++) {
         if (proc->fds[i] == NULL) {
@@ -584,21 +591,25 @@ int syscall_fork(struct cpu_ctx *ctx) {
 
     sched_enqueue_thread(new_thread, false);
 
-    return new_proc->pid;
+    ret = new_proc->pid;
+    goto cleanup;
 
 fail:
     // TODO: Properly clean up
     FREE(new_proc, ALLOC_PROCESS);
-    return -1;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_exec(void *_, const char *path, const char **argv, const char **envp) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("exec(%s, %lx, %lx)", path, argv, envp);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): exec(%s, %lx, %lx)", proc->pid, proc->name, path, argv, envp);
 
     struct pagemap *new_pagemap = vmm_new_pagemap();
     struct auxval auxv, ld_auxv;
@@ -640,16 +651,17 @@ int syscall_exec(void *_, const char *path, const char **argv, const char **envp
     sched_dequeue_and_die();
 
 fail:
+    DEBUG_SYSCALL_LEAVE("%d", -1);
     return -1;
 }
 
 int syscall_exit(void *_, int status) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("exit(%d)", status);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): exit(%d) = ...\n", proc->pid, proc->name, status & 0xff);
 
     struct pagemap *old_pagemap = proc->pagemap;
 
@@ -682,10 +694,12 @@ int syscall_exit(void *_, int status) {
 pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("waitpid(%d, %lx, %x)", pid, status, flags);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): waitpid(%d, %lx, %x)", proc->pid, proc->name, pid, status, flags);
 
     struct process *child = NULL;
     struct event *child_event = NULL;
@@ -695,25 +709,25 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     if (pid == -1) {
         if (proc->children.length == 0) {
             errno = ECHILD;
-            return -1;
+            goto cleanup;
         }
 
         events = proc->child_events.data;
         event_num = proc->child_events.length;
     } else if (pid < -1 || pid == 0) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     } else {
         if (proc->children.length == 0) {
             errno = ECHILD;
-            return -1;
+            goto cleanup;
         }
 
         child = VECTOR_ITEM(&processes, pid);
 
         if ((ssize_t)child == VECTOR_INVALID_INDEX || child->ppid != proc->pid) {
             errno = ECHILD;
-            return -1;
+            goto cleanup;
         }
 
         child_event = &child->event;
@@ -725,10 +739,11 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
     ssize_t which = event_await(events, event_num, block);
     if (which == -1) {
         if (block) {
-            return 0;
+            ret = 0;
+            goto cleanup;
         } else {
             errno = EINTR;
-            return -1;
+            goto cleanup;
         }
     }
 
@@ -743,5 +758,9 @@ pid_t syscall_waitpid(void *_, int pid, int *status, int flags) {
 
     VECTOR_REMOVE_BY_VALUE(&processes, child);
 
-    return child->pid;
+    ret = child->pid;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }

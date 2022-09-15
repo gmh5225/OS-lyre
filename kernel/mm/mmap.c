@@ -9,6 +9,7 @@
 #include <lib/print.h>
 #include <lib/resource.h>
 #include <lib/vector.h>
+#include <lib/debug.h>
 #include <mm/mmap.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
@@ -362,33 +363,42 @@ bool munmap(struct pagemap *pagemap, uintptr_t addr, size_t length) {
 void *syscall_mmap(void *_, uintptr_t hint, size_t length, uint64_t flags, int fdnum, off_t offset) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("mmap(%lx, %lx, %lx, %d, %ld)", hint, length, flags, fdnum, offset);
+
+    void *ret = MAP_FAILED;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): mmap(%lx, %lx, %lx, %d, %ld)", proc->pid, proc->name, hint, length, flags, fdnum, offset);
 
     struct resource *res = NULL;
     if (fdnum != -1) {
         struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
         if (fd == NULL) {
-            return MAP_FAILED;
+            goto cleanup;
         }
 
         res = fd->description->res;
     } else if (offset != 0) {
         errno = EINVAL;
-        return MAP_FAILED;
+        goto cleanup;
     }
-    return mmap(proc->pagemap, hint, length, (int)(flags >> 32), (int)flags, res, offset);
+    ret = mmap(proc->pagemap, hint, length, (int)(flags >> 32), (int)flags, res, offset);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%llx", ret);
+    return ret;
 }
 
 int syscall_munmap(void *_, uintptr_t addr, size_t length) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("munmap(%lx, %lx)", addr, length);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): munmap(%lx, %lx)", proc->pid, proc->name, addr, length);
+    int ret = munmap(proc->pagemap, addr, length) ? 0 : -1;
 
-    return munmap(proc->pagemap, addr, length) ? 0 : -1;
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }

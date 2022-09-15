@@ -5,6 +5,7 @@
 #include <lib/errno.h>
 #include <lib/resource.h>
 #include <lib/print.h>
+#include <lib/debug.h>
 #include <sched/proc.h>
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
@@ -287,75 +288,91 @@ cleanup:
 int syscall_close(void *_, int fdnum) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("close(%d)", fdnum);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
+    int ret = fdnum_close(proc, fdnum) ? 0 : -1;
 
-    debug_print("syscall (%d %s): close(%d)", proc->pid, proc->name, fdnum);
-
-    return fdnum_close(proc, fdnum) ? 0 : -1;
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 ssize_t syscall_read(void *_, int fdnum, void *buf, size_t count) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("read(%d, %lx, %lu)", fdnum, buf, count);
+
+    ssize_t ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): read(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
-
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct f_description *description = fd->description;
     struct resource *res = description->res;
 
-    ssize_t read = res->read(res, description, buf, description->offset, count);
-    if (read < 0) {
-        return -1;
+    ret = res->read(res, description, buf, description->offset, count);
+    if (ret < 0) {
+        ret = -1;
+        goto cleanup;
     }
 
-    description->offset += read;
-    return read;
+    description->offset += ret;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%lld", ret);
+    return ret;
 }
 
 ssize_t syscall_write(void *_, int fdnum, const void *buf, size_t count) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("write(%d, %lx, %lu)", fdnum, buf, count);
+
+    ssize_t ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): write(%d, %lx, %lu)", proc->pid, proc->name, fdnum, buf, count);
-
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct f_description *description = fd->description;
     struct resource *res = description->res;
 
-    ssize_t written = res->write(res, description, buf, description->offset, count);
-    if (written < 0) {
-        return -1;
+    ret = res->write(res, description, buf, description->offset, count);
+    if (ret < 0) {
+        ret = -1;
+        goto cleanup;
     }
 
-    description->offset += written;
-    return written;
+    description->offset += ret;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%lld", ret);
+    return ret;
 }
 
 off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("seek(%d, %ld, %d)", fdnum, offset, whence);
+
+    off_t ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): seek(%d, %ld, %d)", proc->pid, proc->name, fdnum, offset, whence);
-
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct f_description *description = fd->description;
@@ -364,7 +381,7 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
         case S_IFIFO:
         case S_IFSOCK:
             errno = ESPIPE;
-            return -1;
+            goto cleanup;
     }
 
     off_t curr_offset = description->offset;
@@ -382,12 +399,12 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
             break;
         default:
             errno = EINVAL;
-            return -1;
+            goto cleanup;
     }
 
     if (new_offset < 0) {
         errno = EINVAL;
-        return -1;
+        goto cleanup;
     }
 
     // TODO: Implement res->grow
@@ -396,32 +413,42 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
     // }
 
     description->offset = new_offset;
-    return new_offset;
+    ret = new_offset;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%lld", ret);
+    return ret;
 }
 
 int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("fcntl(%d, %lu, %lx)", fdnum, request, arg);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): fcntl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
-
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     switch (request) {
         case F_DUPFD:
-            return fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, false);
+            ret = fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, false);
+            goto cleanup;
         case F_DUPFD_CLOEXEC:
-            return fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, true);
+            ret = fdnum_dup(proc, fdnum, proc, (int)arg, 0, false, true);
+            goto cleanup;
         case F_GETFD:
             if ((fd->flags & O_CLOEXEC) != 0) {
-                return O_CLOEXEC;
+                ret = O_CLOEXEC;
+                goto cleanup;
             } else {
-                return 0;
+                ret = 0;
+                goto cleanup;
             }
         case F_SETFD:
             if ((arg & O_CLOEXEC) != 0) {
@@ -429,59 +456,74 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
             } else {
                 fd->flags = 0;
             }
-            return 0;
+            ret = 0;
+            goto cleanup;
         case F_GETFL:
-            return fd->description->flags;
+            ret = fd->description->flags;
+            goto cleanup;
         case F_SETFL:
             fd->description->flags = (int)arg;
-            return 0;
+            ret = 0;
+            goto cleanup;
         default:
             debug_print("fcntl: Unhandled request %lx\n", request);
             errno = EINVAL;
-            return -1;
+            goto cleanup;
     }
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_ioctl(void *_, int fdnum, uint64_t request, uint64_t arg) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("ioctl(%d, %lu, %lx)", fdnum, request, arg);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): ioctl(%d, %lu, %lx)", proc->pid, proc->name, fdnum, request, arg);
-
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     struct f_description *description = fd->description;
     struct resource *res = description->res;
-    return res->ioctl(res, description, request, arg);
+    ret = res->ioctl(res, description, request, arg);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_dup3(void *_, int old_fdnum, int new_fdnum, int flags) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("dup3(%d, %d, %x)", old_fdnum, new_fdnum, flags);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): dup3(%d, %d, %x)", proc->pid, proc->name, old_fdnum, new_fdnum, flags);
+    int ret = fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
 
-    return fdnum_dup(proc, old_fdnum, proc, new_fdnum, flags, true, false);
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int flags) {
     (void)_;
 
-    struct thread *thread = sched_current_thread();
-    struct process *proc = thread->process;
+    int ret = -1;
 
-    debug_print("syscall (%d %s): fchmodat(%d, %s, %x, %x)", proc->pid, proc->name, dir_fdnum, path, mode, flags);
+    DEBUG_SYSCALL_ENTER("fchmodat(%d, %s, %x, %x)", dir_fdnum, path, mode, flags);
 
     struct vfs_node *parent = NULL, *node = NULL;
     if (!vfs_fdnum_path_to_node(dir_fdnum, path, true, true, &parent, &node, NULL)) {
-        return -1;
+        goto cleanup;
     }
 
     struct vfs_node *target = node;
@@ -491,7 +533,11 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
 
     target->resource->stat.st_mode &= ~0777;
     target->resource->stat.st_mode |= mode & 0777;
-    return 0;
+    ret = 0;
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
 }
 
 #define MAX_PPOLL_FDS 32
@@ -499,10 +545,10 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
 int syscall_ppoll(void *_, struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, sigset_t *sigmask) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("ppoll(%lx, %lu, %lx, %lx)", fds, nfds, timeout, sigmask);
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): ppoll(%lx, %lu, %lx, %lx)", proc->pid, proc->name, fds, nfds, timeout, sigmask);
 
     int fd_count = 0, event_count = 0, ret = 0;
     int fd_nums[MAX_PPOLL_FDS];
@@ -604,5 +650,6 @@ cleanup:
         FREE(timer, ALLOC_MISC);
     }
 
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }

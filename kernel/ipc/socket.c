@@ -7,6 +7,7 @@
 #include <lib/panic.h>
 #include <lib/print.h>
 #include <lib/resource.h>
+#include <lib/debug.h>
 #include <sched/sched.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/poll.h>
@@ -103,10 +104,12 @@ cleanup:
 int syscall_socket(void *_, int family, int type, int protocol) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("socket(%d, %d, %d)", family, type, protocol);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-
-    debug_print("syscall (%d %s): socket(%d, %d, %d)", proc->pid, proc->name, family, type, protocol);
 
     struct socket *sock;
     switch (family) {
@@ -115,11 +118,11 @@ int syscall_socket(void *_, int family, int type, int protocol) {
             break;
         default:
             errno = EINVAL;
-            return -1;
+            goto cleanup;
     }
 
     if (sock == NULL) {
-        return -1;
+        goto cleanup;
     }
 
     int flags = 0;
@@ -130,27 +133,30 @@ int syscall_socket(void *_, int family, int type, int protocol) {
         flags |= O_NONBLOCK;
     }
 
-    int ret = fdnum_create_from_resource(proc, (struct resource *)sock, flags, 0, false);
+    ret = fdnum_create_from_resource(proc, (struct resource *)sock, flags, 0, false);
     if (ret == -1) {
         resource_free((struct resource *)sock);
-        return -1;
+        goto cleanup;
     }
 
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_bind(void *_, int fdnum, void *addr, socklen_t len) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("bind(%d, %lx, %lu)", fdnum, addr, len);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): bind(%d, %lx, %lu)", proc->pid, proc->name, fdnum, addr, len);
-
-    int ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -168,21 +174,25 @@ int syscall_bind(void *_, int fdnum, void *addr, socklen_t len) {
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_connect(void *_, int fdnum, void *addr, socklen_t len) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("connect(%d, %lx, %lu)", fdnum, addr, len);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): connect(%d, %lx, %lu)", proc->pid, proc->name, fdnum, addr, len);
-
-    int ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -202,21 +212,25 @@ int syscall_connect(void *_, int fdnum, void *addr, socklen_t len) {
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_listen(void *_, int fdnum, int backlog) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("listen(%d, %d)", fdnum, backlog);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): listen(%d, %d, %lu)", proc->pid, proc->name, fdnum, backlog);
-
-    int ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -236,21 +250,25 @@ int syscall_listen(void *_, int fdnum, int backlog) {
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("accept(%d, %lx, %lx)", fdnum, addr, len);
+
+    int ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): accept(%d, %lx, %lx)", proc->pid, proc->name, fdnum, addr, len);
-
-    int ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -266,7 +284,7 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
                 sock->status &= ~POLLIN;
                 if ((desc->flags & O_NONBLOCK) != 0) {
                     errno = EWOULDBLOCK;
-                    goto cleanup;
+                    goto cleanup1;
                 }
 
                 spinlock_release(&sock->lock);
@@ -275,7 +293,7 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
                 ssize_t index = event_await(&sock_event, 1, true);
                 if (index == -1) {
                     errno = EINTR;
-                    goto cleanup;
+                    goto cleanup1;
                 }
 
                 spinlock_acquire(&sock->lock);
@@ -289,7 +307,7 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
 
             struct socket *connection_socket = sock->accept(sock, desc, peer, addr, len);
             if (connection_socket == NULL) {
-                goto cleanup;
+                goto cleanup1;
             }
 
             peer->refcount++;
@@ -305,12 +323,12 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
             ssize_t index = event_await(&conn_event, 1, true);
             if (index == -1) {
                 errno = EINTR;
-                goto cleanup;
+                goto cleanup1;
             }
 
             ret = fdnum_create_from_resource(proc, (struct resource *)connection_socket, 0, 0, false);
 
-cleanup:
+cleanup1:
             spinlock_release(&sock->lock);
         }
     } else {
@@ -318,21 +336,25 @@ cleanup:
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 int syscall_getpeername(void *_, int fdnum, void *addr, socklen_t *len) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("getpeername(%d, %lx, %lx)", fdnum, addr, len);
+
+    ssize_t ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): getpeername(%d, %lx, %lx)", proc->pid, proc->name, fdnum, addr, len);
-
-    ssize_t ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -349,21 +371,25 @@ int syscall_getpeername(void *_, int fdnum, void *addr, socklen_t *len) {
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
 
 ssize_t syscall_recvmsg(void *_, int fdnum, struct msghdr *msg, int flags) {
     (void)_;
 
+    DEBUG_SYSCALL_ENTER("recvmsg(%d, %lx, %d)", fdnum, msg, flags);
+
+    ssize_t ret = -1;
+
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    debug_print("syscall (%d %s): recvmsg(%d, %lx, %d)", proc->pid, proc->name, fdnum, msg, flags);
-
-    ssize_t ret = -1;
     struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
     if (fd == NULL) {
-        return ret;
+        goto cleanup;
     }
 
     struct f_description *desc = fd->description;
@@ -380,5 +406,8 @@ ssize_t syscall_recvmsg(void *_, int fdnum, struct msghdr *msg, int flags) {
     }
 
     desc->res->unref(desc->res, desc);
+
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
 }
