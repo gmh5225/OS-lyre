@@ -3,7 +3,7 @@ from_source=libgcrypt
 revision=1
 imagedeps="gcc"
 hostdeps="gcc automake autoconf libtool pkg-config"
-deps="mlibc-base libgpg-error"
+deps="mlibc libgpg-error"
 
 configure() {
     ${source_dir}/configure \

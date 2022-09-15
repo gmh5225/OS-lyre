@@ -62,6 +62,19 @@ index 2bae909..c4db83a 100644
  x86_64-*-solaris2*)	targ_emul=elf_x86_64_sol2
  			targ_extra_emuls="elf_x86_64 elf_i386_sol2 elf_i386_ldso elf_i386 elf_iamcu"
  			targ_extra_libpath=$targ_extra_emuls
+diff --git binutils-clean/libiberty/configure.ac binutils-workdir/libiberty/configure.ac
+index 6c1ff9c..78cdadc 100644
+--- binutils-clean/libiberty/configure.ac
++++ binutils-workdir/libiberty/configure.ac
+@@ -37,7 +37,7 @@ else
+   libiberty_topdir="${srcdir}/.."
+ fi
+ AC_SUBST(libiberty_topdir)
+-AC_CONFIG_AUX_DIR($libiberty_topdir)
++AC_CONFIG_AUX_DIR([.])
+ 
+ dnl Very limited version of automake's enable-maintainer-mode
+ 
 diff --git binutils-workdir/multilib.am binutils-workdir/multilib.am
 new file mode 100644
 index 0000000..5c98b69
