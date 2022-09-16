@@ -15,25 +15,25 @@ uint64_t debug_get_syscall_id(void) {
 // The following function taken from https://github.com/managarm/mlibc/blob/8aabe65bfcc68f92959732da15a17ff7f7fc8ced/options/ansi/generic/string-stubs.cpp#L338
 
 char *strerror(int err) {
-	const char *s;
+    const char *s;
 
     switch (err) {
         case 0: s = "Success"; break;
         case EAGAIN: s = "Operation would block (EAGAIN)"; break;
         case EACCES: s = "Access denied (EACCESS)"; break;
-        case EBADF:  s = "Bad file descriptor (EBADF)"; break;
+        case EBADF: s = "Bad file descriptor (EBADF)"; break;
         case EEXIST: s = "File exists already (EEXIST)"; break;
         case EFAULT: s = "Access violation (EFAULT)"; break;
-        case EINTR:  s = "Operation interrupted (EINTR)"; break;
+        case EINTR: s = "Operation interrupted (EINTR)"; break;
         case EINVAL: s = "Invalid argument (EINVAL)"; break;
-        case EIO:    s = "I/O error (EIO)"; break;
+        case EIO: s = "I/O error (EIO)"; break;
         case EISDIR: s = "Resource is directory (EISDIR)"; break;
         case ENOENT: s = "No such file or directory (ENOENT)"; break;
         case ENOMEM: s = "Out of memory (ENOMEM)"; break;
         case ENOTDIR: s = "Expected directory instead of file (ENOTDIR)"; break;
         case ENOSYS: s = "Operation not implemented (ENOSYS)"; break;
-        case EPERM:  s = "Operation not permitted (EPERM)"; break;
-        case EPIPE:  s = "Broken pipe (EPIPE)"; break;
+        case EPERM: s = "Operation not permitted (EPERM)"; break;
+        case EPIPE: s = "Broken pipe (EPIPE)"; break;
         case ESPIPE: s = "Seek not possible (ESPIPE)"; break;
         case ENXIO: s = "No such device or address (ENXIO)"; break;
         case ENOEXEC: s = "Exec format error (ENOEXEC)"; break;
