@@ -466,7 +466,7 @@ int syscall_fcntl(void *_, int fdnum, uint64_t request, uint64_t arg) {
             ret = 0;
             goto cleanup;
         default:
-            debug_print("fcntl: Unhandled request %lx\n", request);
+            debug_print(0, "fcntl: Unhandled request %lx\n", request);
             errno = EINVAL;
             goto cleanup;
     }

@@ -304,9 +304,15 @@ void kernel_print(const char *fmt, ...) {
     va_end(args);
 }
 
-void debug_vprint(const char *fmt, va_list args) {
+void debug_vprint(size_t indent, const char *fmt, va_list args) {
     if (debug) {
         spinlock_acquire(&print_lock);
+
+        serial_out('\n');
+
+        for (size_t i = 0; i < indent; i++) {
+            serial_out('\t');
+        }
 
         char buffer[1024];
         vsnprint(buffer, sizeof(buffer), fmt, args);
@@ -315,11 +321,11 @@ void debug_vprint(const char *fmt, va_list args) {
     }
 }
 
-void debug_print(const char *fmt, ...) {
+void debug_print(size_t indent, const char *fmt, ...) {
     if (debug) {
         va_list args;
         va_start(args, fmt);
-        debug_vprint(fmt, args);
+        debug_vprint(indent, fmt, args);
         va_end(args);
     }
 }
