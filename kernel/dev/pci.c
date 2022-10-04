@@ -261,29 +261,32 @@ void pci_set_privl(struct pci_device *d, uint16_t flags) {
 
 bool pci_enable_irq(struct pci_device *d, size_t index, int vec) {
     union msi_address addr = { .dest_id = this_cpu()->lapic_id, .base_address = 0xfee };  
-    union msi_data data = { .vector = vec };
+    union msi_data data = { .vector = vec, .delivery = 0 };
 
     if (d->msix_supported) {
-        uint16_t control = PCI_READW(d, d->msix_offset + 2) | (1 << 15);
+        uint16_t control = PCI_READW(d, d->msix_offset + 2);
+        control |= (0b11 << 14);
+        PCI_WRITEW(d, d->msix_offset + 2, control);
+    
         uint16_t n_irqs  = (control & ((1 << 11) - 1)) + 1;
-        uint32_t table_offset = PCI_READW(d, d->msix_offset + 8);
+        uint32_t info = PCI_READD(d, d->msix_offset + 4);
         if (index > n_irqs) {
             return false;
         }
 
-        struct pci_bar bir = pci_get_bar(d, table_offset & 0b111);
+        struct pci_bar bir = pci_get_bar(d, info & 0b111);
         if (!bir.is_mmio || !bir.base) {
             return false;
         }
 
-        uintptr_t target = bir.base + (table_offset & ~0b111);
-        target += (index * sizeof(uint32_t) * 4) + VMM_HIGHER_HALF;
-
-        ((uint32_t *)target)[0] = addr.raw;
-        ((uint32_t *)target)[2] = data.raw;
-        ((uint32_t *)target)[3] = 0; // Clear previous mask
-
-        PCI_WRITEW(d, d->msix_offset + 2, control & ~(1 << 15));
+        uintptr_t target = bir.base + (info & ~0b111) + VMM_HIGHER_HALF;
+        target += index * 16;
+        ((volatile uint64_t *)target)[0] = addr.raw;
+        ((volatile uint32_t *)target)[2] = data.raw;
+        
+        // Clear both global/local masks, and put MSI-X back in operation
+        ((volatile uint32_t *)target)[3] = 0;
+        PCI_WRITEW(d, d->msix_offset + 2, control & ~(1 << 14));
     } else if (d->msi_supported) {
         uint16_t control = PCI_READW(d, d->msi_offset + 2) | 1;
         uint8_t data_off = (control & (1 << 7)) ? 0xc : 0x8;
@@ -305,22 +308,20 @@ bool pci_setmask(struct pci_device *d, size_t index, bool masked) {
     if (d->msix_supported) {
         uint16_t control = PCI_READW(d, d->msix_offset + 2);
         uint16_t n_irqs  = (control & ((1 << 11) - 1)) + 1;
-        uint32_t table_offset = PCI_READW(d, d->msix_offset + 8);
+        uint32_t info = PCI_READD(d, d->msix_offset + 4);
         if (index > n_irqs) {
             return false;
         }
 
-        struct pci_bar bir = pci_get_bar(d, table_offset & 0b111);
+        struct pci_bar bir = pci_get_bar(d, info & 0b111);
         if (!bir.is_mmio || !bir.base) {
             return false;
         }
 
-        uintptr_t target = bir.base + (table_offset & ~0b111);
-        target += (index * sizeof(uint32_t) * 4) + VMM_HIGHER_HALF;
+        uintptr_t target = bir.base + (info & ~0b111) + VMM_HIGHER_HALF;
+        target += index * 16;
 
-        ((uint32_t *)target)[3] = (int)masked; // Set IRQ as masked
-
-        PCI_WRITEW(d, d->msix_offset + 2, control);
+        ((volatile uint32_t *)target)[3] = (int)masked;
     } if (d->msi_supported) {
         uint16_t control = PCI_READW(d, d->msi_offset + 2);
         
