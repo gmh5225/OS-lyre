@@ -34,10 +34,10 @@ static inline uint32_t hash(const void *data, size_t length) {
     for (size_t HASHMAP_DELETE_i = 0; HASHMAP_DELETE_i < HASHMAP_DELETE_hashmap->cap; HASHMAP_DELETE_i++) { \
         __auto_type HASHMAP_DELETE_bucket = &HASHMAP_DELETE_hashmap->buckets[HASHMAP_DELETE_i]; \
         \
-        free(HASHMAP_DELETE_bucket->items, HASHMAP_DELETE_bucket->cap * sizeof(*HASHMAP_DELETE_bucket->items), ALLOC_HASHMAP); \
+        free(HASHMAP_DELETE_bucket->items); \
     } \
     \
-    free(HASHMAP_DELETE_hashmap->buckets, HASHMAP_DELETE_hashmap->cap * sizeof(*HASHMAP_DELETE_hashmap->buckets), ALLOC_HASHMAP); \
+    free(HASHMAP_DELETE_hashmap->buckets); \
 } while (0)
 
 #define HASHMAP_TYPE(TYPE) \
@@ -148,7 +148,7 @@ out: \
     __auto_type HASHMAP_INSERT_hashmap = HASHMAP; \
     if (HASHMAP_INSERT_hashmap->buckets == NULL) { \
         HASHMAP_INSERT_hashmap->buckets = \
-            alloc(HASHMAP_INSERT_hashmap->cap * sizeof(*HASHMAP_INSERT_hashmap->buckets), ALLOC_HASHMAP); \
+            alloc(HASHMAP_INSERT_hashmap->cap * sizeof(*HASHMAP_INSERT_hashmap->buckets)); \
     } \
     \
     size_t HASHMAP_INSERT_hash = hash(HASHMAP_INSERT_key_data, HASHMAP_INSERT_key_length); \
@@ -159,15 +159,14 @@ out: \
     if (HASHMAP_INSERT_bucket->cap == 0) { \
         HASHMAP_INSERT_bucket->cap = 16; \
         HASHMAP_INSERT_bucket->items = \
-            alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
-    } else if (HASHMAP_INSERT_bucket->filled == HASHMAP_INSERT_bucket->cap) { \
-        __auto_type HASHMAP_INSERT_old_items = HASHMAP_INSERT_bucket->items; \
+            alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items)); \
+    } \
+    \
+    if (HASHMAP_INSERT_bucket->filled == HASHMAP_INSERT_bucket->cap) { \
         HASHMAP_INSERT_bucket->cap *= 2; \
-        HASHMAP_INSERT_bucket->items = alloc(HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
-        if (HASHMAP_INSERT_old_items != NULL) { \
-            memcpy(HASHMAP_INSERT_bucket->items, HASHMAP_INSERT_old_items, HASHMAP_INSERT_bucket->filled * sizeof(*HASHMAP_INSERT_bucket->items)); \
-            free(HASHMAP_INSERT_old_items, HASHMAP_INSERT_bucket->filled * sizeof(*HASHMAP_INSERT_bucket->items), ALLOC_HASHMAP); \
-        } \
+        HASHMAP_INSERT_bucket->items = \
+            realloc(HASHMAP_INSERT_bucket->items, \
+                    HASHMAP_INSERT_bucket->cap * sizeof(*HASHMAP_INSERT_bucket->items)); \
     } \
     \
     __auto_type HASHMAP_INSERT_item = &HASHMAP_INSERT_bucket->items[HASHMAP_INSERT_bucket->filled]; \

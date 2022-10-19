@@ -63,7 +63,7 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 
 char *strdup(const char *src) {
     size_t len = strlen(src);
-    char *ret = alloc(len + 1, ALLOC_STRING);
+    char *ret = alloc(len + 1);
     if (ret != NULL) {
         memcpy(ret, src, len);
         ret[len] = 0;

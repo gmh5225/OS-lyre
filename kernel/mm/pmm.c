@@ -156,19 +156,3 @@ void pmm_free(void *addr, size_t pages) {
 
     spinlock_release(&lock);
 }
-
-uint64_t pmm_total_pages(void) {
-    return usable_pages;
-}
-
-uint64_t pmm_used_pages(void) {
-    return used_pages;
-}
-
-uint64_t pmm_free_pages(void) {
-    return usable_pages - used_pages;
-}
-
-uint64_t pmm_reserved_pages(void) {
-    return reserved_pages;
-}

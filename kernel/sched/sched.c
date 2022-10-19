@@ -275,7 +275,7 @@ noreturn void sched_dequeue_and_die(void) {
 static VECTOR_TYPE(struct process *) processes = VECTOR_INIT;
 
 struct process *sched_new_process(struct process *old_proc, struct pagemap *pagemap) {
-    struct process *new_proc = ALLOC(struct process, ALLOC_PROCESS);
+    struct process *new_proc = ALLOC(struct process);
     if (new_proc == NULL) {
         errno = ENOMEM;
         goto cleanup;
@@ -316,7 +316,7 @@ struct process *sched_new_process(struct process *old_proc, struct pagemap *page
 
 cleanup:
     if (new_proc != NULL) {
-        FREE(new_proc, ALLOC_PROCESS);
+        free(new_proc);
     }
     return NULL;
 }
@@ -324,7 +324,7 @@ cleanup:
 #define STACK_SIZE 0x40000
 
 struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
-    struct thread *thread = ALLOC(struct thread, ALLOC_THREAD);
+    struct thread *thread = ALLOC(struct thread);
 
     thread->lock = SPINLOCK_INIT;
     thread->yield_await = SPINLOCK_INIT;
@@ -362,7 +362,7 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
 
 struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, void *sp,
                                      const char **argv, const char **envp, struct auxval *auxval, bool enqueue) {
-    struct thread *thread = ALLOC(struct thread, ALLOC_THREAD);
+    struct thread *thread = ALLOC(struct thread);
     if (thread == NULL) {
         errno = ENOMEM;
         goto fail;
@@ -490,7 +490,7 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
 
 fail:
     if (thread != NULL) {
-        FREE(thread, ALLOC_THREAD);
+        free(thread);
     }
     return NULL;
 }
@@ -548,7 +548,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
         }
     }
 
-    struct thread *new_thread = ALLOC(struct thread, ALLOC_THREAD);
+    struct thread *new_thread = ALLOC(struct thread);
     if (new_thread == NULL) {
         errno = ENOMEM;
         goto fail;
@@ -596,7 +596,7 @@ int syscall_fork(struct cpu_ctx *ctx) {
 
 fail:
     // TODO: Properly clean up
-    FREE(new_proc, ALLOC_PROCESS);
+    free(new_proc);
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);

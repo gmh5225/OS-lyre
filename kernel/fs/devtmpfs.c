@@ -65,14 +65,11 @@ static ssize_t devtmpfs_resource_write(struct resource *_this, struct f_descript
             new_capacity *= 2;
         }
 
-        void *new_data = alloc(new_capacity, ALLOC_RESOURCE);
+        void *new_data = realloc(this->data, new_capacity);
         if (new_data == NULL) {
             errno = ENOMEM;
             goto fail;
         }
-
-        memcpy(new_data, this->data, this->capacity);
-        free(this->data, this->capacity, ALLOC_RESOURCE);
 
         this->data = new_data;
         this->capacity = new_capacity;
@@ -125,14 +122,14 @@ static bool devtmpfs_truncate(struct resource *this_, struct f_description *desc
             new_capacity *= 2;
         }
 
-        void *new_data = alloc(new_capacity, ALLOC_RESOURCE);
+        void *new_data = alloc(new_capacity);
         if (new_data == NULL) {
             errno = ENOMEM;
             goto fail;
         }
 
         memcpy(new_data, this->data, this->capacity);
-        free(this->data, this->capacity, ALLOC_RESOURCE);
+        free(this->data);
 
         this->data = new_data;
         this->capacity = new_capacity;
@@ -155,7 +152,7 @@ static inline struct devtmpfs_resource *create_devtmpfs_resource(struct devtmpfs
 
     if (S_ISREG(mode)) {
         resource->capacity = 4096;
-        resource->data = alloc(resource->capacity, ALLOC_RESOURCE);
+        resource->data = alloc(resource->capacity);
         resource->can_mmap = true;
     }
 
@@ -209,10 +206,10 @@ static struct vfs_node *devtmpfs_create(struct vfs_filesystem *_this, struct vfs
 
 fail:
     if (new_node != NULL) {
-        FREE(new_node, ALLOC_RESOURCE); // TODO: Use vfs_destroy_node
+        free(new_node); // TODO: Use vfs_destroy_node
     }
     if (resource != NULL) {
-        FREE(resource, ALLOC_RESOURCE);
+        free(resource);
     }
 
     return NULL;
@@ -240,10 +237,10 @@ static struct vfs_node *devtmpfs_symlink(struct vfs_filesystem *_this, struct vf
 
 fail:
     if (new_node != NULL) {
-        FREE(new_node, ALLOC_RESOURCE); // TODO: Use vfs_destroy_node
+        free(new_node); // TODO: Use vfs_destroy_node
     }
     if (resource != NULL) {
-        FREE(resource, ALLOC_RESOURCE);
+        free(resource);
     }
 
     return NULL;
@@ -266,7 +263,7 @@ static struct vfs_node *devtmpfs_link(struct vfs_filesystem *_this, struct vfs_n
 }
 
 static inline struct vfs_filesystem *devtmpfs_instantiate(void) {
-    struct devtmpfs *new_fs = ALLOC(struct devtmpfs, ALLOC_RESOURCE);
+    struct devtmpfs *new_fs = ALLOC(struct devtmpfs);
     if (new_fs == NULL) {
         return NULL;
     }

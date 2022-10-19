@@ -52,7 +52,7 @@ int syscall_futex_wait(void *_, int *ptr, int expected) {
 
     struct event *event = NULL;
     if (!HASHMAP_GET(&futex_hashmap, event, &phys, sizeof(phys))) {
-        event = ALLOC(struct event, ALLOC_MISC);
+        event = ALLOC(struct event);
         HASHMAP_INSERT(&futex_hashmap, &phys, sizeof(phys), event);
     }
 

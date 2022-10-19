@@ -327,7 +327,7 @@ static ssize_t unix_recvmsg(struct socket *_this, struct f_description *descript
         }
     }
 
-    void *tmp_buffer = alloc(before_wrap + after_wrap, ALLOC_MISC);
+    void *tmp_buffer = alloc(before_wrap + after_wrap);
     if (tmp_buffer == NULL) {
         goto cleanup;
     }
@@ -346,7 +346,7 @@ static ssize_t unix_recvmsg(struct socket *_this, struct f_description *descript
         remaining -= transfer_count;
     }
 
-    free(tmp_buffer, before_wrap + after_wrap, ALLOC_MISC);
+    free(tmp_buffer);
 
     this->read_ptr = new_ptr;
     this->used -= transferred;
@@ -386,7 +386,7 @@ struct socket *socket_create_unix(int type, int protocol) {
     sock->family = AF_UNIX;
     sock->type = type;
     sock->protocol = protocol;
-    sock->data = alloc(SOCK_BUFFER_SIZE, ALLOC_RESOURCE);
+    sock->data = alloc(SOCK_BUFFER_SIZE);
     sock->capacity = SOCK_BUFFER_SIZE;
 
     sock->stat.st_mode = S_IFSOCK;

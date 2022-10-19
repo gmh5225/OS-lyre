@@ -20,20 +20,13 @@
 #define VECTOR_ENSURE_LENGTH(VEC, LENGTH) do { \
     __auto_type VECTOR_ENSURE_LENGTH_vec = VEC; \
     if ((LENGTH) >= VECTOR_ENSURE_LENGTH_vec->capacity) { \
-        __auto_type VECTOR_ENSURE_LENGTH_old_capacity = VECTOR_ENSURE_LENGTH_vec->capacity; \
         if (VECTOR_ENSURE_LENGTH_vec->capacity == 0) { \
             VECTOR_ENSURE_LENGTH_vec->capacity = 8; \
         } else { \
             VECTOR_ENSURE_LENGTH_vec->capacity *= 2; \
         } \
-        __auto_type VECTOR_ENSURE_LENGTH_old_data = VECTOR_ENSURE_LENGTH_vec->data; \
-        VECTOR_ENSURE_LENGTH_vec->data = alloc(VECTOR_ENSURE_LENGTH_vec->capacity * sizeof(*VECTOR_ENSURE_LENGTH_vec->data), ALLOC_VECTOR); /* NOLINT */ \
-        if (VECTOR_ENSURE_LENGTH_old_data != NULL) { \
-            memcpy(VECTOR_ENSURE_LENGTH_vec->data, VECTOR_ENSURE_LENGTH_old_data, \
-                VECTOR_ENSURE_LENGTH_old_capacity * sizeof(*VECTOR_ENSURE_LENGTH_vec->data)); /* NOLINT */ \
-            free(VECTOR_ENSURE_LENGTH_old_data, \
-                VECTOR_ENSURE_LENGTH_old_capacity * sizeof(*VECTOR_ENSURE_LENGTH_vec->data), ALLOC_VECTOR); /* NOLINT */ \
-        } \
+        VECTOR_ENSURE_LENGTH_vec->data = realloc(VECTOR_ENSURE_LENGTH_vec->data, \
+            VECTOR_ENSURE_LENGTH_vec->capacity * sizeof(*VECTOR_ENSURE_LENGTH_vec->data)); /* NOLINT */ \
     } \
 } while (0)
 

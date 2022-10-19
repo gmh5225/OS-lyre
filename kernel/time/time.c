@@ -26,7 +26,7 @@ static spinlock_t timers_lock = SPINLOCK_INIT;
 static VECTOR_TYPE(struct timer *) armed_timers = VECTOR_INIT;
 
 struct timer *timer_new(struct timespec when) {
-    struct timer *timer = ALLOC(struct timer, ALLOC_MISC);
+    struct timer *timer = ALLOC(struct timer);
     if (timer == NULL) {
         return NULL;
     }
@@ -130,11 +130,11 @@ int syscall_sleep(void *_, struct timespec *duration, struct timespec *remaining
         }
 
         errno = EINTR;
-        FREE(timer, ALLOC_MISC);
+        free(timer);
         goto cleanup;
     }
 
-    FREE(timer, ALLOC_MISC);
+    free(timer);
     ret = 0;
 
 cleanup:

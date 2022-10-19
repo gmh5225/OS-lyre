@@ -78,7 +78,7 @@ static bool stub_truncate(struct resource *this, struct f_description *descripti
 }
 
 void *resource_create(size_t size) {
-    struct resource *res = alloc(size, ALLOC_RESOURCE);
+    struct resource *res = alloc(size);
     if (res == NULL) {
         return NULL;
     }
@@ -94,7 +94,7 @@ void *resource_create(size_t size) {
 }
 
 void resource_free(struct resource *res) {
-    free(res, res->res_size, ALLOC_RESOURCE);
+    free(res);
 }
 
 dev_t resource_create_dev_id(void) {
@@ -128,10 +128,10 @@ bool fdnum_close(struct process *proc, int fdnum) {
     fd->description->res->unref(fd->description->res, fd->description);
 
     if (fd->description->refcount-- == 1) {
-        FREE(fd->description, ALLOC_RESOURCE);
+        free(fd->description);
     }
 
-    FREE(fd, ALLOC_RESOURCE);
+    free(fd);
 
     ok = true;
     proc->fds[fdnum] = NULL;
@@ -204,7 +204,7 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
         return -1;
     }
 
-    struct f_descriptor *new_fd = ALLOC(struct f_descriptor, ALLOC_RESOURCE);
+    struct f_descriptor *new_fd = ALLOC(struct f_descriptor);
     if (new_fd == NULL) {
         errno = ENOMEM;
         return -1;
@@ -214,7 +214,7 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
 
     new_fdnum = fdnum_create_from_fd(new_proc, new_fd, new_fdnum, specific);
     if (new_fdnum < 0) {
-        FREE(new_fd, ALLOC_RESOURCE);
+        free(new_fd);
         return -1;
     }
 
@@ -232,7 +232,7 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
 struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
     res->refcount++;
 
-    struct f_description *description = ALLOC(struct f_description, ALLOC_RESOURCE);
+    struct f_description *description = ALLOC(struct f_description);
     if (description == NULL) {
         goto fail;
     }
@@ -242,7 +242,7 @@ struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
     description->lock = SPINLOCK_INIT;
     description->res = res;
 
-    struct f_descriptor *fd = ALLOC(struct f_descriptor, ALLOC_RESOURCE);
+    struct f_descriptor *fd = ALLOC(struct f_descriptor);
     if (fd == NULL) {
         goto fail;
     }
@@ -254,7 +254,7 @@ struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
 fail:
     res->refcount--;
     if (description != NULL) {
-        FREE(description, ALLOC_RESOURCE);
+        free(description);
     }
     return NULL;
 }
@@ -647,7 +647,7 @@ cleanup:
 
     if (timer != NULL) {
         timer_disarm(timer);
-        FREE(timer, ALLOC_MISC);
+        free(timer);
     }
 
     DEBUG_SYSCALL_LEAVE("%d", ret);

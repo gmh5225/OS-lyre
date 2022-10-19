@@ -100,7 +100,7 @@ static void mcfg_write(struct pci_device *dev, uint32_t offset, uint32_t value, 
 }
 
 static void scan_function(uint8_t bus, uint8_t slot, uint8_t func) {
-    struct pci_device *dev = ALLOC(struct pci_device, ALLOC_MISC);
+    struct pci_device *dev = ALLOC(struct pci_device);
     *dev = (struct pci_device) {
         .bus = bus,
         .slot = slot,
@@ -108,7 +108,7 @@ static void scan_function(uint8_t bus, uint8_t slot, uint8_t func) {
     };
 
     if (PCI_READD(dev, 0) == (uint32_t)-1) {
-        FREE(dev, ALLOC_MISC);
+        free(dev);
         return;
     }
 

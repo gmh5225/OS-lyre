@@ -42,7 +42,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     vmm_switch_to(vmm_kernel_pagemap);
 
-    struct thread *idle_thread = ALLOC(struct thread, ALLOC_THREAD);
+    struct thread *idle_thread = ALLOC(struct thread);
 
     idle_thread->self = idle_thread;
     idle_thread->this_cpu = cpu_local;
@@ -174,7 +174,7 @@ void cpu_init(void) {
     for (size_t i = 0; i < smp_resp->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_resp->cpus[i];
 
-        struct cpu_local *cpu_local = ALLOC(struct cpu_local, ALLOC_MISC);
+        struct cpu_local *cpu_local = ALLOC(struct cpu_local);
         cpu->extra_argument = (uint64_t)cpu_local;
         cpu_local->cpu_number = i;
 

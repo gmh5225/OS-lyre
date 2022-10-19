@@ -96,7 +96,7 @@ void *socket_create(int family, int type, int protocol, int size) {
 
 cleanup:
     if (sock != NULL) {
-        FREE(sock, ALLOC_RESOURCE);
+        free(sock);
     }
     return NULL;
 }
@@ -241,7 +241,7 @@ int syscall_listen(void *_, int fdnum, int backlog) {
             errno = EINVAL;
         } else if (sock->listen(sock, desc, backlog)) {
             sock->backlog_max = backlog;
-            sock->backlog = alloc(backlog * sizeof(struct socket *), ALLOC_RESOURCE);
+            sock->backlog = alloc(backlog * sizeof(struct socket *));
             sock->state = SOCKET_LISTENING;
             ret = 0;
         }

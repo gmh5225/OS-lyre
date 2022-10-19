@@ -88,13 +88,13 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
                 auxv->at_phdr = phdr.p_vaddr + load_base;
                 break;
             case PT_INTERP: {
-                void *path = alloc(phdr.p_filesz + 1, ALLOC_STRING);
+                void *path = alloc(phdr.p_filesz + 1);
                 if (path == NULL) {
                     goto fail;
                 }
 
                 if (res->read(res, NULL, path, phdr.p_offset, phdr.p_filesz) < 0) {
-                    free(path, phdr.p_filesz + 1, ALLOC_STRING);
+                    free(path);
                     goto fail;
                 }
 
@@ -113,7 +113,7 @@ bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
 
 fail:
     if (ld_path != NULL && *ld_path != NULL) {
-        free((void *)*ld_path, strlen(*ld_path) + 1, ALLOC_STRING);
+        free((void *)*ld_path);
     }
     return false;
 }

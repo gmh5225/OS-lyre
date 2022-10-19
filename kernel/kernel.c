@@ -81,5 +81,6 @@ void kmain_thread(void) {
 
     vfs_pathname(init_node, init_proc->name, sizeof(init_proc->name) - 1);
     sched_new_user_thread(init_proc, (void *)ld_auxv.at_entry, NULL, NULL, argv, envp, &init_auxv, true);
+
     sched_dequeue_and_die();
 }
