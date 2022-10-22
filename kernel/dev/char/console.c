@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdnoreturn.h>
-#include <limine.h>
 #include <lib/libc.h>
 #include <lib/resource.h>
 #include <lib/panic.h>
@@ -20,27 +19,25 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <abi-bits/poll.h>
+#include <terminal/backends/framebuffer.h>
+#include <dev/video/fbdev.h>
 
 static bool is_printable(uint8_t c) {
     return c >= 0x20 && c <= 0x7e;
 }
 
-static void limine_term_callback(struct limine_terminal *term, uint64_t t, uint64_t a, uint64_t b, uint64_t c);
-
-static volatile struct limine_terminal_request terminal_request = {
-    .id = LIMINE_TERMINAL_REQUEST,
-    .revision = 0,
-    .callback = limine_term_callback
-};
+static void term_callback(struct term_context *, uint64_t t, uint64_t a, uint64_t b, uint64_t c);
 
 struct console {
     struct resource;
     struct termios termios;
+
     bool decckm;
 };
 
 static spinlock_t read_lock = SPINLOCK_INIT;
 static spinlock_t terminal_lock = SPINLOCK_INIT;
+static struct term_context *term_context;
 static struct event console_event;
 static struct console *console_res = NULL;
 
@@ -151,37 +148,34 @@ static ssize_t tty_write(struct resource *_this, struct f_description *descripti
     (void)offset;
     (void)_this;
 
-    uint64_t cr3 = read_cr3();
+    if (term_context != NULL) {
+        spinlock_acquire(&terminal_lock);
+        term_write(term_context, buf, count);
+        spinlock_release(&terminal_lock);
 
-    const char *local_buf = buf;
-    if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
-        local_buf = alloc(count);
-        memcpy((char *)local_buf, buf, count);
-        vmm_switch_to(vmm_kernel_pagemap);
+        return count;
     }
 
-    spinlock_acquire(&terminal_lock);
-    terminal_request.response->write(terminal_request.response->terminals[0], local_buf, count);
-    spinlock_release(&terminal_lock);
-
-    if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
-        free((void *)local_buf);
-        write_cr3(cr3);
-    }
-
-    return count;
+    return -1;
 }
 
 static int tty_ioctl(struct resource *_this, struct f_description *description, uint64_t request, uint64_t argp) {
     switch (request) {
         case TIOCGWINSZ: {
             struct winsize *w = (void *)argp;
-            struct limine_terminal *t = terminal_request.response->terminals[0];
-            w->ws_row = t->rows;
-            w->ws_col = t->columns;
-            w->ws_xpixel = t->framebuffer->width;
-            w->ws_ypixel = t->framebuffer->height;
-            return 0;
+
+            if (term_context != NULL) {
+                struct limine_framebuffer_response *fb_response = framebuffer_request.response;
+                struct limine_framebuffer *fb = fb_response->framebuffers[0];
+                w->ws_row = term_context->rows;
+                w->ws_col = term_context->cols;
+                w->ws_xpixel = fb->width;
+                w->ws_ypixel = fb->height;
+                return 0;
+            }
+
+            errno = EINVAL;
+            return -1;
         }
         case TCGETS: {
             struct termios *t = (void *)argp;
@@ -445,8 +439,8 @@ static void dec_private(uint64_t esc_val_count, uint32_t *esc_values, uint64_t f
     }
 }
 
-static void limine_term_callback(struct limine_terminal *term, uint64_t t, uint64_t a, uint64_t b, uint64_t c) {
-    (void)term;
+static void term_callback(struct term_context *context, uint64_t t, uint64_t a, uint64_t b, uint64_t c) {
+    (void)context;
 
     switch (t) {
         case 10:
@@ -455,11 +449,22 @@ static void limine_term_callback(struct limine_terminal *term, uint64_t t, uint6
 }
 
 void console_init(void) {
-    struct limine_terminal_response *terminal_resp = terminal_request.response;
+    struct limine_framebuffer_response *fb_response = framebuffer_request.response;
+    if (fb_response != NULL && fb_response->framebuffer_count > 0) {
+        struct limine_framebuffer *fb = fb_response->framebuffers[0];
 
-    if (terminal_resp == NULL || terminal_resp->terminal_count < 1) {
-        // TODO: Should not be a hard requirement..?
-        panic(NULL, true, "Limine terminal is not available");
+        term_context = fbterm_init(
+            alloc, // malloc function
+            fb->address, fb->width, fb->height, fb->pitch, // framebuffer
+            NULL, // canvas
+            NULL, NULL, // palette
+            NULL, NULL, // colours
+            NULL, 0, 0, 0, // font
+            1, 1, // font scale
+            0 // margin
+        );
+
+        term_context->callback = term_callback;
     }
 
     console_res = resource_create(sizeof(struct console));
@@ -488,10 +493,5 @@ void console_init(void) {
 }
 
 void console_write(const char *buf, size_t length) {
-    if (console_res != NULL) {
-        console_res->write((struct resource *)console_res, NULL, buf, 0, length);
-    } else {
-        struct limine_terminal_response *terminal_resp = terminal_request.response;
-        terminal_resp->write(terminal_resp->terminals[0], buf, length);
-    }
+    tty_write(NULL, NULL, buf, 0, length);
 }
