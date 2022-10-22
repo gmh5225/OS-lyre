@@ -18,6 +18,7 @@
 #include <sched/sched.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/ttydefaults.h>
 #include <abi-bits/poll.h>
 #include <terminal/backends/framebuffer.h>
 #include <dev/video/fbdev.h>
@@ -476,8 +477,15 @@ void console_init(void) {
     console_res->stat.st_mode = 0644 | S_IFCHR;
 
     // Termios initialisation
-    console_res->termios.c_lflag = ISIG | ICANON | ECHO;
-    console_res->termios.c_cc[VINTR] = 0x03;
+    console_res->termios.c_iflag = BRKINT | IGNPAR | ICRNL | IXON | IMAXBEL;
+    console_res->termios.c_oflag = OPOST | ONLCR;
+    console_res->termios.c_cflag = CS8 | CREAD;
+    console_res->termios.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE;
+
+    console_res->termios.c_cc[VINTR] = CTRL('C');
+    console_res->termios.c_cc[VEOF] = CTRL('D');
+    console_res->termios.c_cc[VSUSP] = CTRL('Z');
+
     console_res->termios.ibaud = 38400;
     console_res->termios.obaud = 38400;
 
