@@ -9,7 +9,6 @@
 /cross-files
 /freestanding-headers
 /libgcc-binaries
-/terminal
 /build
 /configure
 /configure.ac.save
