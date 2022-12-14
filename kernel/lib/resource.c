@@ -392,7 +392,7 @@ off_t syscall_seek(void *_, int fdnum, off_t offset, int whence) {
             new_offset = curr_offset + offset;
             break;
         case SEEK_END:
-            new_offset = curr_offset + description->res->stat.st_size;
+            new_offset = offset + description->res->stat.st_size;
             break;
         case SEEK_SET:
             new_offset = offset;
