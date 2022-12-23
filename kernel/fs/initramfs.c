@@ -53,7 +53,7 @@ static inline uint64_t oct2int(const char *str, size_t len) {
 void initramfs_init(void) {
     struct limine_module_response *modules = module_request.response;
     if (modules == NULL || modules->module_count == 0) {
-        panic(NULL, true, "No initramfs");
+        panic(NULL, "No initramfs");
     }
 
     struct limine_file *module = modules->modules[0];
@@ -87,7 +87,7 @@ void initramfs_init(void) {
             case TAR_FILE_TYPE_NORMAL: {
                 node = vfs_create(vfs_root, name, mode | S_IFREG);
                 if (node == NULL) {
-                    panic(NULL, true, "Failed to allocate an initramfs node");
+                    panic(NULL, "Failed to allocate an initramfs node");
                 }
 
                 struct resource *resource = node->resource;
@@ -97,14 +97,14 @@ void initramfs_init(void) {
             case TAR_FILE_TYPE_SYMLINK: {
                 node = vfs_symlink(vfs_root, link_name, name);
                 if (node == NULL) {
-                    panic(NULL, true, "Failed to allocate an initramfs node");
+                    panic(NULL, "Failed to allocate an initramfs node");
                 }
                 break;
             }
             case TAR_FILE_TYPE_DIRECTORY: {
                 node = vfs_create(vfs_root, name, mode | S_IFDIR);
                 if (node == NULL) {
-                    panic(NULL, true, "Failed to allocate an initramfs node");
+                    panic(NULL, "Failed to allocate an initramfs node");
                 }
                 break;
             }

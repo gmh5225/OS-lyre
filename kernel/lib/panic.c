@@ -6,12 +6,16 @@
 #include <dev/lapic.h>
 #include <lib/panic.h>
 #include <lib/print.h>
-#include <lib/trace.h>
 #include <sys/cpu.h>
 #include <sys/idt.h>
 
-noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
+noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
     interrupt_toggle(false);
+
+    static spinlock_t panic_lock = SPINLOCK_INIT;
+
+    spinlock_acquire(&panic_lock);
+
     lapic_send_ipi(0, idt_panic_ipi_vector | 0b10 << 18);
 
     // Force unlock the print lock
@@ -56,12 +60,6 @@ noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     kernel_print("\n\n");
 
 halt:
-    if (trace && (ctx == NULL || ctx->cs == 0x28)) {
-        kernel_print("Stacktrace follows:\n");
-        trace_printstack(ctx == NULL ? 0 : ctx->rbp);
-        kernel_print("\n");
-    }
-
     kernel_print("System halted.");
 
     for (;;) {

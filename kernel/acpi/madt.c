@@ -22,7 +22,7 @@ struct madt {
 void madt_init(void) {
     struct madt *madt = acpi_find_sdt("APIC", 0);
     if (madt == NULL) {
-        panic(NULL, true, "System does not have an MADT");
+        panic(NULL, "System does not have an MADT");
     }
 
     size_t offset = 0;

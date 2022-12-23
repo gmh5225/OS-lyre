@@ -41,7 +41,7 @@ static inline bool use_xsdt(void) {
 void acpi_init(void) {
     struct limine_rsdp_response *rsdp_resp = rsdp_request.response;
     if (rsdp_resp == NULL || rsdp_resp->address == NULL) {
-        panic(NULL, true, "ACPI is not supported on this machine");
+        panic(NULL, "ACPI is not supported on this machine");
     }
 
     rsdp = rsdp_resp->address;
@@ -61,7 +61,7 @@ void acpi_init(void) {
         uint32_t fadt_flags = *((uint32_t *)fadt + 28);
 
         if ((fadt_flags & (1 << 20)) != 0) {
-            panic(NULL, true, "Lyre does not support HW reduced ACPI systems");
+            panic(NULL, "Lyre does not support HW reduced ACPI systems");
         }
     }
 

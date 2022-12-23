@@ -26,9 +26,6 @@ test "x$ARCH" = "x" && ARCH="DEFAULT_ARCH"
 
 AC_PROG_MKDIR_P
 AC_PROG_INSTALL
-AC_PROG_GREP
-AC_PROG_SED
-AC_PROG_AWK
 
 AC_CHECK_PROG([FIND_FOUND], [find], [yes])
 if ! test "x$FIND_FOUND" = "xyes"; then
@@ -38,14 +35,13 @@ fi
 AC_ARG_VAR(CROSS_TOOLCHAIN, [alternative cross toolchain prefix (or 'llvm')])
 AC_ARG_VAR(CROSS_CC, [cross C compiler command])
 AC_ARG_VAR(CROSS_LD, [cross linker command])
-AC_ARG_VAR(CROSS_OBJDUMP, [cross objdump command])
 AC_ARG_VAR(CROSS_STRIP, [cross strip command])
 
 rm -rf "$BUILDDIR/cross-files"
 $MKDIR_P "$BUILDDIR/cross-files"
 (
 cd "$BUILDDIR/cross-files"
-TRIPLET="$ARCH"-elf WANT_CROSS_LD=yes WANT_CROSS_STRIP=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
+TRIPLET="$ARCH"-elf WANT_CROSS_LD=yes WANT_CROSS_STRIP=yes "$SRCDIR/cross-detect/configure"
 ) || exit 1
 
 AC_SUBST([CROSS_FILE], [cross-files/$ARCH-toolchain.mk])

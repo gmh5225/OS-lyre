@@ -230,7 +230,7 @@ struct pagemap *vmm_fork_pagemap(struct pagemap *pagemap) {
                     *new_spte = *new_pte;
                 }
             } else {
-                panic(NULL, true, "Non anon fork");
+                panic(NULL, "Non anon fork");
             }
         }
 

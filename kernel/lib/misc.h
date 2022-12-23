@@ -37,13 +37,13 @@
 
 #define ASSERT(COND) do { \
     if (!(COND)) { \
-        panic(NULL, true, "Assertion failed: " #COND); \
+        panic(NULL, "Assertion failed: " #COND); \
     } \
 } while (0)
 
 #define ASSERT_MSG(COND, ...) do { \
     if (!(COND)) { \
-        panic(NULL, true, __VA_ARGS__); \
+        panic(NULL, __VA_ARGS__); \
     } \
 } while (0)
 

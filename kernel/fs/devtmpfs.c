@@ -279,12 +279,12 @@ static inline struct vfs_filesystem *devtmpfs_instantiate(void) {
 void devtmpfs_init(void) {
     devtmpfs = devtmpfs_instantiate();
     if (devtmpfs == NULL) {
-        panic(NULL, true, "Failed to instantiate devtmpfs");
+        panic(NULL, "Failed to instantiate devtmpfs");
     }
 
     devtmpfs_root = devtmpfs->create(devtmpfs, NULL, "", 0755 | S_IFDIR);
     if (devtmpfs_root == NULL) {
-        panic(NULL, true, "Failed to create root devtmpfs node");
+        panic(NULL, "Failed to create root devtmpfs node");
     }
 
     vfs_add_filesystem(devtmpfs, "devtmpfs");

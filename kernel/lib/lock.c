@@ -17,10 +17,10 @@ end:
 void smartlock_release(struct smartlock *smartlock) {
     struct thread *thread = sched_current_thread();
     if (smartlock->thread != thread) {
-        panic(NULL, true, "Invalid smartlock release");
+        panic(NULL, "Invalid smartlock release");
     }
     if (smartlock->refcount == 0) {
-        panic(NULL, true, "Smartlock release refcount is 0");
+        panic(NULL, "Smartlock release refcount is 0");
     }
     smartlock->refcount--;
     if (smartlock->refcount == 0) {

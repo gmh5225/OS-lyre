@@ -36,7 +36,7 @@ static void exception_handler(uint8_t vector, struct cpu_ctx *ctx) {
         return;
     }
 
-    panic(ctx, true, "Exception %s triggered", exceptions[vector]);
+    panic(ctx, "Exception %s triggered", exceptions[vector]);
 
     __builtin_unreachable();
 }
