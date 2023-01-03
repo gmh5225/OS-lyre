@@ -1,7 +1,7 @@
 name=tzdata
 from_source=tzdata
 revision=1
-imagedeps="tzdata"
+imagedeps="tzdata-utils"
 hostdeps="gcc binutils"
 deps="mlibc"
 

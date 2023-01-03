@@ -3,7 +3,7 @@ from_source=gcc
 revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
 deps="mlibc binutils zlib gmp mpfr mpc"
-imagedeps="gcc"
+imagedeps="gcc g++"
 
 configure() {
         CXXFLAGS_FOR_TARGET="$CFLAGS" \
