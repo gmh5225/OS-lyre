@@ -1,4 +1,4 @@
-QEMUFLAGS ?= -M q35,smm=off -m 8G -cdrom lyre.iso -serial stdio
+QEMUFLAGS ?= -M q35,smm=off -m 8G -boot order=dc -cdrom lyre.iso -serial stdio 
 
 .PHONY: all
 all: jinx
