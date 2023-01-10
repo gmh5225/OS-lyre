@@ -7,6 +7,7 @@
 #include <lib/resource.h>
 #include <lib/debug.h>
 #include <abi-bits/stat.h>
+#include <abi-bits/poll.h>
 
 #define PIPE_BUF 4096
 
@@ -84,6 +85,12 @@ static ssize_t pipe_read(struct resource *_this, struct f_description *descripti
     this->read_ptr = new_ptr;
     this->used -= count;
 
+    if (this->used == 0) {
+        this->status &= ~POLLIN;
+    }
+    if (this->used < this->capacity) {
+        this->status |= POLLOUT;
+    }
     event_trigger(&this->event, false);
     ret = count;
 
@@ -141,6 +148,10 @@ static ssize_t pipe_write(struct resource *_this, struct f_description *descript
     this->write_ptr = new_ptr;
     this->used += count;
 
+    if (this->used == this->capacity) {
+        this->status &= ~POLLOUT;
+    }
+    this->status |= POLLIN;
     event_trigger(&this->event, false);
     ret = count;
 
