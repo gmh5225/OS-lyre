@@ -36,6 +36,7 @@ struct thread {
     uint64_t errno;
     /////////////////
 
+    int tid;
     spinlock_t lock;
     struct cpu_local *this_cpu;
     int running_on;

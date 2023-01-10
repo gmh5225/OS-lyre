@@ -360,6 +360,31 @@ struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     return thread;
 }
 
+int syscall_new_thread(void *_, void *entry, void *stack) {
+    (void)_;
+
+    DEBUG_SYSCALL_ENTER("new_thread(%lx, %lx)", entry, stack);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    struct thread *new = sched_new_user_thread(proc, entry, NULL, stack, NULL, NULL, NULL, true);
+
+    int tid = new->tid;
+
+    DEBUG_SYSCALL_LEAVE("%d", tid);
+
+    return tid;
+}
+
+noreturn int syscall_exit_thread(void *_) {
+    (void)_;
+
+    DEBUG_SYSCALL_ENTER("exit_thread()");
+
+    sched_dequeue_and_die();
+}
+
 struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, void *sp,
                                      const char **argv, const char **envp, struct auxval *auxval, bool enqueue) {
     struct thread *thread = ALLOC(struct thread);
@@ -420,13 +445,15 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
     thread->fpu_storage = pmm_alloc(DIV_ROUNDUP(fpu_storage_size, PAGE_SIZE))
                           + VMM_HIGHER_HALF;
 
-    // Set up FPU control word nd MXCSR as defined in the sysv ABI
+    // Set up FPU control word and MXCSR as defined in the sysv ABI
     fpu_restore(thread->fpu_storage);
     uint16_t default_fcw = 0b1100111111;
     asm volatile ("fldcw %0" :: "m"(default_fcw) : "memory");
     uint32_t default_mxcsr = 0b1111110000000;
     asm volatile ("ldmxcsr %0" :: "m"(default_mxcsr) : "memory");
     fpu_save(thread->fpu_storage);
+
+    thread->tid = proc->threads.length;
 
     if (proc->threads.length == 0) {
         void *stack_top = stack;
