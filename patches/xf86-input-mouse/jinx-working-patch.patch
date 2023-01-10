@@ -14,10 +14,10 @@ index 6c453cd..41a81bf 100644
  
 diff --git xf86-input-mouse-workdir/src/lyre_mouse.c xf86-input-mouse-workdir/src/lyre_mouse.c
 new file mode 100644
-index 0000000..dcdd0e5
+index 0000000..ec88bf3
 --- /dev/null
 +++ xf86-input-mouse-workdir/src/lyre_mouse.c
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,119 @@
 +#ifdef HAVE_XORG_CONFIG_H
 +#include <xorg-config.h>
 +#endif
@@ -56,9 +56,10 @@ index 0000000..dcdd0e5
 +    MouseDevPtr mouse = pInfo->private;
 +    struct mouse_packet packet;
 +
-+    while (read(pInfo->fd, &packet, sizeof(struct mouse_packet)) == sizeof(struct mouse_packet)) {
++    if (read(pInfo->fd, &packet, sizeof(struct mouse_packet)) == sizeof(struct mouse_packet)) {
 +        int b = mouse->lastButtons;
 +        b &= ~0x7;
++
 +        b |= (packet.flags & MOUSE_FLAG_RB) ? 1 : 0;
 +        b |= (packet.flags & MOUSE_FLAG_MB) ? 2 : 0;
 +        b |= (packet.flags & MOUSE_FLAG_LB) ? 4 : 0;

@@ -122,6 +122,7 @@ static noreturn void mouse_handler(void) {
         mouse_res->packet_avl = true;
         spinlock_release(&mouse_res->lock);
 
+        mouse_res->status |= POLLIN;
         event_trigger(&mouse_res->event, false);
     }
 }
@@ -153,8 +154,7 @@ static ssize_t _mouse_read(struct resource *_this, struct f_description *descrip
     memcpy(_buf, &mouse_res->packet, sizeof(struct mouse_packet));
     mouse_res->packet_avl = false;
 
-    mouse_res->status |= POLLIN;
-    event_trigger(&mouse_res->event, false);
+    mouse_res->status &= ~POLLIN;
 
     spinlock_release(&mouse_res->lock);
 
