@@ -14,7 +14,7 @@ index 6c453cd..41a81bf 100644
  
 diff --git xf86-input-mouse-workdir/src/lyre_mouse.c xf86-input-mouse-workdir/src/lyre_mouse.c
 new file mode 100644
-index 0000000..ec88bf3
+index 0000000..8de8a7f
 --- /dev/null
 +++ xf86-input-mouse-workdir/src/lyre_mouse.c
 @@ -0,0 +1,119 @@
@@ -48,8 +48,8 @@ index 0000000..ec88bf3
 +
 +struct mouse_packet {
 +    uint8_t flags;
-+    uint8_t x_mov;
-+    uint8_t y_mov;
++    int32_t x_mov;
++    int32_t y_mov;
 +};
 +
 +static void lyreReadInput(InputInfoPtr pInfo) {
@@ -64,7 +64,7 @@ index 0000000..ec88bf3
 +        b |= (packet.flags & MOUSE_FLAG_MB) ? 2 : 0;
 +        b |= (packet.flags & MOUSE_FLAG_LB) ? 4 : 0;
 +
-+        mouse->PostEvent(pInfo, b, packet.x_mov, packet.y_mov, 0, 0);
++        mouse->PostEvent(pInfo, b, packet.x_mov, -packet.y_mov, 0, 0);
 +    }
 +}
 +

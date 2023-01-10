@@ -53,8 +53,8 @@ static int ps2_mouse_vector;
 
 struct mouse_packet {
     uint8_t flags;
-    uint8_t x_mov;
-    uint8_t y_mov;
+    int32_t x_mov;
+    int32_t y_mov;
 };
 
 struct mouse {
@@ -110,11 +110,11 @@ static noreturn void mouse_handler(void) {
 
         // process packet
         if (current_packet.flags & (1 << 4)) {
-            current_packet.x_mov = (int8_t)current_packet.x_mov;
+            current_packet.x_mov = (int8_t)(uint8_t)current_packet.x_mov;
         }
 
         if (current_packet.flags & (1 << 5)) {
-            current_packet.y_mov = (int8_t)current_packet.y_mov;
+            current_packet.y_mov = (int8_t)(uint8_t)current_packet.y_mov;
         }
 
         spinlock_acquire(&mouse_res->lock);
