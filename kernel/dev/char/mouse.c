@@ -127,6 +127,9 @@ static noreturn void mouse_handler(void) {
 }
 
 static ssize_t _mouse_read(struct resource *_this, struct f_description *description, void *_buf, off_t offset, size_t count) {
+    (void)_this;
+    (void)offset;
+
     if (count != sizeof(struct mouse_packet)) {
         errno = EINVAL;
         return -1;
@@ -136,6 +139,12 @@ static ssize_t _mouse_read(struct resource *_this, struct f_description *descrip
 
     while (!mouse_res->packet_avl) {
         spinlock_release(&mouse_res->lock);
+
+        if (description->flags & O_NONBLOCK) {
+            errno = EWOULDBLOCK;
+            return -1;
+        }
+
         struct event *events[] = { &mouse_res->event };
         event_await(events, 1, true);
         spinlock_acquire(&mouse_res->lock);
@@ -143,6 +152,9 @@ static ssize_t _mouse_read(struct resource *_this, struct f_description *descrip
 
     memcpy(_buf, &mouse_res->packet, sizeof(struct mouse_packet));
     mouse_res->packet_avl = false;
+
+    mouse_res->status |= POLLIN;
+    event_trigger(&mouse_res->event, false);
 
     spinlock_release(&mouse_res->lock);
 
