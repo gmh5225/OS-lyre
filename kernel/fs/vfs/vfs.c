@@ -32,7 +32,7 @@ struct vfs_node *vfs_create_node(struct vfs_filesystem *fs, struct vfs_node *par
     return node;
 }
 
-static void create_dotentries(struct vfs_node *node, struct vfs_node *parent) {
+void vfs_create_dotentries(struct vfs_node *node, struct vfs_node *parent) {
     struct vfs_node *dot = vfs_create_node(node->filesystem, node, ".", false);
     struct vfs_node *dotdot = vfs_create_node(node->filesystem, node, "..", false);
 
@@ -266,7 +266,7 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
     struct vfs_node *mount_node = fs->mount(r.target_parent, r.basename, source_node);
     r.target->mountpoint = mount_node;
 
-    create_dotentries(mount_node, r.target_parent);
+    vfs_create_dotentries(mount_node, r.target_parent);
 
     if (source != NULL && strlen(source) != 0) {
         kernel_print("vfs: Mounted `%s` on `%s` with filesystem `%s`\n", source, target, fs_name);
@@ -385,7 +385,7 @@ struct vfs_node *vfs_create(struct vfs_node *parent, const char *name, int mode)
     HASHMAP_SINSERT(&r.target_parent->children, r.basename, target_node);
 
     if (S_ISDIR(target_node->resource->stat.st_mode)) {
-        create_dotentries(target_node, r.target_parent);
+        vfs_create_dotentries(target_node, r.target_parent);
     }
 
     ret = target_node;
