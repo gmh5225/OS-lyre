@@ -11,8 +11,7 @@ int main(void) {
     setenv("PATH", "/bin:/usr/bin:/usr/local/bin", 1);
 
     for (;;) {
-        printf("\x1b[2J\x1b[H");
-        printf("Welcome to Lyre!\n");
+        printf("\nWelcome to Lyre!\n");
         printf("You can find the source code at https://github.com/lyre-os/lyre\n\n");
 
         int pid = fork();

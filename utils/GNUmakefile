@@ -15,6 +15,6 @@ socket-test: socket-test.c
 
 .PHONY: install
 install: all
-	install -Dm0755 init $(DESTDIR)/usr/sbin/init
-	install -Dm0755 lfetch $(DESTDIR)/usr/bin/lfetch
-	install -Dm0755 socket-test $(DESTDIR)/usr/bin/socket-test
+	install --strip-program=$(STRIP) -s -Dm0755 init $(DESTDIR)/usr/sbin/init
+	install --strip-program=$(STRIP) -s -Dm0755 lfetch $(DESTDIR)/usr/bin/lfetch
+	install --strip-program=$(STRIP) -s -Dm0755 socket-test $(DESTDIR)/usr/bin/socket-test
