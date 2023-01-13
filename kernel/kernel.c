@@ -67,13 +67,13 @@ void kmain_thread(void) {
     struct auxval init_auxv, ld_auxv;
     const char *ld_path;
 
-    struct vfs_node *init_node = vfs_get_node(vfs_root, "/usr/sbin/init", true);
+    struct vfs_node *init_node = vfs_get_node(vfs_root, "/usr/bin/init", true);
     elf_load(init_vm, init_node->resource, 0x0, &init_auxv, &ld_path);
 
     struct vfs_node *ld = vfs_get_node(vfs_root, ld_path, true);
     elf_load(init_vm, ld->resource, 0x40000000, &ld_auxv, NULL);
 
-    const char *argv[] = {"/usr/sbin/init", NULL};
+    const char *argv[] = {"/usr/bin/init", NULL};
     const char *envp[] = {NULL};
 
     struct process *init_proc = sched_new_process(NULL, init_vm);
