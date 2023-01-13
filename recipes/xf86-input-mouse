@@ -1,11 +1,16 @@
 name=xf86-input-mouse
-revision=1
 from_source=xf86-input-mouse
-hostdeps="gcc autoconf automake libtool pkg-config xorg-macros"
-deps="mlibc xorg-server"
+revision=1
+hostdeps="gcc autoconf automake libtool pkg-config"
+deps="mlibc xorg-server xorg-util-macros libx11"
 
 configure() {
-    SYSROOT=${sysroot_dir} ${source_dir}/configure --prefix=${prefix} --host=x86_64-lyre --disable-static
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --disable-static
 }
 
 build() {
@@ -13,5 +18,5 @@ build() {
 }
 
 install() {
-    make DESTDIR=${dest_dir} install
+    DESTDIR="${dest_dir}" make install-strip
 }

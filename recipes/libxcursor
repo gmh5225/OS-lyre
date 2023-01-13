@@ -1,12 +1,16 @@
 name=libxcursor
-revision=1
 from_source=libxcursor
-imagedeps="gcc"
+revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
 deps="mlibc libxrender libxfixes libx11"
 
 configure() {
-    ${source_dir}/configure --prefix=${prefix} --host=x86_64-lyre
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --disable-static
 }
 
 build() {
@@ -14,5 +18,5 @@ build() {
 }
 
 install() {
-    DESTDIR=${dest_dir} make install
+    DESTDIR="${dest_dir}" make install-strip
 }

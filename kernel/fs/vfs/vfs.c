@@ -139,7 +139,7 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
             if (r.target == NULL) {
                 return (struct path2node_res){NULL, NULL, NULL};
             }
-            continue;
+            current_node = r.target;
         }
 
         if (!S_ISDIR(current_node->resource->stat.st_mode)) {

@@ -1,7 +1,16 @@
 diff --git xf86-input-mouse-clean/configure.ac xf86-input-mouse-workdir/configure.ac
-index 6c453cd..41a81bf 100644
+index 6c453cd..7ed1521 100644
 --- xf86-input-mouse-clean/configure.ac
 +++ xf86-input-mouse-workdir/configure.ac
+@@ -62,7 +62,7 @@ AC_SUBST(inputdir)
+ 
+ # X Server SDK location is required to install xf86-mouse-properties.h
+ # This location is also relayed in the xorg-mouse.pc file
+-sdkdir=`$PKG_CONFIG --variable=sdkdir xorg-server`
++sdkdir="$includedir"
+ 
+ # Workaround overriding sdkdir to be able to create a tarball when user has no
+ # write permission in sdkdir. See DISTCHECK_CONFIGURE_FLAGS in Makefile.am
 @@ -84,6 +84,9 @@ case $host_os in
    gnu*)
      OS_MOUSE_NAME=hurd
