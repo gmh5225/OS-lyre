@@ -3,9 +3,13 @@ from_source=grep
 revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
 deps="mlibc pcre"
+imagedeps="gperf"
 
 configure() {
-    ${source_dir}/configure \
+    cp -r "${source_dir}"/. ./
+    libtoolize -cfvi && autoreconf -fvi
+
+    ./configure \
         --host=x86_64-lyre \
         --prefix=${prefix} \
         --disable-nls
