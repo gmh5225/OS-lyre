@@ -10,6 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Check if build is necessary
+        run: [ "$(git tag --points-at HEAD)" = "" ]
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install make curl git mercurial libarchive-tools xorriso -y
 
