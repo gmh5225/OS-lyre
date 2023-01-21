@@ -1,8 +1,8 @@
 name=nano
-version=7.1
+version=7.2
 source_method=tarball
 tarball_url="https://ftp.gnu.org/gnu/nano/nano-${version}.tar.xz"
-tarball_blake2b="cc606a04b34e723da01326d617b50f79711d0b35034b3e75f410fa7e277ba3eddbb1a408a80255533d2fa953f23fee745979363d5621b63a79bd89b29d8d528e"
+tarball_blake2b="c7e3b18383e9f2f9db1f6059c875ddd164d730ea0e5b363e66fb8e5f30e8598ba49a5afd8eea3a55e295f1e43fb136019f60cc9154ae276c5d589002c0e5298a"
 hostdeps="automake autoconf libtool pkg-config"
 
 regenerate() {
