@@ -7,6 +7,7 @@
 #include <lib/print.h>
 #include <lib/debug.h>
 #include <sched/sched.h>
+#include <sys/cpu.h>
 
 static const char *base_digits_lowercase = "0123456789abcdef";
 static const char *base_digits_uppercase = "0123456789ABCDEF";
@@ -284,7 +285,7 @@ size_t snprint(char *buffer, size_t size, const char *fmt, ...) {
     return ret;
 }
 
-spinlock_t print_lock = SPINLOCK_INIT;
+static spinlock_t print_lock = SPINLOCK_INIT;
 
 void kernel_vprint(const char *fmt, va_list args) {
     spinlock_acquire(&print_lock);
@@ -304,9 +305,14 @@ void kernel_print(const char *fmt, ...) {
     va_end(args);
 }
 
+spinlock_t debug_print_lock = SPINLOCK_INIT;
+bool debug_on = debug;
+
 void debug_vprint(size_t indent, const char *fmt, va_list args) {
-    if (debug) {
-        spinlock_acquire(&print_lock);
+    if (debug_on) {
+        bool ints = interrupt_toggle(false);
+
+        spinlock_acquire(&debug_print_lock);
 
         serial_out('\n');
 
@@ -317,12 +323,14 @@ void debug_vprint(size_t indent, const char *fmt, va_list args) {
         char buffer[1024];
         vsnprint(buffer, sizeof(buffer), fmt, args);
         serial_outstr(buffer);
-        spinlock_release(&print_lock);
+        spinlock_release(&debug_print_lock);
+
+        interrupt_toggle(ints);
     }
 }
 
 void debug_print(size_t indent, const char *fmt, ...) {
-    if (debug) {
+    if (debug_on) {
         va_list args;
         va_start(args, fmt);
         debug_vprint(indent, fmt, args);

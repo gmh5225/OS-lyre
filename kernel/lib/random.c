@@ -27,7 +27,7 @@
 #define MT_LOWER_MASK ((uint64_t)(1 << MT_R) - 1)
 #define MT_UPPER_MASK ~(MT_LOWER_MASK)
 
-static struct smartlock lock = SMARTLOCK_INIT;
+static spinlock_t lock = SPINLOCK_INIT;
 static uint64_t mt[MT_N];
 static size_t index = MT_N;
 
@@ -75,7 +75,8 @@ void random_init(void) {
 }
 
 void random_seed(uint64_t seed) {
-    smartlock_acquire(&lock);
+    bool old_int = interrupt_toggle(false);
+    spinlock_acquire(&lock);
 
     index = MT_N;
     mt[0] = seed;
@@ -84,11 +85,13 @@ void random_seed(uint64_t seed) {
         mt[i] = MT_F * (mt[i - 1] ^ (mt[i - 1] >> (MT_W - 2))) + i;
     }
 
-    smartlock_release(&lock);
+    spinlock_release(&lock);
+    interrupt_toggle(old_int);
 }
 
 void random_fill(void *buf, size_t length) {
-    smartlock_acquire(&lock);
+    bool old_int = interrupt_toggle(false);
+    spinlock_acquire(&lock);
 
     uint8_t *buf_u8 = buf;
     while (length >= 8) {
@@ -113,12 +116,15 @@ void random_fill(void *buf, size_t length) {
         }
     }
 
-    smartlock_release(&lock);
+    spinlock_release(&lock);
+    interrupt_toggle(old_int);
 }
 
 uint64_t random_generate() {
-    smartlock_acquire(&lock);
+    bool old_int = interrupt_toggle(false);
+    spinlock_acquire(&lock);
     uint64_t result = generate();
-    smartlock_release(&lock);
+    spinlock_release(&lock);
+    interrupt_toggle(old_int);
     return result;
 }

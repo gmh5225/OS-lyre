@@ -20,6 +20,8 @@ size_t fpu_storage_size = 0;
 void (*fpu_save)(void *ctx) = NULL;
 void (*fpu_restore)(void *ctx) = NULL;
 
+size_t cpu_count = 0;
+
 #define CPU_STACK_SIZE 0x10000
 
 static size_t cpus_started_i = 0;
@@ -170,6 +172,8 @@ void cpu_init(void) {
     ASSERT(smp_resp != NULL);
 
     kernel_print("cpu: %u processors detected\n", smp_resp->cpu_count);
+
+    cpu_count = smp_resp->cpu_count;
 
     for (size_t i = 0; i < smp_resp->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_resp->cpus[i];

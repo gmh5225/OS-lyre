@@ -70,6 +70,8 @@ extern size_t fpu_storage_size;
 extern void (*fpu_save)(void *ctx);
 extern void (*fpu_restore)(void *ctx);
 
+extern size_t cpu_count;
+
 static inline uint64_t read_cr0(void) {
     uint64_t ret;
     asm volatile ("mov %%cr0, %0" : "=r"(ret) :: "memory");

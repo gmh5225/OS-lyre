@@ -9,26 +9,32 @@
 #include <sys/cpu.h>
 #include <sys/idt.h>
 
+static spinlock_t panic_lock = SPINLOCK_INIT;
+
+volatile size_t panic_cpu_counter = 0;
+
 noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
     interrupt_toggle(false);
 
-    static spinlock_t panic_lock = SPINLOCK_INIT;
-
-    spinlock_acquire(&panic_lock);
+    spinlock_acquire_no_dead_check(&panic_lock);
 
     lapic_send_ipi(0, idt_panic_ipi_vector | 0b10 << 18);
 
-    // Force unlock the print lock
-    print_lock = SPINLOCK_INIT;
+    while (panic_cpu_counter != cpu_count - 1) {}
 
-    kernel_print("\n\n*** LYRE PANIC ***\n\n");
-    kernel_print("The Lyre kernel panicked with the following message:\n  ");
+    // Force unlock the print lock
+    spinlock_release(&debug_print_lock);
+
+    debug_on = true;
+
+    debug_print(0, "\n\n*** LYRE PANIC ***\n");
+    debug_print(0, "The Lyre kernel panicked with the following message:  ");
 
     va_list args;
     va_start(args, fmt);
 
-    kernel_vprint(fmt, args);
-    kernel_print("\n\n");
+    debug_vprint(0, fmt, args);
+    debug_print(0, "\n");
 
     if (ctx == NULL) {
         goto halt;
@@ -36,8 +42,8 @@ noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
 
     uint64_t cr2 = read_cr2();
     uint64_t cr3 = read_cr3();
-    kernel_print("CPU context at panic:\n");
-    kernel_print("  RAX=%016lx  RBX=%016lx\n"
+    debug_print(0, "CPU context at panic:");
+    debug_print(0,  "  RAX=%016lx  RBX=%016lx\n"
                  "  RCX=%016lx  RDX=%016lx\n"
                  "  RSI=%016lx  RDI=%016lx\n"
                  "  RBP=%016lx  RSP=%016lx\n"
@@ -57,10 +63,10 @@ noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
                  ctx->cs, ctx->ds, ctx->es, ctx->ss,
                  cr2, cr3, ctx->err);
 
-    kernel_print("\n\n");
+    debug_print(0, "\n");
 
 halt:
-    kernel_print("System halted.");
+    debug_print(0, "System halted.");
 
     for (;;) {
         halt();

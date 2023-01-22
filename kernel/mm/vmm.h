@@ -19,7 +19,7 @@
 #define PTE_GET_FLAGS(VALUE) ((VALUE) & ~PTE_ADDR_MASK)
 
 struct pagemap {
-    struct smartlock lock;
+    spinlock_t lock;
     uint64_t *top_level;
     VECTOR_TYPE(struct mmap_range_local *) mmap_ranges;
 };
@@ -40,7 +40,7 @@ void vmm_destroy_pagemap(struct pagemap *pagemap);
 void vmm_switch_to(struct pagemap *pagemap);
 bool vmm_map_page(struct pagemap *pagemap, uintptr_t virt, uintptr_t phys, uint64_t flags);
 bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags);
-bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt);
+bool vmm_unmap_page(struct pagemap *pagemap, uintptr_t virt, bool already_locked);
 uint64_t *vmm_virt2pte(struct pagemap *pagemap, uintptr_t virt, bool allocate);
 uintptr_t vmm_virt2phys(struct pagemap *pagemap, uintptr_t virt);
 

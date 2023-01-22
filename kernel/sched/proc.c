@@ -9,7 +9,7 @@
 #include <sched/proc.h>
 #include <abi-bits/utsname.h>
 
-static struct smartlock futex_lock = SMARTLOCK_INIT;
+static spinlock_t futex_lock = SPINLOCK_INIT;
 static HASHMAP_TYPE(struct event *) futex_hashmap = HASHMAP_INIT(256);
 
 void proc_init(void) {
@@ -48,7 +48,7 @@ int syscall_futex_wait(void *_, int *ptr, int expected) {
 
     uintptr_t phys = vmm_virt2phys(proc->pagemap, (uintptr_t)ptr);
 
-    smartlock_acquire(&futex_lock);
+    spinlock_acquire(&futex_lock);
 
     struct event *event = NULL;
     if (!HASHMAP_GET(&futex_hashmap, event, &phys, sizeof(phys))) {
@@ -56,7 +56,7 @@ int syscall_futex_wait(void *_, int *ptr, int expected) {
         HASHMAP_INSERT(&futex_hashmap, &phys, sizeof(phys), event);
     }
 
-    smartlock_release(&futex_lock);
+    spinlock_release(&futex_lock);
 
     ssize_t which = event_await(&event, 1, true);
     if (which == -1) {
@@ -82,17 +82,17 @@ int syscall_futex_wake(void *_, int *ptr) {
 
     uintptr_t phys = vmm_virt2phys(proc->pagemap, (uintptr_t)ptr);
 
-    smartlock_acquire(&futex_lock);
+    spinlock_acquire(&futex_lock);
 
     struct event *event = NULL;
     if (!HASHMAP_GET(&futex_hashmap, event, &phys, sizeof(phys))) {
         goto cleanup;
     }
 
-    event_trigger(event, true);
+    event_trigger(event, false);
 
 cleanup:
-    smartlock_release(&futex_lock);
+    spinlock_release(&futex_lock);
 
     DEBUG_SYSCALL_LEAVE("%d", 0);
     return 0;

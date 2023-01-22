@@ -326,8 +326,8 @@ cleanup:
 struct thread *sched_new_kernel_thread(void *pc, void *arg, bool enqueue) {
     struct thread *thread = ALLOC(struct thread);
 
-    thread->lock = SPINLOCK_INIT;
-    thread->yield_await = SPINLOCK_INIT;
+    thread->lock = (spinlock_t)SPINLOCK_INIT;
+    thread->yield_await = (spinlock_t)SPINLOCK_INIT;
     thread->stacks = (typeof(thread->stacks))VECTOR_INIT;
 
     void *stack_phys = pmm_alloc(STACK_SIZE / PAGE_SIZE);
@@ -393,8 +393,8 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
         goto fail;
     }
 
-    thread->lock = SPINLOCK_INIT;
-    thread->yield_await = SPINLOCK_INIT;
+    thread->lock = (spinlock_t)SPINLOCK_INIT;
+    thread->yield_await = (spinlock_t)SPINLOCK_INIT;
     thread->enqueued = false;
     thread->stacks = (typeof(thread->stacks))VECTOR_INIT;
 
@@ -581,8 +581,8 @@ int syscall_fork(struct cpu_ctx *ctx) {
         goto fail;
     }
 
-    new_thread->lock = SPINLOCK_INIT;
-    new_thread->yield_await = SPINLOCK_INIT;
+    new_thread->lock = (spinlock_t)SPINLOCK_INIT;
+    new_thread->yield_await = (spinlock_t)SPINLOCK_INIT;
     new_thread->enqueued = false;
     new_thread->stacks = (typeof(new_thread->stacks))VECTOR_INIT;
 

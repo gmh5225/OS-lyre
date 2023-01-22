@@ -138,7 +138,7 @@ size_t event_trigger(struct event *event, bool drop) {
     event->listeners_i = 0;
 
 cleanup:
-    interrupt_toggle(old_state);
     spinlock_release(&event->lock);
+    interrupt_toggle(old_state);
     return ret;
 }

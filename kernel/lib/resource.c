@@ -99,7 +99,7 @@ void resource_free(struct resource *res) {
 
 dev_t resource_create_dev_id(void) {
     static dev_t dev_id_counter = 1;
-    static spinlock_t lock = SPINLOCK_INIT;
+    static spinlock_t lock = (spinlock_t)SPINLOCK_INIT;
     spinlock_acquire(&lock);
     dev_t ret = dev_id_counter++;
     spinlock_release(&lock);
@@ -239,7 +239,7 @@ struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
 
     description->refcount = 1;
     description->flags = flags & FILE_STATUS_FLAGS_MASK;
-    description->lock = SPINLOCK_INIT;
+    description->lock = (spinlock_t)SPINLOCK_INIT;
     description->res = res;
 
     struct f_descriptor *fd = ALLOC(struct f_descriptor);

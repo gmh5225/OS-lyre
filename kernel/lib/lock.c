@@ -1,29 +1,35 @@
-#include <stddef.h>
 #include <lib/lock.h>
-#include <sched/proc.h>
+#include <lib/panic.h>
 
-void smartlock_acquire(struct smartlock *smartlock) {
-    struct thread *thread = sched_current_thread();
-    if (smartlock->thread == thread && smartlock->refcount > 0) {
-        goto end;
+__attribute__((noinline)) void spinlock_acquire(spinlock_t *lock) {
+    volatile size_t deadlock_counter = 0;
+    for (;;) {
+        if (spinlock_test_and_acq(lock)) {
+            break;
+        }
+        if (++deadlock_counter == 10000000) {
+            goto deadlock;
+        }
+#if defined (__x86_64__)
+        asm volatile ("pause");
+#endif
     }
-    while (!CAS(&smartlock->thread, NULL, thread)) {
-        asm ("pause");
-    }
-end:
-    smartlock->refcount++;
+    lock->last_acquirer = __builtin_return_address(0);
+    return;
+
+deadlock:
+    panic(NULL, "Deadlock occurred at %llx on lock %llx whose last acquirer was %llx", __builtin_return_address(0), lock, lock->last_acquirer);
 }
 
-void smartlock_release(struct smartlock *smartlock) {
-    struct thread *thread = sched_current_thread();
-    if (smartlock->thread != thread) {
-        panic(NULL, "Invalid smartlock release");
+__attribute__((noinline)) void spinlock_acquire_no_dead_check(spinlock_t *lock) {
+    for (;;) {
+        if (spinlock_test_and_acq(lock)) {
+            break;
+        }
+#if defined (__x86_64__)
+        asm volatile ("pause");
+#endif
     }
-    if (smartlock->refcount == 0) {
-        panic(NULL, "Smartlock release refcount is 0");
-    }
-    smartlock->refcount--;
-    if (smartlock->refcount == 0) {
-        smartlock->thread = NULL;
-    }
+    lock->last_acquirer = __builtin_return_address(0);
 }
+
