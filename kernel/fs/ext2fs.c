@@ -613,12 +613,6 @@ static bool ext2fs_removedirentry(struct ext2fs *fs, struct ext2fs_inode *parent
 static ssize_t ext2fs_bgdreadentry(struct ext2fs_blockgroupdesc *bgd, struct ext2fs *fs, uint32_t idx) {
     off_t off = fs->blksize >= 2048 ? fs->blksize : fs->blksize * 2;
 
-    if (fs->blksize >= 2048) {
-        off = fs->blksize;
-    } else {
-        off = fs->blksize * 2;
-    }
-
     ASSERT_MSG(fs->backing->resource->read(fs->backing->resource, NULL, bgd, off + sizeof(struct ext2fs_blockgroupdesc) * idx, sizeof(struct ext2fs_blockgroupdesc)), "ext2fs: unable to read bgd entry");
     return 0;
 }
