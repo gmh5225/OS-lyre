@@ -114,6 +114,7 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
         struct vfs_node *new_node;
 
         // XXX put a lock around this guy
+        // XXX page fault here (seemingly random)
         if (!HASHMAP_SGET(&current_node->children, new_node, elem_str)) {
             errno = ENOENT;
             if (last) {
@@ -340,7 +341,7 @@ bool vfs_unlink(struct vfs_node *parent, const char *path) {
         goto cleanup;
     }
 
-    if (!r.target->resource->unref(r.target->resource, NULL)) {
+    if (!r.target->resource->unref(r.target->resource, &((struct f_description) { .node = r.target, .res = r.target->resource }))) {
         goto cleanup;
     }
 
