@@ -242,7 +242,7 @@ static inline bool cpuid(uint32_t leaf, uint32_t subleaf,
 
 static inline bool interrupt_state(void) {
     uint64_t flags;
-    asm volatile ("pushfq; pop %0" : "=rm"(flags));
+    asm volatile ("pushfq; pop %0" : "=rm"(flags) :: "memory");
     return flags & (1 << 9);
 }
 

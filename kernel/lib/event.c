@@ -75,7 +75,7 @@ ssize_t event_await(struct event **events, size_t num_events, bool block) {
 
     struct thread *thread = sched_current_thread();
 
-    interrupt_toggle(false);
+    bool old_ints = interrupt_toggle(false);
     lock_events(events, num_events);
 
     ssize_t i = check_for_pending(events, num_events);
@@ -95,6 +95,8 @@ ssize_t event_await(struct event **events, size_t num_events, bool block) {
     unlock_events(events, num_events);
     sched_yield(true);
 
+    interrupt_toggle(false);
+
     if (thread->enqueued_by_signal) {
         goto cleanup2;
     }
@@ -102,13 +104,12 @@ ssize_t event_await(struct event **events, size_t num_events, bool block) {
     ret = thread->which_event;
 
 cleanup2:
-    interrupt_toggle(false);
     lock_events(events, num_events);
     detach_listeners(thread);
     unlock_events(events, num_events);
 
 cleanup:
-    interrupt_toggle(true);
+    interrupt_toggle(old_ints);
     return ret;
 }
 
