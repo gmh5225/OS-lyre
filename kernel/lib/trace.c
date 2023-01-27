@@ -23,14 +23,15 @@ bool trace_address(uintptr_t address, size_t *offset, struct symbol *sym) {
     }
 }
 
-void trace_printaddr(uintptr_t address) {
+bool trace_printaddr(uintptr_t address) {
     size_t offset;
     struct symbol sym;
     if (!trace_address(address, &offset, &sym)) {
-        kernel_print("  Failed to print address\n");
-        return;
+        debug_print(0, "  [%016lx] Failed to resolve symbol", address);
+        return false;
     }
-    kernel_print("  [%016lx] <%s+0x%lx>\n", address, sym.name, offset);
+    debug_print(0, "  [%016lx] <%s+0x%lx>", address, sym.name, offset);
+    return true;
 }
 
 void trace_printstack(uintptr_t _base_ptr) {
@@ -47,10 +48,12 @@ void trace_printstack(uintptr_t _base_ptr) {
     for (;;) {
         uintptr_t *old_bp = (uintptr_t *)base_ptr[0];
         uintptr_t *ret_addr = (uintptr_t *)base_ptr[1];
-        if (ret_addr == NULL || old_bp == NULL) {
+        if (ret_addr == NULL || old_bp == NULL || (uintptr_t)ret_addr < 0xffffffff80000000) {
             break;
         }
-        trace_printaddr((uintptr_t)ret_addr);
+        if (!trace_printaddr((uintptr_t)ret_addr)) {
+            break;
+        }
         base_ptr = old_bp;
     }
 }

@@ -6,6 +6,7 @@
 #include <dev/lapic.h>
 #include <lib/panic.h>
 #include <lib/print.h>
+#include <lib/trace.h>
 #include <sys/cpu.h>
 #include <sys/idt.h>
 
@@ -13,7 +14,7 @@ static spinlock_t panic_lock = SPINLOCK_INIT;
 
 volatile size_t panic_cpu_counter = 0;
 
-noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
+noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     interrupt_toggle(false);
 
     asm volatile ("lock incq (%0)" :: "r"(&panic_cpu_counter) : "memory" );
@@ -68,6 +69,12 @@ noreturn void panic(struct cpu_ctx *ctx, const char *fmt, ...) {
     debug_print(0, "\n");
 
 halt:
+    if (trace && (ctx == NULL || ctx->cs == 0x28)) {
+        debug_print(0, "Stacktrace follows:");
+        trace_printstack(ctx == NULL ? 0 : ctx->rbp);
+        debug_print(0, "\n");
+    }
+
     debug_print(0, "System halted.");
 
     for (;;) {

@@ -13,7 +13,7 @@ struct symbol {
 extern struct symbol symbol_table[];
 
 bool trace_address(uintptr_t address, size_t *offset, struct symbol *symbol);
-void trace_printaddr(uintptr_t addr);
+bool trace_printaddr(uintptr_t addr);
 void trace_printstack(uintptr_t _base_ptr);
 
 #endif

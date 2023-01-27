@@ -56,7 +56,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     uint64_t *common_int_stack_phys = pmm_alloc(CPU_STACK_SIZE / PAGE_SIZE);
     if (common_int_stack_phys == NULL) {
-        panic(NULL, "Allocation failure");
+        panic(NULL, true, "Allocation failure");
     }
     uint64_t *common_int_stack =
         (void *)common_int_stack_phys + CPU_STACK_SIZE + VMM_HIGHER_HALF;
@@ -64,7 +64,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     uint64_t *sched_stack_phys = pmm_alloc(CPU_STACK_SIZE / PAGE_SIZE);
     if (sched_stack_phys == NULL) {
-        panic(NULL, "Allocation failure");
+        panic(NULL, true, "Allocation failure");
     }
     uint64_t *sched_stack =
         (void *)sched_stack_phys + CPU_STACK_SIZE + VMM_HIGHER_HALF;
@@ -138,7 +138,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
         wrxcr(0, xcr0);
 
         if (!cpuid(0xd, 0, &eax, &ebx, &ecx, &edx)) {
-            panic(NULL, "CPUID failure");
+            panic(NULL, true, "CPUID failure");
         }
 
         fpu_storage_size = ecx;
@@ -197,7 +197,7 @@ void cpu_init(void) {
 
 struct cpu_local *this_cpu(void) {
     if (interrupt_state()) {
-        panic(NULL, "Calling this_cpu() with interrupts on is a bug");
+        panic(NULL, true, "Calling this_cpu() with interrupts on is a bug");
     }
 
     return sched_current_thread()->this_cpu;

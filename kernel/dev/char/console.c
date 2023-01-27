@@ -459,7 +459,8 @@ void console_init(void) {
     struct limine_terminal_response *terminal_resp = terminal_request.response;
 
     if (terminal_resp == NULL || terminal_resp->terminal_count < 1) {
-        panic(NULL, "Limine terminal is not available");
+        // TODO: Should not be a hard requirement..?
+        panic(NULL, true, "Limine terminal is not available");
     }
 
     console_res = resource_create(sizeof(struct console));

@@ -199,7 +199,7 @@ static void ext2fs_freeblocklist(struct ext2fs *fs, size_t blockidx, size_t indi
 
     uint32_t *buf = alloc(fs->blksize);
     size_t entriesablock = fs->blksize / sizeof(uint32_t);
-    
+
     fs->backing->resource->read(fs->backing->resource, NULL, buf, blockidx * fs->blksize, fs->blksize);
 
     for (size_t i = 0; i < entriesablock; i++) {
@@ -581,7 +581,7 @@ static bool ext2fs_removedirentry(struct ext2fs *fs, struct ext2fs_inode *parent
 
                 ext2fs_freeblocklist(fs, inode.blocks[12], 0); // single indirect
                 ext2fs_freeblocklist(fs, inode.blocks[13], 1); // double indirect
-                ext2fs_freeblocklist(fs, inode.blocks[14], 2); // triple indirect 
+                ext2fs_freeblocklist(fs, inode.blocks[14], 2); // triple indirect
 
                 ext2fs_inodewriteentry(&inode, fs, inodeidx); // update (for deletion time)
 
@@ -709,7 +709,7 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
     spinlock_acquire(&this->lock);
 
     void *ret = NULL;
-    
+
     ret = pmm_alloc_nozero(1);
     if (ret == NULL) {
         goto cleanup;
@@ -738,9 +738,9 @@ static bool ext2fs_resunref(struct resource *_this, struct f_description *descri
         ext2fs_inodereadentry(&inode, this->fs, this->stat.st_ino);
 
         struct ext2fs_inode parent = { 0 };
-        ext2fs_inodereadentry(&parent, this->fs, description->node->parent->resource->stat.st_ino); 
+        ext2fs_inodereadentry(&parent, this->fs, description->node->parent->resource->stat.st_ino);
 
-        if (!S_ISDIR(this->stat.st_mode)) { 
+        if (!S_ISDIR(this->stat.st_mode)) {
             ret = ext2fs_removedirentry(this->fs, &parent, description->node->parent->resource->stat.st_ino, this->stat.st_ino, true);
         } else {
             parent.hardlinkcnt--; // remove reference to parent via ..
@@ -753,7 +753,7 @@ static bool ext2fs_resunref(struct resource *_this, struct f_description *descri
         spinlock_release(&this->lock);
     }
     return ret;
-} 
+}
 
 static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, struct vfs_node *source);
 
@@ -780,7 +780,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
     if (node == NULL) {
         goto fail;
     }
-    
+
     resource = resource_create(sizeof(struct ext2fs_resource));
     if (resource == NULL) {
         goto fail;
@@ -815,7 +815,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
         S_ISBLK(mode) ? 0x6000 :
         S_ISFIFO(mode) ? 0x1000 :
         S_ISSOCK(mode) ? 0xc000 :
-        0xa000;  
+        0xa000;
 
     struct ext2fs_inode inode = {
         .perms = (mode & 0xfff) | inodetype,
@@ -843,7 +843,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
     struct ext2fs_inode parentinode = { 0 };
     ext2fs_inodereadentry(&parentinode, this, parent->resource->stat.st_ino);
 
-    uint8_t dirtype = ext2fs_inode2dirtype(inodetype); 
+    uint8_t dirtype = ext2fs_inode2dirtype(inodetype);
 
     if (S_ISDIR(mode)) {
         uint8_t *buf = alloc(this->blksize);
@@ -876,13 +876,13 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
         ext2fs_inodewriteentry(&inode, this, resource->stat.st_ino);
     }
 
-    ext2fs_createdirentry(this, &parentinode, parent->resource->stat.st_ino, resource->stat.st_ino, dirtype, name); 
+    ext2fs_createdirentry(this, &parentinode, parent->resource->stat.st_ino, resource->stat.st_ino, dirtype, name);
 
     resource->fs = this;
 
     node->resource = (struct resource *)resource;
     parent->resource->stat.st_nlink = parentinode.hardlinkcnt;
-    node->resource->stat.st_nlink = inode.hardlinkcnt; 
+    node->resource->stat.st_nlink = inode.hardlinkcnt;
     node->resource->refcount = S_ISDIR(mode) ? inode.hardlinkcnt - 1 : inode.hardlinkcnt; // physical references (ignoring initial, these are "virtual" entries)
     return node;
 fail:
@@ -927,20 +927,20 @@ static void ext2fs_populate(struct vfs_filesystem *_this, struct vfs_node *node)
         if (!strcmp(namebuf, ".") || !strcmp(namebuf, "..")) {
             i += direntry->entsize; // vfs already handles creating these
             continue;
-        } 
+        }
 
         struct ext2fs_inode inode = { 0 };
         ext2fs_inodereadentry(&inode, fs, direntry->inodeidx);
 
-        uint16_t mode = (inode.perms & 0xFFF) | 
-            (direntry->dirtype == 1 ? S_IFREG : 
-             direntry->dirtype == 2 ? S_IFDIR : 
-             direntry->dirtype == 3 ? S_IFCHR : 
-             direntry->dirtype == 4 ? S_IFBLK : 
-             direntry->dirtype == 5 ? S_IFIFO : 
-             direntry->dirtype == 6 ? S_IFSOCK : 
+        uint16_t mode = (inode.perms & 0xFFF) |
+            (direntry->dirtype == 1 ? S_IFREG :
+             direntry->dirtype == 2 ? S_IFDIR :
+             direntry->dirtype == 3 ? S_IFCHR :
+             direntry->dirtype == 4 ? S_IFBLK :
+             direntry->dirtype == 5 ? S_IFIFO :
+             direntry->dirtype == 6 ? S_IFSOCK :
              S_IFLNK);
- 
+
         struct vfs_node *fnode = vfs_create_node((struct vfs_filesystem *)fs, node, namebuf, S_ISDIR(mode));
         struct ext2fs_resource *fres = resource_create(sizeof(struct ext2fs_resource));
 
@@ -1061,7 +1061,7 @@ static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, 
     source->resource->read(source->resource, NULL, &new_fs->sb, source->resource->stat.st_blksize * 2, sizeof(struct ext2fs_superblock));
 
     if (new_fs->sb.sig != 0xef53) {
-        panic(NULL, "Told to mount an ext2 filesystem whilst source is not ext2!");
+        panic(NULL, false, "Told to mount an ext2 filesystem whilst source is not ext2!");
     }
 
     new_fs->backing = source;
@@ -1104,7 +1104,7 @@ static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, 
 void ext2fs_init(void) {
     struct vfs_filesystem *new_fs = ext2fs_instantiate();
     if (new_fs == NULL) {
-        panic(NULL, "Failed to instantiate ext2fs");
+        panic(NULL, false, "Failed to instantiate ext2fs");
     }
 
     vfs_add_filesystem(new_fs, "ext2fs");

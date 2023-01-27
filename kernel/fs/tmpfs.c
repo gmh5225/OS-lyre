@@ -277,7 +277,7 @@ static inline struct vfs_filesystem *tmpfs_instantiate(void) {
 void tmpfs_init(void) {
     struct vfs_filesystem *tmpfs = tmpfs_instantiate();
     if (tmpfs == NULL) {
-        panic(NULL, "Failed to instantiate tmpfs");
+        panic(NULL, true, "Failed to instantiate tmpfs");
     }
 
     vfs_add_filesystem(tmpfs, "tmpfs");

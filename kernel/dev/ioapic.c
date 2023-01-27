@@ -31,7 +31,7 @@ static struct madt_io_apic *io_apic_from_gsi(uint32_t gsi) {
         }
     }
 
-    panic(NULL, "Cannot determine IO APIC from GSI %lu", gsi);
+    panic(NULL, true, "Cannot determine IO APIC from GSI %lu", gsi);
 }
 
 void io_apic_set_irq_redirect(uint32_t lapic_id, uint8_t vector, uint8_t irq, bool status) {

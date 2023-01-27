@@ -47,7 +47,7 @@ uint8_t idt_allocate_vector(void) {
     spinlock_acquire(&lock);
 
     if (free_vector == 0xf0) {
-        panic(NULL, "IDT exhausted");
+        panic(NULL, true, "IDT exhausted");
     }
 
     uint8_t ret = free_vector++;

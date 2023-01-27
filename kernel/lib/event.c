@@ -25,7 +25,7 @@ static void attach_listeners(struct event **events, size_t num_events, struct th
     for (size_t i = 0; i < num_events; i++) {
         struct event *event = events[i];
         if (event->listeners_i == EVENT_MAX_LISTENERS) {
-            panic(NULL, "Event listeners exhausted");
+            panic(NULL, true, "Event listeners exhausted");
         }
 
         struct event_listener *listener = &event->listeners[event->listeners_i++];
@@ -33,7 +33,7 @@ static void attach_listeners(struct event **events, size_t num_events, struct th
         listener->which = i;
 
         if (thread->attached_events_i == MAX_EVENTS) {
-            panic(NULL, "Listening on too many events");
+            panic(NULL, true, "Listening on too many events");
         }
 
         thread->attached_events[thread->attached_events_i++] = event;
