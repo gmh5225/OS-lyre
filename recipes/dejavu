@@ -4,7 +4,7 @@ revision=1
 deps="mlibc freetype fontconfig"
 
 configure() {
-    cp -r ${source_dir}/. .
+    cp -r ${source_dir}/. ./
 }
 
 build() {

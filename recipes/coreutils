@@ -6,9 +6,7 @@ deps="mlibc tzdata"
 imagedeps="gcc gperf"
 
 configure() {
-    cp -r "${source_dir}"/. ./
-
-    libtoolize -cfvi && autoreconf -fvi
+    cp -rp "${source_dir}"/. ./
 
         CFLAGS="-DSLOW_BUT_NO_HACKS $CFLAGS" \
     ./configure    \

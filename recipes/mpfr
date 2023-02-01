@@ -6,8 +6,7 @@ hostdeps="gcc autoconf autoconf-archive automake libtool pkg-config"
 deps="mlibc gmp"
 
 configure() {
-    cp -r "${source_dir}"/. ./
-    libtoolize -cfvi && autoreconf -fvi
+    cp -rp "${source_dir}"/. ./
 
     ./configure \
         --host=x86_64-lyre \
