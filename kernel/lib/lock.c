@@ -7,7 +7,7 @@ __attribute__((noinline)) void spinlock_acquire(spinlock_t *lock) {
         if (spinlock_test_and_acq(lock)) {
             break;
         }
-        if (++deadlock_counter >= 100000) {
+        if (++deadlock_counter >= 100000000) {
             goto deadlock;
         }
 #if defined (__x86_64__)
@@ -18,7 +18,7 @@ __attribute__((noinline)) void spinlock_acquire(spinlock_t *lock) {
     return;
 
 deadlock:
-    panic(NULL, "Deadlock occurred at %llx on lock %llx whose last acquirer was %llx", __builtin_return_address(0), lock, lock->last_acquirer);
+    panic(NULL, true, "Deadlock occurred at %llx on lock %llx whose last acquirer was %llx", __builtin_return_address(0), lock, lock->last_acquirer);
 }
 
 __attribute__((noinline)) void spinlock_acquire_no_dead_check(spinlock_t *lock) {
@@ -27,7 +27,7 @@ __attribute__((noinline)) void spinlock_acquire_no_dead_check(spinlock_t *lock) 
         if (spinlock_test_and_acq(lock)) {
             break;
         }
-        if (++deadlock_counter >= 100000) {
+        if (++deadlock_counter >= 100000000) {
             goto deadlock;
         }
 #if defined (__x86_64__)
