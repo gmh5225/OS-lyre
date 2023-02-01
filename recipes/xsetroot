@@ -5,7 +5,11 @@ hostdeps="gcc autoconf automake libtool pkg-config"
 deps="mlibc xorg-server libxmu xbitmaps libxcursor"
 
 configure() {
-    ${source_dir}/configure --prefix=${prefix} --host=x86_64-lyre
+    ${source_dir}/configure \
+        --prefix=${prefix} \
+        --host=x86_64-lyre \
+        --sysconfdir=/etc \
+        --localstatedir=/var
 }
 
 build() {
@@ -13,5 +17,5 @@ build() {
 }
 
 install() {
-    make DESTDIR=${dest_dir} install
+    make DESTDIR=${dest_dir} install-strip
 }

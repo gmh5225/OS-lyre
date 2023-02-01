@@ -9,6 +9,8 @@ configure() {
     ${source_dir}/configure           \
         --host=x86_64-lyre           \
         --prefix=${prefix}            \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
         --disable-static
 }
 
