@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 extern bool sysenter;
+extern uint32_t bsp_lapic_id;
 
 struct thread;
 
@@ -58,7 +59,7 @@ struct cpu_local {
     bool active;
     int last_run_queue_index;
     uint32_t lapic_id;
-    uint32_t lapic_freq;
+    uint64_t lapic_freq;
     struct tss tss;
     struct thread *idle_thread;
     void (*timer_function)(int, struct cpu_ctx *);

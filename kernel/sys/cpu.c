@@ -11,6 +11,7 @@
 #include <lib/print.h>
 #include <lib/panic.h>
 #include <lib/misc.h>
+#include <lib/lock.h>
 #include <sched/sched.h>
 #include <limine.h>
 
@@ -153,7 +154,10 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
         fpu_restore = fxrstor;
     }
 
+    static spinlock_t lock = SPINLOCK_INIT;
+    spinlock_acquire(&lock);
     lapic_init();
+    spinlock_release(&lock);
 
     interrupt_toggle(true);
 
@@ -166,6 +170,8 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
     }
 }
 
+uint32_t bsp_lapic_id;
+
 void cpu_init(void) {
     struct limine_smp_response *smp_resp = smp_request.response;
 
@@ -174,6 +180,8 @@ void cpu_init(void) {
     kernel_print("cpu: %u processors detected\n", smp_resp->cpu_count);
 
     cpu_count = smp_resp->cpu_count;
+
+    bsp_lapic_id = smp_resp->bsp_lapic_id;
 
     for (size_t i = 0; i < smp_resp->cpu_count; i++) {
         struct limine_smp_info *cpu = smp_resp->cpus[i];

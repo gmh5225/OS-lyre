@@ -183,7 +183,7 @@ void mouse_init(void) {
     devtmpfs_add_device((struct resource *)mouse_res, "mouse");
 
     ps2_mouse_vector = idt_allocate_vector();
-    io_apic_set_irq_redirect(lapic_get_id(), ps2_mouse_vector, 12, true);
+    io_apic_set_irq_redirect(bsp_lapic_id, ps2_mouse_vector, 12, true);
 
     sched_new_kernel_thread(mouse_handler, NULL, true);
 }

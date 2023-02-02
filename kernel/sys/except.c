@@ -46,6 +46,6 @@ void except_init(void) {
         isr[i] = exception_handler;
     }
 
-    //idt_set_ist(0xe, 2); // #PF uses IST 2
+    idt_set_ist(0xe, 2); // #PF uses IST 2
     idt_set_ist(0x6, 3); // #UD uses IST 3
 }

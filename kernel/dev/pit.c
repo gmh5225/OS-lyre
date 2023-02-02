@@ -45,5 +45,5 @@ void pit_init(void) {
     uint8_t timer_vector = idt_allocate_vector();
 
     isr[timer_vector] = pit_timer_handler;
-    io_apic_set_irq_redirect(lapic_get_id(), timer_vector, 0, true);
+    io_apic_set_irq_redirect(bsp_lapic_id, timer_vector, 0, true);
 }

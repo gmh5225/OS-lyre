@@ -46,35 +46,36 @@ static void lapic_timer_handler(int vector, struct cpu_ctx *ctx) {
 void lapic_init(void) {
     ASSERT((rdmsr(0x1b) & 0xfffff000) == 0xfee00000);
 
-    // Configure spurious IRQ
-    lapic_write(LAPIC_REG_SPURIOUS, lapic_read(LAPIC_REG_SPURIOUS) | (1 << 8) | 0xff);
-
     // Timer interrupt
     if (timer_vec == 0) {
         timer_vec = idt_allocate_vector();
         idt_set_ist(timer_vec, 1);
+        isr[timer_vec] = lapic_timer_handler;
     }
-    isr[timer_vec] = lapic_timer_handler;
-    lapic_write(LAPIC_REG_LVT_TIMER, lapic_read(LAPIC_REG_LVT_TIMER) | (1 << 8) | timer_vec);
 
     lapic_timer_calibrate();
+
+    // Configure spurious IRQ
+    lapic_write(LAPIC_REG_SPURIOUS, lapic_read(LAPIC_REG_SPURIOUS) | (1 << 8) | 0xff);
 }
 
 void lapic_eoi(void) {
     lapic_write(LAPIC_REG_EOI, LAPIC_EOI_ACK);
 }
 
-void lapic_timer_oneshot(uint32_t us, void *function) {
+void lapic_timer_oneshot(uint64_t us, void *function) {
+    bool old_int_state = interrupt_toggle(false);
     lapic_timer_stop();
 
-    bool old_int_state = interrupt_toggle(false);
     this_cpu()->timer_function = function;
-    interrupt_toggle(old_int_state);
 
-    uint32_t ticks = us * (this_cpu()->lapic_freq / 1000000);
+    uint64_t ticks = us * (this_cpu()->lapic_freq / 1000000);
+
     lapic_write(LAPIC_REG_LVT_TIMER, timer_vec);
     lapic_write(LAPIC_REG_TIMER_DIV, 0);
     lapic_write(LAPIC_REG_TIMER_INITCNT, ticks);
+
+    interrupt_toggle(old_int_state);
 }
 
 void lapic_send_ipi(uint32_t lapic_id, uint32_t vec) {
@@ -86,20 +87,22 @@ void lapic_timer_calibrate(void) {
     lapic_timer_stop();
 
     // Initialize PIT
-    lapic_write(LAPIC_REG_LVT_TIMER, (1 << 16) | 0xff);
+    lapic_write(LAPIC_REG_LVT_TIMER, (1 << 16) | 0xff); // Vector 0xff, masked
     lapic_write(LAPIC_REG_TIMER_DIV, 0);
+
     pit_set_reload_value(0xffff); // Reset PIT
 
-    int init_tick = pit_get_current_count();
-    int samples = 0xfffff;
+    uint64_t samples = 0xfffff;
+
+    uint16_t initial_tick = pit_get_current_count();
+
     lapic_write(LAPIC_REG_TIMER_INITCNT, (uint32_t)samples);
     while (lapic_read(LAPIC_REG_TIMER_CURCNT) != 0);
-    int final_tick = pit_get_current_count();
-    int total_ticks = init_tick - final_tick;
-    this_cpu()->lapic_freq = (samples / total_ticks) * PIT_DIVIDEND;
-    lapic_timer_stop();
-}
 
-uint32_t lapic_get_id(void) {
-    return lapic_read(LAPIC_REG_ID);
+    uint16_t final_tick = pit_get_current_count();
+
+    uint64_t total_ticks = initial_tick - final_tick;
+    this_cpu()->lapic_freq = (samples / total_ticks) * PIT_DIVIDEND;
+
+    lapic_timer_stop();
 }
