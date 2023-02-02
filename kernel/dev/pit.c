@@ -11,11 +11,12 @@
 uint16_t pit_get_current_count(void) {
     outb(0x43, 0x00);
     uint8_t lo = inb(0x40);
-    uint8_t hi = inb(0x40) << 8;
+    uint8_t hi = inb(0x40);
     return ((uint16_t)hi << 8) | lo;
 }
 
 void pit_set_reload_value(uint16_t new_count) {
+    // Channel 0, lo/hi access mode, mode 2 (rate generator)
     outb(0x43, 0x34);
     outb(0x40, (uint8_t)new_count);
     outb(0x40, (uint8_t)(new_count >> 8));
@@ -35,8 +36,8 @@ static void pit_timer_handler(int vector, struct cpu_ctx *ctx) {
     (void)vector;
     (void)ctx;
 
-    lapic_eoi();
     timer_handler();
+    lapic_eoi();
 }
 
 void pit_init(void) {
