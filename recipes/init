@@ -1,5 +1,5 @@
-name=utils
-from_source=utils
+name=init
+from_source=init
 revision=1
 deps="mlibc"
 hostdeps="gcc"
@@ -13,5 +13,5 @@ build() {
 }
 
 install() {
-    make install DESTDIR="${dest_dir}" STRIP=x86_64-lyre-strip
+    make install DESTDIR="${dest_dir}" PREFIX="${prefix}" STRIP=x86_64-lyre-strip
 }

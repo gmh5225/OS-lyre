@@ -3,7 +3,7 @@ QEMUFLAGS ?= -M q35,smm=off -m 8G -boot order=dc -cdrom lyre.iso -serial stdio
 .PHONY: all
 all: jinx
 	rm -f builds/kernel.built builds/kernel.installed
-	./jinx build base-files utils kernel
+	./jinx build base-files init kernel
 	./build-support/makeiso.sh
 
 .PHONY: debug
@@ -20,7 +20,7 @@ distro-full: jinx
 
 .PHONY: distro-base
 distro-base: jinx
-	./jinx build bash coreutils utils
+	./jinx build bash coreutils init
 
 .PHONY: run-kvm
 run-kvm: lyre.iso
@@ -46,16 +46,16 @@ run: lyre.iso
 kernel-clean:
 	rm -rf builds/kernel* pkgs/kernel*
 
-.PHONY: utils-clean
-utils-clean:
-	rm -rf builds/utils* pkgs/utils*
+.PHONY: init-clean
+init-clean:
+	rm -rf builds/init* pkgs/init*
 
 .PHONY: base-files-clean
 base-files-clean:
 	rm -rf builds/base-files* pkgs/base-files*
 
 .PHONY: clean
-clean: kernel-clean utils-clean base-files-clean
+clean: kernel-clean init-clean base-files-clean
 	rm -rf iso_root sysroot lyre.iso initramfs.tar
 
 .PHONY: distclean

@@ -1,6 +1,6 @@
-name=utils
+name=init
 version=0.0
-source_dir="utils"
+source_dir="init"
 
 regenerate() {
     true

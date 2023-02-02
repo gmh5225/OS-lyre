@@ -8,7 +8,7 @@ int main(void) {
     setenv("TERM", "linux", 1);
     setenv("USER", "root", 1);
     setenv("HOME", "/root", 1);
-    setenv("PATH", "/bin:/usr/bin:/usr/local/bin", 1);
+    setenv("PATH", "/usr/local/bin:/usr/bin", 1);
 
     for (;;) {
         printf("\nWelcome to Lyre!\n");
