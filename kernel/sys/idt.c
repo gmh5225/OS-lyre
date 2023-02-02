@@ -79,6 +79,10 @@ extern void *isr_thunks[];
 extern void syscall_ud_entry(void);
 extern void panic_ipi_entry(void);
 
+static void generic_isr(uint8_t vector, struct cpu_ctx *ctx) {
+    panic(ctx, false, "Generic ISR triggered on vector %u", vector);
+}
+
 void idt_init(void) {
     idt_panic_ipi_vector = idt_allocate_vector();
 
@@ -89,6 +93,7 @@ void idt_init(void) {
             register_handler(i, panic_ipi_entry, 0x8e);
         } else {
             register_handler(i, isr_thunks[i], 0x8e);
+            isr[i] = generic_isr;
         }
     }
 
