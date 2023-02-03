@@ -26,7 +26,7 @@ static struct idt_entry idt[256];
 void *isr[256];
 uint8_t idt_panic_ipi_vector;
 
-static void register_handler(uint8_t vector, void *handler, uint8_t flags) {
+void idt_register_handler(uint8_t vector, void *handler, uint8_t flags) {
     uint64_t handler_int = (uint64_t)handler;
 
     idt[vector] = (struct idt_entry){
@@ -61,6 +61,10 @@ void idt_set_ist(uint8_t vector, uint8_t ist) {
     idt[vector].ist = ist;
 }
 
+uint8_t idt_get_ist(uint8_t vector) {
+    return idt[vector].ist;
+}
+
 void idt_set_flags(uint8_t vector, uint8_t flags) {
     idt[vector].flags = flags;
 }
@@ -76,7 +80,6 @@ void idt_reload(void) {
 
 extern void *isr_thunks[];
 
-extern void syscall_ud_entry(void);
 extern void panic_ipi_entry(void);
 
 static void generic_isr(uint8_t vector, struct cpu_ctx *ctx) {
@@ -87,12 +90,10 @@ void idt_init(void) {
     idt_panic_ipi_vector = idt_allocate_vector();
 
     for (size_t i = 0; i < 256; i++) {
-        if (i == 0x6) {
-            register_handler(i, syscall_ud_entry, 0x8e);
-        } else if (i == idt_panic_ipi_vector) {
-            register_handler(i, panic_ipi_entry, 0x8e);
+        if (i == idt_panic_ipi_vector) {
+            idt_register_handler(i, panic_ipi_entry, 0x8e);
         } else {
-            register_handler(i, isr_thunks[i], 0x8e);
+            idt_register_handler(i, isr_thunks[i], 0x8e);
             isr[i] = generic_isr;
         }
     }

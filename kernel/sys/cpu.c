@@ -89,18 +89,19 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     uint32_t eax, ebx, ecx, edx;
 
-    // SYSENTER (check if manufacturer ID is "GenuineIntel")
-    if (cpuid(0, 0, &eax, &ebx, &ecx, &edx)
-     && ebx == 0x756e6547
-     && edx == 0x49656e69
-     && ecx == 0x6c65746e) {
+    if (sysenter) {
         if (cpu_local->bsp) {
             kernel_print("cpu: Using SYSENTER\n");
-            sysenter = true;
         }
 
         wrmsr(0x174, 0x28); // CS
         wrmsr(0x176, (uint64_t)syscall_sysenter_entry);
+    } else {
+        if (cpu_local->bsp) {
+            kernel_print("cpu: SYSENTER not present! Using #UD\n");
+
+            idt_register_handler(0x06, syscall_ud_entry, 0x8e);
+        }
     }
 
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_XSAVE)) {
@@ -174,8 +175,39 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 }
 
 uint32_t bsp_lapic_id;
+bool smp_started = false;
+
+static void sysenter_check_exception(uint8_t vector, struct cpu_ctx *ctx) {
+    // If this was a #GP, we have sysenter
+    if (vector == 0x0d) {
+        sysenter = true;
+    }
+
+    // Skip over test sysexitq instruction
+    ctx->rip += 3;
+}
 
 void cpu_init(void) {
+    uint32_t eax, ebx, ecx, edx;
+    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
+        uint8_t old_ud_ist = idt_get_ist(0x06);
+        uint8_t old_gp_ist = idt_get_ist(0x0d);
+        void *old_ud_handler = isr[0x06];
+        void *old_gp_handler = isr[0x0d];
+
+        idt_set_ist(0x06, 0);
+        idt_set_ist(0x0d, 0);
+        isr[0x06] = sysenter_check_exception;
+        isr[0x0d] = sysenter_check_exception;
+
+        asm ("sysexitq");
+
+        idt_set_ist(0x06, old_ud_ist);
+        idt_set_ist(0x0d, old_gp_ist);
+        isr[0x06] = old_ud_handler;
+        isr[0x0d] = old_gp_handler;
+    }
+
     struct limine_smp_response *smp_resp = smp_request.response;
 
     ASSERT(smp_resp != NULL);
@@ -204,6 +236,8 @@ void cpu_init(void) {
     while (cpus_started_i != smp_resp->cpu_count) {
         asm ("pause");
     }
+
+    smp_started = true;
 }
 
 struct cpu_local *this_cpu(void) {

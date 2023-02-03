@@ -17,13 +17,15 @@ volatile size_t panic_cpu_counter = 0;
 noreturn void panic(struct cpu_ctx *ctx, bool trace, const char *fmt, ...) {
     interrupt_toggle(false);
 
-    asm volatile ("lock incq (%0)" :: "r"(&panic_cpu_counter) : "memory" );
+    if (smp_started) {
+        asm volatile ("lock incq (%0)" :: "r"(&panic_cpu_counter) : "memory" );
 
-    spinlock_acquire_no_dead_check(&panic_lock);
+        spinlock_acquire_no_dead_check(&panic_lock);
 
-    lapic_send_ipi(0, idt_panic_ipi_vector | 0b10 << 18);
+        lapic_send_ipi(0, idt_panic_ipi_vector | 0b10 << 18);
 
-    while (panic_cpu_counter != cpu_count) {}
+        while (panic_cpu_counter != cpu_count) {}
+    }
 
     // Force unlock the print lock
     spinlock_release(&debug_print_lock);
