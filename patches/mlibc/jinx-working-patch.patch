@@ -49,7 +49,7 @@ index 3474615..de088e9 100644
 +// 	__builtin_unreachable();
 +// }
 diff --git mlibc-clean/sysdeps/lyre/generic/generic.cpp mlibc-workdir/sysdeps/lyre/generic/generic.cpp
-index 374e30a..89e8f95 100644
+index 374e30a..1aa96fc 100644
 --- mlibc-clean/sysdeps/lyre/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/lyre/generic/generic.cpp
 @@ -39,6 +39,26 @@ void sys_exit(int status) {
@@ -79,6 +79,18 @@ index 374e30a..89e8f95 100644
  int sys_kill(pid_t, int) STUB_ONLY
  
  int sys_tcgetattr(int fd, struct termios *attr) {
+@@ -751,7 +771,10 @@ again:
+ 	return 0;
+ }
+ 
+-int sys_getgroups(size_t, const gid_t *, int *) STUB_ONLY
++int sys_getgroups(size_t, const gid_t *, int *) {
++	mlibc::infoLogger() << "mlibc: sys_getgroups() is unimplemented" << frg::endlog;
++	return ENOSYS;
++}
+ 
+ int sys_mount(const char *, const char *, const char *, unsigned long, const void *) STUB_ONLY
+ 
 diff --git mlibc-workdir/sysdeps/lyre/generic/thread.S mlibc-workdir/sysdeps/lyre/generic/thread.S
 new file mode 100644
 index 0000000..47ab6a9
