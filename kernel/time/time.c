@@ -12,7 +12,6 @@
 #include <time/time.h>
 #include <dev/pit.h>
 #include <sched/sched.h>
-#include <time.h> // XXX brings in a bunch of libc crap, beware
 
 static volatile struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,
