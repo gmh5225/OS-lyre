@@ -89,8 +89,11 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
 
     uint32_t eax, ebx, ecx, edx;
 
-    // SYSENTER
-    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
+    // SYSENTER (check if manufacturer ID is "GenuineIntel")
+    if (cpuid(0, 0, &eax, &ebx, &ecx, &edx)
+     && ebx == 0x756e6547
+     && edx == 0x49656e69
+     && ecx == 0x6c65746e) {
         if (cpu_local->bsp) {
             kernel_print("cpu: Using SYSENTER\n");
             sysenter = true;
