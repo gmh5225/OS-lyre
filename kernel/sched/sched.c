@@ -153,10 +153,11 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
     if (sysenter) {
         wrmsr(0x175, (uint64_t)current_thread->kernel_stack);
+    } else {
+        cpu->tss.ist3 = (uint64_t)current_thread->kernel_stack;
     }
 
     cpu->tss.ist2 = (uint64_t)current_thread->pf_stack;
-    cpu->tss.ist3 = (uint64_t)current_thread->kernel_stack;
 
     if (read_cr3() != current_thread->cr3) {
         write_cr3(current_thread->cr3);

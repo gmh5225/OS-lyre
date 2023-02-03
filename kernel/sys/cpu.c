@@ -101,6 +101,7 @@ static void single_cpu_init(struct limine_smp_info *smp_info) {
             kernel_print("cpu: SYSENTER not present! Using #UD\n");
 
             idt_register_handler(0x06, syscall_ud_entry, 0x8e);
+            idt_set_ist(0x6, 3); // #UD uses IST 3
         }
     }
 
@@ -183,8 +184,8 @@ static void sysenter_check_exception(uint8_t vector, struct cpu_ctx *ctx) {
         sysenter = true;
     }
 
-    // Skip over test sysexitq instruction
-    ctx->rip += 3;
+    // Skip over test sysenter instruction
+    ctx->rip += 2;
 }
 
 void cpu_init(void) {
@@ -200,11 +201,12 @@ void cpu_init(void) {
         isr[0x06] = sysenter_check_exception;
         isr[0x0d] = sysenter_check_exception;
 
+        wrmsr(0x174, 0); // CS == NULL
+
         asm volatile (
-            "sysexitq"
+            "sysenter"
             :
-            // Make sure RCX and RDX contain non-canonical addresses
-            : "c"(0x8000000000000000), "d"(0x8000000000000000)
+            :
             : "memory"
         );
 
