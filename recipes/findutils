@@ -3,6 +3,7 @@ from_source=findutils
 revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
 deps="mlibc"
+imagedeps="python"
 
 configure() {
     cp -rp "${source_dir}"/. ./
@@ -12,7 +13,8 @@ configure() {
         --prefix=${prefix} \
         --sysconfdir=/etc \
         --localstatedir=/var \
-        --disable-nls
+        --disable-nls \
+        --without-selinux
 }
 
 build() {
