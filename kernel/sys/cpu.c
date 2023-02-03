@@ -200,7 +200,13 @@ void cpu_init(void) {
         isr[0x06] = sysenter_check_exception;
         isr[0x0d] = sysenter_check_exception;
 
-        asm ("sysexitq");
+        asm volatile (
+            "sysexitq"
+            :
+            // Make sure RCX and RDX contain non-canonical addresses
+            : "c"(0x8000000000000000), "d"(0x8000000000000000)
+            : "memory"
+        );
 
         idt_set_ist(0x06, old_ud_ist);
         idt_set_ist(0x0d, old_gp_ist);
