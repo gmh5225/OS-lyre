@@ -102,7 +102,11 @@ static ssize_t unix_write(struct resource *_this, struct f_description *descript
     spinlock_acquire(&peer->lock);
 
     while (peer->used == peer->capacity) {
-        // XXX non-block!!
+        if ((description->flags & O_NONBLOCK) != 0) {
+            errno = EWOULDBLOCK;
+            goto cleanup;
+        }
+
         spinlock_release(&peer->lock);
 
         struct event *events[] = {&peer->event};
