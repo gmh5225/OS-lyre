@@ -23,8 +23,6 @@ static struct thread *running_queue[MAX_RUNNING_THREADS];
 
 static uint8_t sched_vector;
 
-static size_t working_cpus = 0;
-
 static void sched_entry(int vector, struct cpu_ctx *ctx);
 
 void sched_init(void) {
@@ -142,8 +140,6 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
         current_thread->running_on = -1;
         spinlock_release(&current_thread->lock);
-
-        working_cpus--;
     }
 
     if (next_thread == NULL) {
@@ -154,13 +150,8 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 #endif
         cpu->active = false;
         vmm_switch_to(vmm_kernel_pagemap);
-        if (waiting_event_count == 0 && working_cpus == 0) {
-            panic(NULL, false, "Event heartbeat flatlined");
-        }
         sched_await();
     }
-
-    working_cpus++;
 
     current_thread = next_thread;
 

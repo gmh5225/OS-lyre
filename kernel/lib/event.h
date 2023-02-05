@@ -24,6 +24,4 @@ struct event {
 ssize_t event_await(struct event **events, size_t num_events, bool block);
 size_t event_trigger(struct event *event, bool drop);
 
-extern size_t waiting_event_count;
-
 #endif
