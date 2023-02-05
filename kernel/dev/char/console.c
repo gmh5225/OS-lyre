@@ -161,9 +161,11 @@ static ssize_t tty_write(struct resource *_this, struct f_description *descripti
         vmm_switch_to(vmm_kernel_pagemap);
     }
 
+    bool old_int = interrupt_toggle(false);
     spinlock_acquire(&terminal_lock);
     terminal_request.response->write(terminal_request.response->terminals[0], local_buf, count);
     spinlock_release(&terminal_lock);
+    interrupt_toggle(old_int);
 
     if (cr3 != (uint64_t)vmm_kernel_pagemap->top_level - VMM_HIGHER_HALF) {
         free((void *)local_buf);
