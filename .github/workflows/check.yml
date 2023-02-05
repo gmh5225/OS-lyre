@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir mlibc-build
           cd mlibc-build
-          meson --cross-file ../build-support/cross_file.txt --prefix=/ -Dheaders_only=true ../mlibc
+          meson setup --cross-file ../build-support/cross_file.txt --prefix=/ -Dheaders_only=true -Dlinux_kernel_headers=/usr/include ../mlibc
           ninja
           mkdir ../mlibc-headers
           DESTDIR=`realpath ../mlibc-headers` ninja install
