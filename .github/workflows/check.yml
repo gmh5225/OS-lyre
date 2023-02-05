@@ -19,7 +19,7 @@ jobs:
 
       - name: Download linux-headers
         run: |
-          curl -Lo linux.tar.xz https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-`grep 'version=' < ../source-recipes/linux | sed 's/version=//g'`.tar.xz
+          curl -Lo linux.tar.xz https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-`grep 'version=' < source-recipes/linux | sed 's/version=//g'`.tar.xz
           tar -xf linux.tar.xz
           mv linux-* linux
 
