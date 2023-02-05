@@ -36,7 +36,7 @@ syscall_table:
     .quad syscall_sleep       // 31
     .quad syscall_ppoll       // 32
     .quad syscall_umask       // 33
-    .quad 0  // 34
+    .quad syscall_mprotect    // 34
     .quad syscall_getclock    // 35
     .quad syscall_socket      // 36
     .quad syscall_bind        // 37

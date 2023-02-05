@@ -182,6 +182,92 @@ cleanup:
     return false;
 }
 
+int mprotect(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot) {
+    int ret = -1;
+
+    if (length == 0) {
+        errno = EINVAL;
+        goto cleanup;
+    }
+    length = ALIGN_UP(length, PAGE_SIZE);
+
+    for (uintptr_t i = addr; i < addr + length; i += PAGE_SIZE) {
+        struct mmap_range_local *local_range = addr2range(pagemap, i).range;
+
+        if (local_range->prot == prot) {
+            continue;
+        }
+
+        uintptr_t snip_begin = i;
+        for (;;) {
+            i += PAGE_SIZE;
+            if (i >= local_range->base + local_range->length || i >= addr + length) {
+                break;
+            }
+        }
+        uintptr_t snip_end = i;
+        uintptr_t snip_size = snip_end - snip_begin;
+
+        spinlock_acquire(&pagemap->lock);
+
+        if (snip_begin > local_range->base && snip_end < local_range->base + local_range->length) {
+            struct mmap_range_local *postsplit_range = ALLOC(struct mmap_range_local);
+
+            postsplit_range->pagemap = local_range->pagemap;
+            postsplit_range->global = local_range->global;
+            postsplit_range->base = snip_end;
+            postsplit_range->length = (local_range->base + local_range->length) - snip_end;
+            postsplit_range->offset = local_range->offset + (off_t)(snip_end - local_range->base);
+            postsplit_range->prot = local_range->prot;
+            postsplit_range->flags = local_range->flags;
+
+            VECTOR_PUSH_BACK(&pagemap->mmap_ranges, postsplit_range);
+
+            local_range->length -= postsplit_range->length;
+        }
+
+        for (uintptr_t j = snip_begin; j < snip_end; j += PAGE_SIZE) {
+            uint64_t pt_flags = PTE_PRESENT | PTE_USER;
+
+            if ((prot & PROT_WRITE) != 0) {
+                pt_flags |= PTE_WRITABLE;
+            }
+            if ((prot & PROT_EXEC) == 0) {
+                pt_flags |= PTE_NX;
+            }
+
+            vmm_flag_page(pagemap, false, j, pt_flags);
+        }
+
+        uintptr_t new_offset = local_range->offset + (snip_begin - local_range->base);
+
+        if (snip_begin == local_range->base) {
+            local_range->offset += snip_size;
+            local_range->base = snip_end;
+        }
+        local_range->length -= snip_size;
+
+        struct mmap_range_local *new_range = ALLOC(struct mmap_range_local);
+
+        new_range->pagemap = local_range->pagemap;
+        new_range->global = local_range->global;
+        new_range->base = snip_begin;
+        new_range->length = snip_size;
+        new_range->offset = new_offset;
+        new_range->prot = prot;
+        new_range->flags = local_range->flags;
+
+        VECTOR_PUSH_BACK(&pagemap->mmap_ranges, new_range);
+
+        spinlock_release(&pagemap->lock);
+    }
+
+    ret = 0;
+
+cleanup:
+    return ret;
+}
+
 void *mmap(struct pagemap *pagemap, uintptr_t addr, size_t length, int prot,
            int flags, struct resource *res, off_t offset) {
     struct mmap_range_global *global_range = NULL;
@@ -398,6 +484,20 @@ int syscall_munmap(void *_, uintptr_t addr, size_t length) {
     struct process *proc = thread->process;
 
     int ret = munmap(proc->pagemap, addr, length) ? 0 : -1;
+
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
+}
+
+int syscall_mprotect(void *_, uintptr_t addr, size_t length, int prot) {
+    (void)_;
+
+    DEBUG_SYSCALL_ENTER("mprotect(%lx, %lx, %x)", addr, length, prot);
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    int ret = mprotect(proc->pagemap, addr, length, prot);
 
     DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;

@@ -325,8 +325,10 @@ cleanup:
     return ok;
 }
 
-bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags) {
-    spinlock_acquire(&pagemap->lock);
+bool vmm_flag_page(struct pagemap *pagemap, bool lock, uintptr_t virt, uint64_t flags) {
+    if (lock) {
+        spinlock_acquire(&pagemap->lock);
+    }
 
     bool ok = false;
     size_t pml4_entry = (virt & (0x1ffull << 39)) >> 39;
@@ -364,7 +366,9 @@ bool vmm_flag_page(struct pagemap *pagemap, uintptr_t virt, uint64_t flags) {
     );
 
 cleanup:
-    spinlock_release(&pagemap->lock);
+    if (lock) {
+        spinlock_release(&pagemap->lock);
+    }
     return ok;
 }
 

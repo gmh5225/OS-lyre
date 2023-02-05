@@ -49,7 +49,7 @@ index 3474615..de088e9 100644
 +// 	__builtin_unreachable();
 +// }
 diff --git mlibc-clean/sysdeps/lyre/generic/generic.cpp mlibc-workdir/sysdeps/lyre/generic/generic.cpp
-index 374e30a..1aa96fc 100644
+index 374e30a..c6fe6ae 100644
 --- mlibc-clean/sysdeps/lyre/generic/generic.cpp
 +++ mlibc-workdir/sysdeps/lyre/generic/generic.cpp
 @@ -39,6 +39,26 @@ void sys_exit(int status) {
@@ -79,7 +79,22 @@ index 374e30a..1aa96fc 100644
  int sys_kill(pid_t, int) STUB_ONLY
  
  int sys_tcgetattr(int fd, struct termios *attr) {
-@@ -751,7 +771,10 @@ again:
+@@ -420,7 +440,13 @@ int sys_vm_unmap(void *pointer, size_t size) {
+ 
+ #ifndef MLIBC_BUILDING_RTDL
+ 
+-int sys_vm_protect(void *, size_t, int) STUB_ONLY
++int sys_vm_protect(void *pointer, size_t size, int prot) {
++	__syscall_ret ret = __syscall(SYS_mprotect, pointer, size, prot);
++	if ((int)ret.ret == -1) {
++		return ret.errno;
++	}
++	return 0;
++}
+ 
+ #endif
+ 
+@@ -751,7 +777,10 @@ again:
  	return 0;
  }
  
@@ -167,9 +182,18 @@ index 0000000..800d4ad
 +	}
 +}
 diff --git mlibc-clean/sysdeps/lyre/include/lyre/syscall.h mlibc-workdir/sysdeps/lyre/include/lyre/syscall.h
-index af8e0cb..dbfa2f5 100644
+index af8e0cb..db83175 100644
 --- mlibc-clean/sysdeps/lyre/include/lyre/syscall.h
 +++ mlibc-workdir/sysdeps/lyre/include/lyre/syscall.h
+@@ -37,7 +37,7 @@
+ #define SYS_sleep 31
+ #define SYS_ppoll 32
+ #define SYS_umask 33
+-#define SYS_getmemstat 34
++#define SYS_mprotect 34
+ #define SYS_getclock 35
+ #define SYS_socket 36
+ #define SYS_bind 37
 @@ -46,6 +46,8 @@
  #define SYS_accept 40
  #define SYS_getpeername 41
