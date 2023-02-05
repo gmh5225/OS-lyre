@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install build-essential meson nasm -y
+        run: sudo apt-get update && sudo apt-get install build-essential meson nasm linux-libc-dev -y
 
       - name: Clone mlibc
         run: git clone https://github.com/managarm/mlibc.git
