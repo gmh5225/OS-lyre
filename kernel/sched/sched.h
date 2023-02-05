@@ -10,6 +10,7 @@
 
 extern struct process *kernel_process;
 
+void sched_init(void);
 noreturn void sched_await(void);
 void sched_yield(bool save_ctx);
 bool sched_enqueue_thread(struct thread *thread, bool by_signal);

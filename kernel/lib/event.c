@@ -9,6 +9,8 @@
 #include <sched/proc.h>
 #include <sched/sched.h>
 
+size_t waiting_event_count = 0;
+
 static ssize_t check_for_pending(struct event **events, size_t num_events) {
     for (size_t i = 0; i < num_events; i++) {
         if (events[i]->pending > 0) {
@@ -90,12 +92,16 @@ ssize_t event_await(struct event **events, size_t num_events, bool block) {
         goto cleanup;
     }
 
+    waiting_event_count++;
+
     attach_listeners(events, num_events, thread);
     sched_dequeue_thread(thread);
     unlock_events(events, num_events);
     sched_yield(true);
 
     interrupt_toggle(false);
+
+    waiting_event_count--;
 
     if (thread->enqueued_by_signal) {
         goto cleanup2;

@@ -305,6 +305,7 @@ static noreturn void keyboard_handler(void) {
     for (;;) {
         struct event *events[] = { &int_events[ps2_keyboard_vector] };
         event_await(events, 1, true);
+
         uint8_t input_byte = ps2_read();
 
         if (input_byte == 0xe0) {

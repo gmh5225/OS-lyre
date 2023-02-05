@@ -8,8 +8,9 @@
 #include <lib/resource.h>
 #include <lib/debug.h>
 #include <sched/sched.h>
-#include <sys/timer.h>
+#include <dev/lapic.h>
 #include <sys/cpu.h>
+#include <sys/idt.h>
 #include <mm/mmap.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
@@ -19,33 +20,45 @@
 struct process *kernel_process;
 
 static struct thread *running_queue[MAX_RUNNING_THREADS];
-static size_t running_queue_i = 0;
 
-static spinlock_t lock = SPINLOCK_INIT;
+static uint8_t sched_vector;
 
-// This is a very crappy algorithm
-static int get_next_thread(int orig_i) {
-    spinlock_acquire(&lock);
+static size_t working_cpus = 0;
 
-    int cpu_number = this_cpu()->cpu_number;
+static void sched_entry(int vector, struct cpu_ctx *ctx);
 
-    if (orig_i >= (int)running_queue_i) {
+void sched_init(void) {
+    sched_vector = idt_allocate_vector();
+    kernel_print("sched: Scheduler interrupt vector is 0x%x\n", sched_vector);
+
+    isr[sched_vector] = sched_entry;
+    idt_set_ist(sched_vector, 1);
+
+    kernel_process = sched_new_process(NULL, vmm_kernel_pagemap);
+}
+
+static struct thread *get_next_thread(void) {
+    struct cpu_local *cpu = this_cpu();
+
+    int orig_i = cpu->last_run_queue_index;
+
+    if (orig_i >= MAX_RUNNING_THREADS) {
         orig_i = 0;
     }
 
     int index = orig_i + 1;
 
     for (;;) {
-        if (index >= (int)running_queue_i) {
+        if (index >= MAX_RUNNING_THREADS) {
             index = 0;
         }
 
         struct thread *thread = running_queue[index];
 
         if (thread != NULL) {
-            if (thread->running_on == cpu_number || spinlock_test_and_acq(&thread->lock) == true) {
-                spinlock_release(&lock);
-                return index;
+            if (spinlock_test_and_acq(&thread->lock) == true) {
+                cpu->last_run_queue_index = index;
+                return thread;
             }
         }
 
@@ -56,8 +69,8 @@ static int get_next_thread(int orig_i) {
         index++;
     }
 
-    spinlock_release(&lock);
-    return -1;
+    cpu->last_run_queue_index = index;
+    return NULL;
 }
 
 #if defined (__x86_64__)
@@ -99,19 +112,22 @@ static noreturn void thread_spinup(struct cpu_ctx *ctx) {
 static void sched_entry(int vector, struct cpu_ctx *ctx) {
     (void)vector;
 
+    lapic_timer_stop();
+
     struct cpu_local *cpu = this_cpu();
 
     cpu->active = true;
 
     struct thread *current_thread = sched_current_thread();
 
-    int new_index = get_next_thread(cpu->last_run_queue_index);
+    struct thread *next_thread = get_next_thread();
 
     if (current_thread != cpu->idle_thread) {
         spinlock_release(&current_thread->yield_await);
 
-        if (new_index == cpu->last_run_queue_index) {
-            sys_timer_oneshot(current_thread->timeslice, sched_entry);
+        if (next_thread == NULL && current_thread->enqueued) {
+            lapic_eoi();
+            lapic_timer_oneshot(current_thread->timeslice, sched_vector);
             return;
         }
 
@@ -126,21 +142,27 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
         current_thread->running_on = -1;
         spinlock_release(&current_thread->lock);
+
+        working_cpus--;
     }
 
-    if (new_index == -1) {
+    if (next_thread == NULL) {
+        lapic_eoi();
 #if defined (__x86_64__)
         set_gs_base(cpu->idle_thread);
         set_kernel_gs_base(cpu->idle_thread);
 #endif
-        cpu->last_run_queue_index = 0;
         cpu->active = false;
         vmm_switch_to(vmm_kernel_pagemap);
+        if (waiting_event_count == 0 && working_cpus == 0) {
+            panic(NULL, false, "Event heartbeat flatlined");
+        }
         sched_await();
     }
 
-    current_thread = running_queue[new_index];
-    cpu->last_run_queue_index = new_index;
+    working_cpus++;
+
+    current_thread = next_thread;
 
 #if defined (__x86_64__)
     set_gs_base(current_thread);
@@ -169,7 +191,8 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
     current_thread->running_on = cpu->cpu_number;
     current_thread->this_cpu = cpu;
 
-    sys_timer_oneshot(current_thread->timeslice, sched_entry);
+    lapic_eoi();
+    lapic_timer_oneshot(current_thread->timeslice, sched_vector);
 
     struct cpu_ctx *new_ctx = &current_thread->ctx;
 
@@ -178,7 +201,7 @@ static void sched_entry(int vector, struct cpu_ctx *ctx) {
 
 noreturn void sched_await(void) {
     interrupt_toggle(false);
-    sys_timer_oneshot(20000, sched_entry);
+    lapic_timer_oneshot(20000, sched_vector);
     interrupt_toggle(true);
     for (;;) {
         halt();
@@ -189,13 +212,21 @@ noreturn void sched_await(void) {
 void sched_yield(bool save_ctx) {
     interrupt_toggle(false);
 
+    lapic_timer_stop();
+
     struct thread *thread = sched_current_thread();
+
+    struct cpu_local *cpu = this_cpu();
 
     if (save_ctx) {
         spinlock_acquire(&thread->yield_await);
+    } else {
+        set_gs_base(cpu->idle_thread);
+        set_kernel_gs_base(cpu->idle_thread);
     }
 
-    sys_timer_oneshot(1, sched_entry);
+    lapic_send_ipi(cpu->lapic_id, sched_vector);
+
     interrupt_toggle(true);
 
     if (save_ctx) {
@@ -215,24 +246,21 @@ bool sched_enqueue_thread(struct thread *thread, bool by_signal) {
 
     thread->enqueued_by_signal = by_signal;
 
-    spinlock_acquire(&lock);
-
     for (size_t i = 0; i < MAX_RUNNING_THREADS; i++) {
         if (CAS(&running_queue[i], NULL, thread)) {
             thread->enqueued = true;
 
-            // TODO cpu wakey wakey thing
-
-            if (i >= running_queue_i) {
-                running_queue_i = i + 1;
+            for (size_t j = 0; j < cpu_count; j++) {
+                if (cpus[j].active == false) {
+                    lapic_send_ipi(cpus[j].lapic_id, sched_vector);
+                    break;
+                }
             }
 
-            spinlock_release(&lock);
             return true;
         }
     }
 
-    spinlock_release(&lock);
     return false;
 }
 
@@ -241,22 +269,14 @@ bool sched_dequeue_thread(struct thread *thread) {
         return true;
     }
 
-    spinlock_acquire(&lock);
-
-    for (size_t i = 0; i < running_queue_i; i++) {
+    for (size_t i = 0; i < MAX_RUNNING_THREADS; i++) {
         if (CAS(&running_queue[i], thread, NULL)) {
             thread->enqueued = false;
 
-            if (i == running_queue_i - 1) {
-               running_queue_i--;
-            }
-
-            spinlock_release(&lock);
             return true;
         }
     }
 
-    spinlock_release(&lock);
     return false;
 }
 

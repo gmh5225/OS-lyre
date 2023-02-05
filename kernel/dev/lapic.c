@@ -20,8 +20,6 @@
 #define LAPIC_REG_TIMER_DIV 0x3e0
 #define LAPIC_EOI_ACK 0x00
 
-static uint8_t timer_vec = 0;
-
 static inline uint32_t lapic_read(uint32_t reg) {
     return *((volatile uint32_t *)((uintptr_t)0xfee00000 + VMM_HIGHER_HALF + reg));
 }
@@ -30,28 +28,14 @@ static inline void lapic_write(uint32_t reg, uint32_t val) {
     *((volatile uint32_t *)((uintptr_t)0xfee00000 + VMM_HIGHER_HALF + reg)) = val;
 }
 
-static inline void lapic_timer_stop(void) {
+void lapic_timer_stop(void) {
     lapic_write(LAPIC_REG_TIMER_INITCNT, 0);
     lapic_write(LAPIC_REG_LVT_TIMER, 1 << 16);
-}
-
-static void lapic_timer_handler(int vector, struct cpu_ctx *ctx) {
-    lapic_eoi();
-    if (this_cpu()->timer_function != NULL) {
-        this_cpu()->timer_function(vector, ctx);
-    }
 }
 
 // Enable for all cores
 void lapic_init(void) {
     ASSERT((rdmsr(0x1b) & 0xfffff000) == 0xfee00000);
-
-    // Timer interrupt
-    if (timer_vec == 0) {
-        timer_vec = idt_allocate_vector();
-        idt_set_ist(timer_vec, 1);
-        isr[timer_vec] = lapic_timer_handler;
-    }
 
     lapic_timer_calibrate();
 
@@ -63,15 +47,13 @@ void lapic_eoi(void) {
     lapic_write(LAPIC_REG_EOI, LAPIC_EOI_ACK);
 }
 
-void lapic_timer_oneshot(uint64_t us, void *function) {
+void lapic_timer_oneshot(uint64_t us, uint8_t vector) {
     bool old_int_state = interrupt_toggle(false);
     lapic_timer_stop();
 
-    this_cpu()->timer_function = function;
-
     uint64_t ticks = us * (this_cpu()->lapic_freq / 1000000);
 
-    lapic_write(LAPIC_REG_LVT_TIMER, timer_vec);
+    lapic_write(LAPIC_REG_LVT_TIMER, vector);
     lapic_write(LAPIC_REG_TIMER_DIV, 0);
     lapic_write(LAPIC_REG_TIMER_INITCNT, ticks);
 

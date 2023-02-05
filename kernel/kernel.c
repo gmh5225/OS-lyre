@@ -35,9 +35,7 @@ void _start(void) {
     slab_init();
     vmm_init();
     proc_init();
-
-    kernel_process = sched_new_process(NULL, vmm_kernel_pagemap);
-
+    sched_init();
     cpu_init();
     acpi_init();
     time_init();

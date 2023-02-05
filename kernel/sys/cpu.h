@@ -63,8 +63,9 @@ struct cpu_local {
     uint64_t lapic_freq;
     struct tss tss;
     struct thread *idle_thread;
-    void (*timer_function)(int, struct cpu_ctx *);
 };
+
+extern struct cpu_local *cpus;
 
 void cpu_init(void);
 

@@ -84,7 +84,7 @@ static noreturn void mouse_handler(void) {
 
         switch (handler_cycle) {
             case 0:
-                current_packet.flags = inb(0x60);
+                current_packet.flags = mouse_read();
                 handler_cycle++;
                 if (current_packet.flags & (1 << 6) || current_packet.flags & (1 << 7))
                     discard_packet = true;     // discard rest of packet
@@ -92,11 +92,11 @@ static noreturn void mouse_handler(void) {
                     discard_packet = true;     // discard rest of packet
                 continue;
             case 1:
-                current_packet.x_mov = inb(0x60);
+                current_packet.x_mov = mouse_read();
                 handler_cycle++;
                 continue;
             case 2: {
-                current_packet.y_mov = inb(0x60);
+                current_packet.y_mov = mouse_read();
                 handler_cycle = 0;
 
                 if (discard_packet) {

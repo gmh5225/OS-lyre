@@ -188,6 +188,8 @@ static void sysenter_check_exception(uint8_t vector, struct cpu_ctx *ctx) {
     ctx->rip += 2;
 }
 
+struct cpu_local *cpus = NULL;
+
 void cpu_init(void) {
     uint32_t eax, ebx, ecx, edx;
     if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
@@ -224,12 +226,14 @@ void cpu_init(void) {
 
     cpu_count = smp_resp->cpu_count;
 
+    cpus = alloc(cpu_count * sizeof(struct cpu_local));
+
     bsp_lapic_id = smp_resp->bsp_lapic_id;
 
-    for (size_t i = 0; i < smp_resp->cpu_count; i++) {
+    for (size_t i = 0; i < cpu_count; i++) {
         struct limine_smp_info *cpu = smp_resp->cpus[i];
 
-        struct cpu_local *cpu_local = ALLOC(struct cpu_local);
+        struct cpu_local *cpu_local = &cpus[i];
         cpu->extra_argument = (uint64_t)cpu_local;
         cpu_local->cpu_number = i;
 
