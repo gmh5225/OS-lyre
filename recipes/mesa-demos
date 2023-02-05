@@ -1,0 +1,28 @@
+name=mesa-demos
+from_source=mesa-demos
+revision=1
+hostdeps="gcc autoconf automake libtool pkg-config"
+deps="mlibc freetype mesa glu libx11 libxext"
+
+configure() {
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --disable-static \
+        --enable-autotools \
+        --disable-gles1 \
+        --disable-osmesa \
+        --disable-libdrm \
+        --with-system-data-files \
+        --with-glut=no
+}
+
+build() {
+    make -j${parallelism}
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip
+}
