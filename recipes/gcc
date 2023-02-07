@@ -26,17 +26,11 @@ configure() {
 }
 
 build() {
-    make -j${parallelism} all-gcc all-target-libgcc all-target-libstdc++-v3
+    make -j${parallelism} all-gcc
 }
 
 install() {
     DESTDIR="${dest_dir}" make install-strip-gcc
-
-    DESTDIR="${dest_dir}" make install-strip-target-libgcc
-    rm "${dest_dir}${prefix}"/lib/gcc/x86_64-lyre/12.2.0/crti.o
-    rm "${dest_dir}${prefix}"/lib/gcc/x86_64-lyre/12.2.0/crtn.o
-
-    DESTDIR="${dest_dir}" make install-strip-target-libstdc++-v3
 
     ln -s gcc "${dest_dir}${prefix}"/bin/cc
     # Remove static libraries

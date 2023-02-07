@@ -2,7 +2,7 @@ name=mlibc-base
 from_source=mlibc
 revision=1
 imagedeps="meson ninja"
-hostdeps="gcc-compiler pkg-config"
+hostdeps="gcc pkg-config"
 deps="linux-headers mlibc-headers cxxshim frigg"
 
 configure() {
