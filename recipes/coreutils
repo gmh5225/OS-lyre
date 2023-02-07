@@ -2,7 +2,7 @@ name=coreutils
 from_source=coreutils
 revision=1
 hostdeps="gcc automake autoconf libtool pkg-config"
-deps="mlibc tzdata"
+deps="core-libs tzdata"
 imagedeps="gcc gperf"
 
 configure() {

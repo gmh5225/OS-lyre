@@ -4,7 +4,7 @@ revision=1
 hostdeps="autoconf automake libtool pkg-config"
 imagedeps="gcc"
 hostdeps="gcc binutils"
-deps="mlibc-base libgcc"
+deps="mlibc libgcc"
 
 configure() {
     # Hack to continue gcc build

@@ -3,7 +3,7 @@ from_source=mpfr
 revision=1
 imagedeps="gcc"
 hostdeps="gcc autoconf autoconf-archive automake libtool pkg-config"
-deps="mlibc gmp"
+deps="core-libs gmp"
 
 configure() {
     cp -rp "${source_dir}"/. ./

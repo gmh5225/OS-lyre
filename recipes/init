@@ -1,7 +1,7 @@
 name=init
 from_source=init
 revision=1
-deps="mlibc"
+deps="core-libs"
 hostdeps="gcc"
 
 configure() {

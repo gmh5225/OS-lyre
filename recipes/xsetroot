@@ -2,7 +2,7 @@ name=xsetroot
 revision=1
 from_source=xsetroot
 hostdeps="gcc autoconf automake libtool pkg-config"
-deps="mlibc xorg-server libxmu xbitmaps libxcursor"
+deps="core-libs xorg-server libxmu xbitmaps libxcursor"
 
 configure() {
     ${source_dir}/configure \

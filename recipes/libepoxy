@@ -2,7 +2,7 @@ name=libepoxy
 from_source=libepoxy
 revision=1
 hostdeps="gcc pkg-config"
-deps="mlibc mesa xorg-proto libx11"
+deps="core-libs mesa xorg-proto libx11"
 imagedeps="meson ninja"
 
 configure() {

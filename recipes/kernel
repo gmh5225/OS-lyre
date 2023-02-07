@@ -1,7 +1,7 @@
 name=kernel
 from_source=kernel
 revision=1
-deps="mlibc"
+deps="core-libs"
 hostdeps="gcc binutils"
 
 configure() {

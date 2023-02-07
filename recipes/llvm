@@ -3,7 +3,7 @@ from_source=llvm
 revision=1
 imagedeps="gcc ninja python git"
 hostdeps="gcc cmake pkg-config"
-deps="mlibc zlib"
+deps="core-libs zlib"
 
 configure() {
     cmake \

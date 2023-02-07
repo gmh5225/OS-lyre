@@ -3,7 +3,7 @@ from_source=libgpg-error
 revision=1
 imagedeps="gcc"
 hostdeps="gcc automake autoconf libtool pkg-config"
-deps="mlibc"
+deps="core-libs"
 
 configure() {
     ${source_dir}/configure \

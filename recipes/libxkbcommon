@@ -2,7 +2,7 @@ name=libxkbcommon
 from_source=libxkbcommon
 revision=1
 hostdeps="gcc pkg-config"
-deps="mlibc libxcb libxml xkeyboard-config"
+deps="core-libs libxcb libxml xkeyboard-config"
 imagedeps="meson ninja"
 
 configure() {

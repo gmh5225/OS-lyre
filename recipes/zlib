@@ -2,7 +2,7 @@ name=zlib
 from_source=zlib
 revision=1
 hostdeps="gcc pkg-config"
-deps="mlibc"
+deps="core-libs"
 
 configure() {
         prefix="${prefix}" \

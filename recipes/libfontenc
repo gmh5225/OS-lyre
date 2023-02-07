@@ -2,7 +2,7 @@ name=libfontenc
 from_source=libfontenc
 revision=1
 hostdeps="gcc autoconf automake libtool pkg-config"
-deps="mlibc xorg-proto zlib"
+deps="core-libs xorg-proto zlib"
 
 configure() {
     ${source_dir}/configure           \

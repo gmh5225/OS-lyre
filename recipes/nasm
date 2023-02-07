@@ -2,7 +2,7 @@ name=nasm
 from_source=nasm
 revision=1
 hostdeps="gcc automake autoconf libtool pkg-config"
-deps="mlibc"
+deps="core-libs"
 
 configure() {
     cp -rp "${source_dir}"/. ./
