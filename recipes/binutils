@@ -26,6 +26,10 @@ build() {
 
 install() {
     DESTDIR="${dest_dir}" make install-strip
+
+    # Remove unnecessary directory
+    rm -rf "${dest_dir}${prefix}"/x86_64-lyre
+
     # Remove static libraries
     rm -rf "${dest_dir}${prefix}"/lib/*.a
 }

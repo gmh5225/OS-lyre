@@ -3,6 +3,7 @@
 set -ex
 
 # Build the sysroot with jinx and build limine.
+rm -rf sysroot
 ./jinx sysroot
 ./jinx host-build limine
 
