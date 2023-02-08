@@ -1,0 +1,24 @@
+name=curl
+from_source=curl
+revision=1
+hostdeps="gcc autoconf automake libtool pkg-config"
+deps="core-libs openssl zlib zstd"
+
+configure() {
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --disable-static \
+        --enable-threaded-resolver \
+        --with-openssl
+}
+
+build() {
+    make -j${parallelism}
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip
+}
