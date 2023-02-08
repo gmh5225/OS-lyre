@@ -25,7 +25,7 @@ virtual machines.
 
 You can grab a pre-built nightly Lyre image at https://github.com/lyre-os/lyre/releases
 
-Make sure to boot the ISO with enough memory (8+GiB) as, for now, Lyre loads its
+Make sure to boot the ISO with enough memory (3+GiB) as, for now, Lyre loads its
 entire root filesystem in a ramdisk in order to be able to more easily boot
 on real hardware.
 
@@ -37,17 +37,16 @@ The following is a distro-agnostic list of packages needed to build Lyre.
 
 Skip to a paragraph for your host distro if there is any.
 
-`GNU make`, `curl`, `git`, `mercurial`, `bsdtar`, `xorriso`, and `qemu`
-to test it.
+`GNU make`, `curl`, `git`, `bsdtar`, `xorriso`, and `qemu` to test it.
 
 ### Build prerequisites for Ubuntu, Debian, and derivatives
 ```bash
-sudo apt install make curl git mercurial libarchive-tools xorriso qemu-system-x86
+sudo apt install make curl git libarchive-tools xorriso qemu-system-x86
 ```
 
 ### Build prerequisites for Arch Linux and derivatives
 ```bash
-sudo pacman -S --needed make curl git mercurial libarchive xorriso qemu
+sudo pacman -S --needed make curl git libarchive xorriso qemu
 ```
 
 ### Building the distro
