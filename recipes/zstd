@@ -12,6 +12,7 @@ build() {
         CC=x86_64-lyre-gcc \
         CXX=x86_64-lyre-g++ \
         AR=x86_64-lyre-ar \
+        PREFIX="${prefix}" \
     make -j${parallelism}
 }
 
