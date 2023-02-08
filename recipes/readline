@@ -5,19 +5,20 @@ hostdeps="gcc autoconf automake libtool pkg-config"
 deps="core-libs ncurses"
 
 configure() {
-    ${source_dir}/configure    \
-        --host=x86_64-lyre    \
-        --prefix=${prefix}     \
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
         --sysconfdir=/etc \
         --localstatedir=/var \
-        --disable-static       \
-        --enable-multibyte
+        --disable-static \
+        --enable-multibyte \
+        --with-curses
 }
 
 build() {
-    make -j${parallelism}
+    make SHLIB_LIBS="-lncursesw" -j${parallelism}
 }
 
 install() {
-    make install DESTDIR="${dest_dir}"
+    make SHLIB_LIBS="-lncursesw" install DESTDIR="${dest_dir}"
 }

@@ -6,13 +6,14 @@ hostdeps="gcc autoconf automake libtool pkg-config"
 deps="core-libs ncurses readline"
 
 configure() {
-    ${source_dir}/configure    \
-        --host=x86_64-lyre    \
-        --prefix=${prefix}     \
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
         --sysconfdir=/etc \
         --localstatedir=/var \
         --without-bash-malloc  \
-        --disable-nls
+        --disable-nls \
+        --with-installed-readline="${sysroot}"/usr/lib
 }
 
 build() {
