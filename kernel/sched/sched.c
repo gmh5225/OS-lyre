@@ -221,7 +221,7 @@ void sched_yield(bool save_ctx) {
     interrupt_toggle(true);
 
     if (save_ctx) {
-        spinlock_acquire(&thread->yield_await);
+        spinlock_acquire_no_dead_check(&thread->yield_await);
         spinlock_release(&thread->yield_await);
     } else {
         for (;;) {
