@@ -27,4 +27,8 @@ install() {
     sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
 
     DESTDIR="${dest_dir}" make DESTDIR="${dest_dir}" MANSUFFIX=ssl install
+
+    x86_64-lyre-strip "${dest_dir}${prefix}"/bin/openssl
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libcrypto.so.1.1
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libssl.so.1.1
 }
