@@ -20,4 +20,6 @@ install() {
     make install DESTDIR="${dest_dir}"
     # We strip it manually because install-strip is broken.
     x86_64-lyre-strip "${dest_dir}${prefix}"/bin/less
+    x86_64-lyre-strip "${dest_dir}${prefix}"/bin/lessecho
+    x86_64-lyre-strip "${dest_dir}${prefix}"/bin/lesskey
 }
