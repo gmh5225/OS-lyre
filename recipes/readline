@@ -21,4 +21,7 @@ build() {
 
 install() {
     make SHLIB_LIBS="-lncursesw" install DESTDIR="${dest_dir}"
+
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libhistory.so.8
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libreadline.so.8
 }
