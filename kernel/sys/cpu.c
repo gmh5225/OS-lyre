@@ -192,7 +192,13 @@ struct cpu_local *cpus = NULL;
 
 void cpu_init(void) {
     uint32_t eax, ebx, ecx, edx;
-    if (cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
+
+    bool is_amd = cpuid(0, 0, &eax, &ebx, &ecx, &edx)
+               && ebx == 0x68747541
+               && edx == 0x69746e65
+               && ecx == 0x444d4163;
+
+    if (!is_amd && cpuid(1, 0, &eax, &ebx, &ecx, &edx) && (edx & CPUID_SEP)) {
         uint8_t old_ud_ist = idt_get_ist(0x06);
         uint8_t old_gp_ist = idt_get_ist(0x0d);
         void *old_ud_handler = isr[0x06];
