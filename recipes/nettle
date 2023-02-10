@@ -6,12 +6,12 @@ deps="core-libs gmp"
 imagedeps="gcc"
 
 configure() {
-    ${source_dir}/configure           \
-        --host=x86_64-lyre           \
-        --prefix=${prefix}            \
+    ${source_dir}/configure \
+        --host=x86_64-lyre \
+        --prefix=${prefix} \
         --sysconfdir=/etc \
         --localstatedir=/var \
-        --disable-documentation       \
+        --disable-documentation \
         --disable-static
 }
 
@@ -21,4 +21,8 @@ build() {
 
 install() {
     DESTDIR="${dest_dir}" make install
+
+    x86_64-lyre-strip "${dest_dir}${prefix}"/bin/*
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libhogweed.so.6.6
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libnettle.so.8.6
 }
