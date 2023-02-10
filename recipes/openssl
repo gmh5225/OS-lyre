@@ -31,4 +31,5 @@ install() {
     x86_64-lyre-strip "${dest_dir}${prefix}"/bin/openssl
     x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libcrypto.so.1.1
     x86_64-lyre-strip "${dest_dir}${prefix}"/lib/libssl.so.1.1
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/engines-1.1/*
 }
