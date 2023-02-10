@@ -40,4 +40,7 @@ install() {
 
     # Remove static libraries
     rm -rf "${dest_dir}${prefix}"/lib/*.a
+
+    # Strip
+    x86_64-lyre-strip "${dest_dir}${prefix}"/lib/{libformw.so,libmenuw.so,libncursesw.so,libpanelw.so,libtinfow.so}
 }
