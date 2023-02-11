@@ -12,8 +12,8 @@ int main(void) {
 
     for (;;) {
         if (access("/usr/bin/bash", X_OK) == -1) {
-                perror("init: /usr/bin/bash");
-                return EXIT_FAILURE;
+            perror("init: /usr/bin/bash");
+            return EXIT_FAILURE;
         }
 
         printf("\nWelcome to Lyre!\n");
@@ -22,8 +22,8 @@ int main(void) {
         int pid = fork();
 
         if (pid == -1) {
-                perror("init: fork failed");
-                return EXIT_FAILURE;
+            perror("init: fork failed");
+            return EXIT_FAILURE;
         }
 
         if (pid == 0) {
