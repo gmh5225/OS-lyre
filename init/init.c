@@ -11,7 +11,6 @@ int main(void) {
     setenv("PATH", "/usr/local/bin:/usr/bin", 1);
 
     for (;;) {
-
         if (access("/usr/bin/bash", X_OK) == -1) {
                 perror("init: /usr/bin/bash");
                 return EXIT_FAILURE;

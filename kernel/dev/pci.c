@@ -55,10 +55,10 @@ static uint32_t legacy_read(struct pci_device *dev, uint32_t offset, int access_
     #if defined (__x86_64__)
 
     uint32_t address = (1 << 31) | (offset & ~3) | (dev->func << 8) | (dev->slot << 11) | (dev->bus << 16);
-    outd(0xCF8, address);
-    uint32_t data = ind(0xCFC);
+    outd(0xcf8, address);
+    uint32_t data = ind(0xcfc);
 
-    data >>= (offset & 0x3)*8;
+    data >>= (offset & 0x3) * 8;
 
     switch (access_size) {
         case 1:
@@ -80,29 +80,29 @@ static void legacy_write(struct pci_device *dev, uint32_t offset, uint32_t value
     #if defined (__x86_64__)
 
     uint32_t address = (1 << 31) | (offset & ~3) | (dev->func << 8) | (dev->slot << 11) | (dev->bus << 16);
-    outd(0xCF8, address);
-    uint32_t oldval = ind(0xCFC);
+    outd(0xcf8, address);
+    uint32_t oldval = ind(0xcfc);
     uint32_t mask = 0;
 
     switch (access_size) {
         case 1:
-            mask = 0xFF;
+            mask = 0xff;
             break;
         case 2:
-            mask = 0xFFFF;
+            mask = 0xffff;
             break;
         case 4:
-            mask = 0xFFFFFFFF;
+            mask = 0xffffffff;
             break;
     }
 
-    int bitoffset = (offset & 3)*8;
+    int bitoffset = (offset & 3) * 8;
     value = (value & mask) << bitoffset;
     oldval &= ~(mask << bitoffset);
     oldval |= value;
 
-    outd(0xCF8, address);
-    outd(0xCFC, oldval);
+    outd(0xcf8, address);
+    outd(0xcf8, oldval);
 
     #else
     #error UNSUPPORTED ARCH
