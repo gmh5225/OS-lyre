@@ -8,6 +8,7 @@
 #include <lib/vector.h>
 #include <lib/print.h>
 #include <sys/cpu.h>
+#include <sys/port.h>
 
 struct mcfg_entry {
     uint64_t mmio_base;
@@ -49,6 +50,64 @@ void (*pci_write)(struct pci_device *, uint32_t, uint32_t, int);
 static VECTOR_TYPE(struct mcfg_entry) mcfg_entries = VECTOR_INIT;
 static VECTOR_TYPE(struct pci_device *) devlist = VECTOR_INIT;
 static void scan_bus(uint8_t bus);
+
+static uint32_t legacy_read(struct pci_device *dev, uint32_t offset, int access_size) {
+    #if defined (__x86_64__)
+
+    uint32_t address = (1 << 31) | (offset & ~3) | (dev->func << 8) | (dev->slot << 11) | (dev->bus << 16);
+    outd(0xcf8, address);
+    uint32_t data = ind(0xcfc);
+
+    data >>= (offset & 0x3) * 8;
+
+    switch (access_size) {
+        case 1:
+            return (uint8_t)data;
+        case 2:
+            return (uint16_t)data;
+        case 4:
+            return (uint32_t)data;
+    }
+
+    return 0;
+
+    #else
+    #error UNSUPPORTED ARCH
+    #endif
+}
+
+static void legacy_write(struct pci_device *dev, uint32_t offset, uint32_t value, int access_size){
+    #if defined (__x86_64__)
+
+    uint32_t address = (1 << 31) | (offset & ~3) | (dev->func << 8) | (dev->slot << 11) | (dev->bus << 16);
+    outd(0xcf8, address);
+    uint32_t oldval = ind(0xcfc);
+    uint32_t mask = 0;
+
+    switch (access_size) {
+        case 1:
+            mask = 0xff;
+            break;
+        case 2:
+            mask = 0xffff;
+            break;
+        case 4:
+            mask = 0xffffffff;
+            break;
+    }
+
+    int bitoffset = (offset & 3) * 8;
+    value = (value & mask) << bitoffset;
+    oldval &= ~(mask << bitoffset);
+    oldval |= value;
+
+    outd(0xcf8, address);
+    outd(0xcf8, oldval);
+
+    #else
+    #error UNSUPPORTED ARCH
+    #endif
+}
 
 static uint32_t mcfg_read(struct pci_device *dev, uint32_t offset, int access_size) {
     VECTOR_FOR_EACH(&mcfg_entries, ent,
@@ -247,8 +306,15 @@ void pci_init(void) {
     scan_root_bus();
     dispatch_drivers();
 
+    return;
+
 legacy:
-    // TODO: Support PCI access mechanism 1 (legacy PIO)
+
+    pci_read = legacy_read;
+    pci_write = legacy_write;
+    scan_root_bus();
+    dispatch_drivers();
+
     return;
 }
 
