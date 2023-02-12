@@ -48,7 +48,7 @@ cd "$BUILDDIR/cross-files"
 TRIPLET="$ARCH"-elf WANT_CROSS_LD=yes WANT_CROSS_STRIP=yes WANT_CROSS_OBJDUMP=yes "$SRCDIR/cross-detect/configure"
 ) || exit 1
 
-AC_SUBST([CROSS_FILE], [cross-files/$ARCH-toolchain.mk])
+AC_SUBST([CROSS_FILE], [cross-files/$ARCH-elf-toolchain.mk])
 
 m4_define([DEFAULT_CROSS_CFLAGS], [-g -O2 -pipe -Wall -Wextra])
 AC_ARG_VAR(CROSS_CFLAGS, [cross C flags @<:@default: ]DEFAULT_CROSS_CFLAGS[@:>@])
