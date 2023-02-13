@@ -7,6 +7,8 @@
 #include <lib/misc.h>
 #include <lib/panic.h>
 #include <lib/print.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
 
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,
@@ -144,6 +146,8 @@ void initramfs_init(void) {
         //         break;
         //     }
         // }
+
+        pmm_free((void *)current_file - VMM_HIGHER_HALF, (512 + ALIGN_UP(size, 512)) / PAGE_SIZE);
 
         current_file = (void *)current_file + 512 + ALIGN_UP(size, 512);
     }
