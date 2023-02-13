@@ -3,7 +3,7 @@ QEMUFLAGS ?= -M q35,smm=off -m 8G -boot order=dc -cdrom lyre.iso -serial stdio
 .PHONY: all
 all: jinx
 	rm -f builds/kernel.built builds/kernel.installed
-	./jinx build base-files init kernel
+	$(MAKE) distro-base
 	./build-support/makeiso.sh
 
 .PHONY: debug
@@ -20,7 +20,7 @@ distro-full: jinx
 
 .PHONY: distro-base
 distro-base: jinx
-	./jinx build bash coreutils init
+	./jinx build bash coreutils init nano less bpkg
 
 .PHONY: run-kvm
 run-kvm: lyre.iso

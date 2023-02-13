@@ -26,14 +26,26 @@ jobs:
       - name: Build ISO
         run: make all
 
+      - name: Rename lyre.iso
+        run: mv lyre.iso lyre-nightly-full-$(date +'%Y%m%d').iso
+
+      - name: Distclean
+        run: make distclean
+
+      - name: Build base distro
+        run: make distro-base
+
+      - name: Build ISO
+        run: make all
+
+      - name: Rename lyre.iso
+        run: mv lyre.iso lyre-nightly-base-$(date +'%Y%m%d').iso
+
       - name: Set TAG_DATE variable
         run: echo "TAG_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Tag new nightly release
         run: git tag nightly-$TAG_DATE && git push --tags
-
-      - name: Rename lyre.iso
-        run: mv lyre.iso lyre-nightly-$(date +'%Y%m%d').iso
 
       - name: Create nightly release
         uses: softprops/action-gh-release@v1
