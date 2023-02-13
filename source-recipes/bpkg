@@ -1,0 +1,9 @@
+name=bpkg
+version=1.00
+tarball_url="https://nishi.e3t.cc/pub/dist/bpkg/bpkg-${version}.tar.gz"
+tarball_blake2b="20ddbeb34fca6418d88cd3e7ffd4739274461b6203d95293c8b09532a1005133f9a81b6f88b9aa80692b7f400488c52d5786489713df6aec359ee10e449310fb"
+hostdeps="automake autoconf libtool pkg-config"
+
+regenerate() {
+    libtoolize -cfvi && autoreconf -fvi
+}

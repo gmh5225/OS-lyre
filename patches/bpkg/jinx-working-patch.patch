@@ -1,0 +1,171 @@
+diff --git bpkg-clean/Makefile.in bpkg-workdir/Makefile.in
+index 27187cb..cc01d8a 100644
+--- bpkg-clean/Makefile.in
++++ bpkg-workdir/Makefile.in
+@@ -1,26 +1,87 @@
+-PKG_PREFIX := /usr/bpkg
++# Following 2 lines needed for AC... vars
++override prefix := @prefix@
++override exec_prefix := @exec_prefix@
+ 
+-CC := @CC@
+-CFLAGS := @CFLAGS@ -DPREFIX=\"$(PKG_PREFIX)\"
++override ACBINDIR := @bindir@
+ 
+-BIN := @DIR@/bin
+-SRC := @DIR@/src
+-INC := @DIR@/include
+-OBJ := @DIR@/obj
++DESTDIR ?=
+ 
+-BPKG_REQUIRES := $(OBJ)/main.o $(OBJ)/refresh.o $(OBJ)/install.o $(OBJ)/util.o $(OBJ)/update.o $(OBJ)/remove.o $(OBJ)/list.o $(OBJ)/sha512.o $(OBJ)/keep.o $(OBJ)/unkeep.o $(OBJ)/clean.o
++define DEFAULT_VAR =
++    ifeq ($(origin $1),default)
++        override $(1) := $(2)
++    endif
++    ifeq ($(origin $1),undefined)
++        override $(1) := $(2)
++    endif
++endef
+ 
+-all: $(BIN)/bpkg
++$(eval $(call DEFAULT_VAR,CC,@CC@))
+ 
+-$(BIN)/bpkg: $(BPKG_REQUIRES)
+-	$(CC) $(CFLAGS) -o $@ $(BPKG_REQUIRES)
++CPPFLAGS ?= @CPPFLAGS@
++CFLAGS ?= @CFLAGS@
++override CFLAGS += \
++    -std=c89 \
++    -I@SRCDIR@/include $(shell curl-config --cflags) \
++    $(shell curl-config --libs) \
++    -lcrypto \
++    -DPREFIX=\"$(PREFIX)\" \
++    -MMD
++LDFLAGS ?= @LDFLAGS@
++LIBS ?= @LIBS@
++
++override MKDIR_P := @MKDIR_P@
++override INSTALL := @INSTALL@
++override INSTALL_PROGRAM := @INSTALL_PROGRAM@
++
++override SRC := @SRCDIR@/src
++override BIN := @BUILDDIR@/bin
++override OBJ := @BUILDDIR@/obj
++
++override BPKG_REQUIRES := \
++    $(OBJ)/main.o \
++    $(OBJ)/bpkg/refresh.o \
++    $(OBJ)/bpkg/install.o \
++    $(OBJ)/bpkg/util.o \
++    $(OBJ)/bpkg/update.o \
++    $(OBJ)/bpkg/remove.o \
++    $(OBJ)/bpkg/list.o \
++    $(OBJ)/bpkg/sha512.o \
++    $(OBJ)/bpkg/keep.o \
++    $(OBJ)/bpkg/unkeep.o \
++    $(OBJ)/bpkg/clean.o
++
++override HEADER_DEPS := $(BPKG_REQUIRES:.o=.d)
++
++-include $(HEADER_DEPS)
+ 
+-$(OBJ)/main.o: $(SRC)/main.c
+-	$(CC) $(CFLAGS) -c -o $@ $(SRC)/main.c
++.PHONY: all
++all:
++	$(MKDIR_P) $(BIN) $(OBJ)/bpkg
++	$(MAKE) $(BIN)/bpkg
+ 
+-$(OBJ)/%.o: $(SRC)/bpkg/%.c $(INC)/bpkg/%.h $(INC)/bpkg.h
+-	$(CC) $(CFLAGS) -c -o $@ $<
++.PHONY: install
++install: all
++	$(INSTALL) -d $(DESTDIR)$(ACBINDIR)
++	$(INSTALL_PROGRAM) $(BIN)/bpkg $(DESTDIR)$(ACBINDIR)/
+ 
++.PHONY: install-strip
++install-strip: install
++	@NATIVE_STRIP@ $(DESTDIR)$(ACBINDIR)/bpkg
++
++$(BIN)/bpkg: $(BPKG_REQUIRES)
++	$(CC) $(CFLAGS) $(LDFLAGS) $(BPKG_REQUIRES) $(LIBS) -o $@
++
++$(OBJ)/%.o: $(SRC)/%.c
++	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
++
++.PHONY: clean
+ clean:
+-	rm -rf $(OBJ)/*
+-	rm -rf $(BIN)/*
++	rm -rf $(OBJ) $(BIN)
++
++.PHONY: distclean
++distclean: clean
++	rm -rf config.log config.status Makefile
++
++.PHONY: maintainer-clean
++maintainer-clean: distclean
++	cd $(SRCDIR) && rm -rf configure build-aux *'~' autom4te.cache
+diff --git bpkg-clean/configure.ac bpkg-workdir/configure.ac
+index 5479948..71781a6 100644
+--- bpkg-clean/configure.ac
++++ bpkg-workdir/configure.ac
+@@ -1,29 +1,38 @@
+ AC_INIT(bpkg, [1.0.0])
+ 
+-mkdir -p ./bin
+-mkdir -p ./obj
++AC_CONFIG_AUX_DIR([build-aux])
+ 
+-CFLAGS="-std=c89 -g -I./include `curl-config --cflags` `curl-config --libs` -lcrypto"
++SRCDIR="$(cd "$srcdir" && pwd -P)"
++BUILDDIR="$(pwd -P)"
++
++AC_SUBST(SRCDIR)
++AC_SUBST(BUILDDIR)
++
++test "x$CFLAGS" = "x" && CFLAGS='-g -O2 -pipe -Wall -Wextra'
+ 
+ AC_LANG(C)
+ AC_PROG_CC([musl-gcc gcc clang])
+ 
+-AC_CHECK_HEADERS([
+-	stdio.h
+-        stdint.h
+-        stdlib.h
+-        stdbool.h
+-        string.h
+-        unistd.h
+-        sys/stat.h
+-        curl/curl.h
+-        openssl/sha.h
+-        dirent.h
+-        stddef.h
+-])
+-
+-DIR="`pwd`"
+-AC_SUBST(DIR)
++AC_CHECK_HEADERS([stdio.h stdint.h stdlib.h stdbool.h string.h unistd.h sys/stat.h curl/curl.h openssl/sha.h dirent.h stddef.h])
++
++AC_PROG_MKDIR_P
++case "$MKDIR_P" in
++    .*) MKDIR_P="$(cd "$(dirname "$MKDIR_P")" && pwd -P)/$(basename "$MKDIR_P")" ;;
++esac
++AC_PROG_INSTALL
++case "$INSTALL" in
++    .*) INSTALL="$(cd "$(dirname "$INSTALL")" && pwd -P)/$(basename "$INSTALL")" ;;
++esac
++
++NATIVE_STRIP="$($CC -dumpmachine)"-strip
++AC_CHECK_PROG([NATIVE_STRIP_FOUND], $NATIVE_STRIP, [yes])
++if ! test "x$NATIVE_STRIP_FOUND" = "xyes"; then
++    NATIVE_STRIP=strip
++fi
++
++AC_SUBST(NATIVE_STRIP)
++
++AC_PREFIX_DEFAULT([/usr/local])
+ 
+ AC_CONFIG_FILES([Makefile])
+ 
