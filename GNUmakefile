@@ -1,7 +1,11 @@
-QEMUFLAGS ?= -M q35,smm=off -m 8G -boot order=dc -cdrom lyre.iso -serial stdio
+QEMUFLAGS ?= -M q35,smm=off -m 8G -boot order=dc -cdrom lyre.iso -serial stdio -smp 4
 
 .PHONY: all
-all: jinx
+all:
+	rm -f lyre.iso
+	$(MAKE) lyre.iso
+
+lyre.iso: jinx
 	rm -f builds/kernel.built builds/kernel.installed
 	$(MAKE) distro-base
 	./build-support/makeiso.sh
@@ -24,23 +28,23 @@ distro-base: jinx
 
 .PHONY: run-kvm
 run-kvm: lyre.iso
-	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS) -smp 4
+	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS)
 
 .PHONY: run-hvf
 run-hvf: lyre.iso
-	qemu-system-x86_64 -accel hvf -cpu host $(QEMUFLAGS) -smp 4
+	qemu-system-x86_64 -accel hvf -cpu host $(QEMUFLAGS)
 
 ovmf:
 	mkdir -p ovmf
 	cd ovmf && curl -o OVMF-X64.zip https://efi.akeo.ie/OVMF/OVMF-X64.zip && 7z x OVMF-X64.zip
 
 .PHONY: run-uefi
-run-uefi: ovmf
-	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS) -smp 4 -bios ovmf/OVMF.fd
+run-uefi: lyre.iso ovmf
+	qemu-system-x86_64 -enable-kvm -cpu host $(QEMUFLAGS) -bios ovmf/OVMF.fd
 
 .PHONY: run
 run: lyre.iso
-	qemu-system-x86_64 $(QEMUFLAGS) -smp 4
+	qemu-system-x86_64 $(QEMUFLAGS)
 
 .PHONY: kernel-clean
 kernel-clean:
