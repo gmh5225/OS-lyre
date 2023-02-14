@@ -8,8 +8,9 @@
 #include <lib/debug.h>
 #include <abi-bits/stat.h>
 #include <abi-bits/poll.h>
+#include <mm/vmm.h>
 
-#define PIPE_BUF 4096
+#define PIPE_BUF (PAGE_SIZE * 16)
 
 struct pipe {
     struct resource;
@@ -18,10 +19,37 @@ struct pipe {
     size_t read_ptr;
     size_t write_ptr;
     size_t used;
+    size_t reader_count;
+    size_t writer_count;
 };
 
-static bool pipe_unref(struct resource *this, struct f_description *description) {
-    (void)description;
+static bool pipe_ref(struct resource *_this, struct f_description *description) {
+    struct pipe *this = (struct pipe *)_this;
+
+    ASSERT_MSG((description->flags & O_RDWR) == 0, "pipe with O_RDWR");
+
+    if (description->flags & O_WRONLY) {
+        __atomic_fetch_add(&this->writer_count, 1, __ATOMIC_SEQ_CST);
+    } else {
+        __atomic_fetch_add(&this->reader_count, 1, __ATOMIC_SEQ_CST);
+    }
+
+    __atomic_fetch_add(&this->refcount, 1, __ATOMIC_SEQ_CST); // XXX should be atomic
+    event_trigger(&this->event, false);
+    return true;
+}
+
+static bool pipe_unref(struct resource *_this, struct f_description *description) {
+    struct pipe *this = (struct pipe *)_this;
+
+    ASSERT_MSG((description->flags & O_RDWR) == 0, "pipe with O_RDWR");
+
+    if (description->flags & O_WRONLY) {
+        __atomic_fetch_sub(&this->writer_count, 1, __ATOMIC_SEQ_CST);
+    } else {
+        __atomic_fetch_sub(&this->reader_count, 1, __ATOMIC_SEQ_CST);
+    }
+
     __atomic_fetch_sub(&this->refcount, 1, __ATOMIC_SEQ_CST); // XXX should be atomic
     event_trigger(&this->event, false);
     return true;
@@ -36,7 +64,7 @@ static ssize_t pipe_read(struct resource *_this, struct f_description *descripti
     spinlock_acquire(&this->lock);
 
     while (this->used == 0) {
-        if (this->refcount < 2) {
+        if (this->writer_count == 0) {
             ret = 0;
             goto cleanup;
         }
@@ -108,6 +136,13 @@ static ssize_t pipe_write(struct resource *_this, struct f_description *descript
     ssize_t ret = 0;
     spinlock_acquire(&this->lock);
 
+    if (this->reader_count == 0) {
+        // TODO raise SIGPIPE
+        errno = EPIPE;
+        ret = -1;
+        goto cleanup;
+    }
+
     while (this->used == this->capacity) {
         spinlock_release(&this->lock);
 
@@ -169,6 +204,7 @@ static struct resource *pipe_create(void) {
     pipe->read = pipe_read;
     pipe->write = pipe_write;
     pipe->unref = pipe_unref;
+    pipe->ref = pipe_ref;
     pipe->capacity = PIPE_BUF;
     pipe->data = alloc(pipe->capacity);
     pipe->stat.st_mode = S_IFIFO;
@@ -203,13 +239,13 @@ int syscall_pipe(void *_, int pipe_fdnums[static 2], int flags) {
         goto cleanup;
     }
 
-    int read_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
+    int read_fd = fdnum_create_from_resource(proc, pipe, flags | O_RDONLY, 0, false);
     if (read_fd < 0) {
         free(pipe);
         goto cleanup;
     }
 
-    int write_fd = fdnum_create_from_resource(proc, pipe, flags, 0, false);
+    int write_fd = fdnum_create_from_resource(proc, pipe, flags | O_WRONLY, 0, false);
     if (write_fd < 0) {
         free(pipe);
         goto cleanup;
