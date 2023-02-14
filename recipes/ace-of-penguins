@@ -1,12 +1,16 @@
 name=ace-of-penguins
 from_source=ace-of-penguins
 revision=1
-imagedeps="meson ninja base-devel libpng"
-hostdeps="gcc binutils pkg-config"
-deps="mlibc libx11 libxpm libpng zlib"
+imagedeps="gcc libpng"
+hostdeps="gcc autoconf automake pkg-config libtool"
+deps="core-libs libx11 libxpm libpng zlib"
 
 configure() {
-    ${source_dir}/configure --prefix=${prefix} --host=x86_64-lyre
+    ${source_dir}/configure \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --prefix=${prefix} \
+        --host=x86_64-lyre
 }
 
 build() {
@@ -14,5 +18,5 @@ build() {
 }
 
 install() {
-    make DESTDIR=${dest_dir} install
+    DESTDIR="${dest_dir}" make install-strip
 }
