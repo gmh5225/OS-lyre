@@ -12,6 +12,7 @@ configure() {
         --sysconfdir=/etc \
         --localstatedir=/var \
         --disable-static \
+        --with-sysroot=${sysroot_dir} \
         --enable-xlib-xcb \
         --enable-xml \
         --enable-tee \
