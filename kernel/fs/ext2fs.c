@@ -1099,14 +1099,20 @@ static inline struct vfs_filesystem *ext2fs_instantiate(void) {
 static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, struct vfs_node *source) {
 
     struct ext2fs *new_fs = (struct ext2fs *)ext2fs_instantiate();
+    
+    if (new_fs == NULL) {
+        return NULL; // failed to instantiate filesystem
+    }
 
     source->resource->read(source->resource, NULL, &new_fs->sb, source->resource->stat.st_blksize * 2, sizeof(struct ext2fs_superblock));
 
     if (new_fs->sb.sig != 0xef53) {
+        free(new_fs);
         return NULL; // signature is not correct
     }
 
     if (new_fs->sb.vermaj < 1) {
+        free(new_fs);
         return NULL; // only supports newer revisions of the filesystem
     }
 
@@ -1120,15 +1126,18 @@ static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, 
 
     if (ext2fs_inodereadentry(&new_fs->root, new_fs, 2)) {
         kernel_print("ext2fs: unable to read root inode, aborted\n");
+        free(new_fs);
         return NULL;
     }
 
     struct vfs_node *node = vfs_create_node((struct vfs_filesystem *)new_fs, parent, name, true);
     if (node == NULL) {
+        free(new_fs);
         return NULL;
     }
     struct ext2fs_resource *resource = resource_create(sizeof(struct ext2fs_resource));
     if (resource == NULL) {
+        free(new_fs);
         return NULL;
     }
 
