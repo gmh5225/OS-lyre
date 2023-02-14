@@ -510,17 +510,12 @@ int syscall_openat(void *_, int dir_fdnum, const char *path, int flags, int mode
         goto cleanup;
     }
 
-    if (!S_ISREG(node->resource->stat.st_mode) && (flags & O_TRUNC) != 0) {
-        errno = EINVAL;
-        goto cleanup;
-    }
-
     struct f_descriptor *fd = fd_create_from_resource(node->resource, flags);
     if (fd == NULL) {
         goto cleanup;
     }
 
-    if ((flags & O_TRUNC) != 0) {
+    if ((flags & O_TRUNC) != 0 && S_ISREG(node->resource->stat.st_mode)) {
         node->resource->truncate(node->resource, fd->description, 0);
     }
 

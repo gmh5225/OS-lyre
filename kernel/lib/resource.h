@@ -27,6 +27,7 @@ struct resource {
     int (*ioctl)(struct resource *this, struct f_description *description, uint64_t request, uint64_t arg);
     void *(*mmap)(struct resource *this, size_t file_page, int flags);
     bool (*unref)(struct resource *this, struct f_description *description);
+    bool (*ref)(struct resource *this, struct f_description *description);
     bool (*truncate)(struct resource *this, struct f_description *description, size_t length);
 };
 
@@ -49,7 +50,7 @@ void *resource_create(size_t size);
 void resource_free(struct resource *res);
 dev_t resource_create_dev_id(void);
 
-bool fdnum_close(struct process *proc, int fdnum);
+bool fdnum_close(struct process *proc, int fdnum, bool lock);
 int fdnum_create_from_fd(struct process *proc, struct f_descriptor *fd, int old_fdnum, bool specific);
 int fdnum_create_from_resource(struct process *proc, struct resource *res, int flags,
                                int old_fdnum, bool specific);

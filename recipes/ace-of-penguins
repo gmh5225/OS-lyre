@@ -1,0 +1,22 @@
+name=ace-of-penguins
+from_source=ace-of-penguins
+revision=1
+imagedeps="gcc libpng"
+hostdeps="gcc autoconf automake pkg-config libtool"
+deps="core-libs libx11 libxpm libpng zlib"
+
+configure() {
+    ${source_dir}/configure \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --prefix=${prefix} \
+        --host=x86_64-lyre
+}
+
+build() {
+    make -j${parallelism}
+}
+
+install() {
+    DESTDIR="${dest_dir}" make install-strip
+}
