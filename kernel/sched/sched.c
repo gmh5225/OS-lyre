@@ -497,6 +497,7 @@ struct thread *sched_new_user_thread(struct process *proc, void *pc, void *arg, 
 
         // Auxilary vector
         *(--stack) = 0, *(--stack) = 0;
+        stack -= 2; stack[0] = AT_SECURE, stack[1] = 0;
         stack -= 2; stack[0] = AT_ENTRY, stack[1] = auxval->at_entry;
         stack -= 2; stack[0] = AT_PHDR,  stack[1] = auxval->at_phdr;
         stack -= 2; stack[0] = AT_PHENT, stack[1] = auxval->at_phent;
