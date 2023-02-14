@@ -1,0 +1,18 @@
+name=ace-of-penguins
+from_source=ace-of-penguins
+revision=1
+imagedeps="meson ninja base-devel libpng"
+hostdeps="gcc binutils pkg-config"
+deps="mlibc libx11 libxpm libpng zlib"
+
+configure() {
+    ${source_dir}/configure --prefix=${prefix} --host=x86_64-lyre
+}
+
+build() {
+    make -j${parallelism}
+}
+
+install() {
+    make DESTDIR=${dest_dir} install
+}
