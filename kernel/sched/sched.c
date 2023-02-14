@@ -714,7 +714,7 @@ int syscall_exit(void *_, int status) {
     thread->process = kernel_process;
 
     for (int i = 0; i < MAX_FDS; i++) {
-        fdnum_close(proc, i);
+        fdnum_close(proc, i, true);
     }
 
     if (proc->pid != -1) {

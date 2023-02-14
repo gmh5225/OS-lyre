@@ -62,6 +62,12 @@ static void *stub_mmap(struct resource *this, size_t file_page, int flags) {
     return NULL;
 }
 
+static bool stub_ref(struct resource *this, struct f_description *description) {
+    (void)description;
+    this->refcount++;
+    return true;
+}
+
 static bool stub_unref(struct resource *this, struct f_description *description) {
     (void)this;
     (void)description;
@@ -88,6 +94,7 @@ void *resource_create(size_t size) {
     res->write = stub_write;
     res->ioctl = resource_default_ioctl;
     res->mmap = stub_mmap;
+    res->ref = stub_ref;
     res->unref = stub_unref;
     res->truncate = stub_truncate;
     return res;
@@ -106,13 +113,16 @@ dev_t resource_create_dev_id(void) {
     return ret;
 }
 
-bool fdnum_close(struct process *proc, int fdnum) {
+bool fdnum_close(struct process *proc, int fdnum, bool lock) {
     if (proc == NULL) {
         proc = sched_current_thread()->process;
     }
 
     bool ok = false;
-    spinlock_acquire(&proc->fds_lock);
+
+    if (lock) {
+        spinlock_acquire(&proc->fds_lock);
+    }
 
     if (fdnum < 0 || fdnum >= MAX_FDS) {
         errno = EBADF;
@@ -137,7 +147,9 @@ bool fdnum_close(struct process *proc, int fdnum) {
     proc->fds[fdnum] = NULL;
 
 cleanup:
-    spinlock_release(&proc->fds_lock);
+    if (lock) {
+        spinlock_release(&proc->fds_lock);
+    }
     return ok;
 }
 
@@ -163,8 +175,7 @@ int fdnum_create_from_fd(struct process *proc, struct f_descriptor *fd, int old_
             }
         }
     } else {
-        // TODO: Close an existing descriptor without deadlocking :^)
-        // fdnum_close(proc, old_fdnum);
+        fdnum_close(proc, old_fdnum, false);
         proc->fds[old_fdnum] = fd;
         res = old_fdnum;
     }
@@ -224,14 +235,12 @@ int fdnum_dup(struct process *old_proc, int old_fdnum, struct process *new_proc,
     }
 
     old_fd->description->refcount++;
-    old_fd->description->res->refcount++;
+    old_fd->description->res->ref(old_fd->description->res, old_fd->description);
 
     return new_fdnum;
 }
 
 struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
-    res->refcount++;
-
     struct f_description *description = ALLOC(struct f_description);
     if (description == NULL) {
         goto fail;
@@ -246,13 +255,12 @@ struct f_descriptor *fd_create_from_resource(struct resource *res, int flags) {
     if (fd == NULL) {
         goto fail;
     }
-
+    res->ref(res, description);
     fd->description = description;
     fd->flags = flags & FILE_DESCRIPTOR_FLAGS_MASK;
     return fd;
 
 fail:
-    res->refcount--;
     if (description != NULL) {
         free(description);
     }
@@ -292,7 +300,7 @@ int syscall_close(void *_, int fdnum) {
 
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
-    int ret = fdnum_close(proc, fdnum) ? 0 : -1;
+    int ret = fdnum_close(proc, fdnum, true) ? 0 : -1;
 
     DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
