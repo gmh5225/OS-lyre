@@ -32,4 +32,6 @@ install() {
     x86_64-lyre-strip "${dest_dir}${prefix}"/lib/{libgailutil-3.so.0.0.0,libgdk-3.so.0.2404.32,libgtk-3.so.0.2404.32}
     x86_64-lyre-strip "${dest_dir}${prefix}"/lib/gtk-3.0/3.0.0/immodules/*
     x86_64-lyre-strip "${dest_dir}${prefix}"/lib/gtk-3.0/3.0.0/printbackends/*
+
+    glib-compile-schemas "${dest_dir}${prefix}"/share/glib-2.0/schemas
 }
