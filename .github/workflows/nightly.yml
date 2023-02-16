@@ -20,17 +20,17 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install make curl git mercurial libarchive-tools xorriso -y
 
-      - name: Build distro
-        run: make distro-full
+      #- name: Build distro
+      #  run: make distro-full
 
-      - name: Build ISO
-        run: make all
+      #- name: Build ISO
+      #  run: make all
 
-      - name: Rename lyre.iso
-        run: mv lyre.iso lyre-nightly-full-$(date +'%Y%m%d').iso
+      #- name: Rename lyre.iso
+      #  run: mv lyre.iso lyre-nightly-full-$(date +'%Y%m%d').iso
 
-      - name: Distclean
-        run: make distclean
+      #- name: Distclean
+      #  run: make distclean
 
       - name: Build base distro
         run: make distro-base
