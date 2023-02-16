@@ -653,6 +653,7 @@ static void nvme_initcontroller(struct pci_device *device) {
 
     ASSERT_MSG(bar.is_mmio, "PCI bar is not memory mapped!");
     ASSERT((PCI_READD(device, 0x10) & 0b111) == 0b100);
+    ASSERT(pci_map_bar(bar));
 
     controller_res->bar = (struct nvme_bar *)(bar.base);
     pci_set_privl(device, PCI_PRIV_MMIO | PCI_PRIV_BUSMASTER);

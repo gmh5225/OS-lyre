@@ -1019,7 +1019,6 @@ static void ext2fs_populate(struct vfs_filesystem *_this, struct vfs_node *node)
 
         if (S_ISDIR(mode)) {
             vfs_create_dotentries(fnode, node); // set up for correct directory structure
-            ext2fs_populate((struct vfs_filesystem *)fs, fnode); // recurse filesystem
         }
 
         if (S_ISLNK(mode)) {
@@ -1156,8 +1155,6 @@ static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, 
     resource->fs = new_fs;
 
     node->resource = (struct resource *)resource;
-
-    ext2fs_populate((struct vfs_filesystem *)new_fs, node); // recursively fill vfs with filesystem
 
     return node; // root node (will become child of parent)
 }

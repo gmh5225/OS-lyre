@@ -418,7 +418,7 @@ struct pci_bar pci_get_bar(struct pci_device *d, uint8_t index) {
 
     if (base_low & 1) {
         result.base = base_low & ~0b11;
-        result.len  = ~(size_low & 0b11) + 1;
+        result.len  = ~(size_low & ~0b11) + 1;
     } else {
         int type = (base_low >> 1) & 3;
         uint32_t base_high = PCI_READD(d, offset + 4);
@@ -428,7 +428,7 @@ struct pci_bar pci_get_bar(struct pci_device *d, uint8_t index) {
             result.base |= ((uint64_t)base_high << 32);
         }
 
-        result.len = ~(size_low & 0b1111) + 1;
+        result.len = ~(size_low & ~0b1111) + 1;
         result.is_mmio = true;
     }
 
@@ -467,3 +467,31 @@ struct pci_device *pci_get_device_by_vendor(uint16_t vendor, uint16_t id, size_t
     return NULL;
 }
 
+bool pci_map_bar(struct pci_bar bar) {
+    if (bar.is_mmio == false) {
+        return false;
+    }
+
+    uintptr_t pagebase = ALIGN_DOWN(bar.base, PAGE_SIZE);
+    uintptr_t end = ALIGN_UP(bar.base + bar.len, PAGE_SIZE);
+    bool mapped = true;
+
+    for (uintptr_t offset = 0; offset < end - pagebase && mapped; offset += PAGE_SIZE) {
+        if (vmm_virt2phys(vmm_kernel_pagemap, pagebase + offset) == INVALID_PHYS) {
+            mapped = false;
+        }
+    }
+
+    if (mapped == false) {
+        for (uintptr_t offset = 0; offset < end - pagebase; offset += PAGE_SIZE) {
+            vmm_unmap_page(vmm_kernel_pagemap, pagebase + offset, false); // without this vmm_map_page will fail if a part of the bar was mapped
+            vmm_unmap_page(vmm_kernel_pagemap, pagebase + offset + VMM_HIGHER_HALF, false);
+            if (vmm_map_page(vmm_kernel_pagemap, pagebase + offset, pagebase + offset, PTE_PRESENT | PTE_WRITABLE | PTE_NX) == false ||
+                vmm_map_page(vmm_kernel_pagemap, pagebase + offset + VMM_HIGHER_HALF, pagebase + offset, PTE_PRESENT | PTE_WRITABLE | PTE_NX) == false){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
