@@ -57,6 +57,7 @@ struct pci_driver {
 extern uint32_t (*pci_read)(struct pci_device *, uint32_t, int);
 extern void (*pci_write)(struct pci_device *, uint32_t, uint32_t, int);
 
+bool pci_map_bar(struct pci_bar bar);
 void pci_set_privl(struct pci_device *d, uint16_t privilege);
 bool pci_setmask(struct pci_device *d, size_t index, bool masked);
 bool pci_enable_irq(struct pci_device *d, size_t index, int vec);
