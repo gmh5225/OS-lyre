@@ -67,6 +67,14 @@ struct path2node_res {
     char *basename;
 };
 
+static bool populate(struct vfs_node *node) {
+    if (node->filesystem && node->filesystem->populate && node->populated == false && node->resource && S_ISDIR(node->resource->stat.st_mode)) {
+        node->filesystem->populate(node->filesystem, node);
+        return node->populated;
+    }
+    return true;
+}
+
 static struct vfs_node *reduce_node(struct vfs_node *node, bool follow_symlinks);
 
 static struct path2node_res path2node(struct vfs_node *parent, const char *path) {
@@ -81,6 +89,9 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
 
     size_t index = 0;
     struct vfs_node *current_node = reduce_node(parent, false);
+    if (!populate(current_node)) {
+        return (struct path2node_res){NULL, NULL, NULL};
+    }
 
     if (path[index] == '/') {
         current_node = reduce_node(vfs_root, false);
@@ -124,6 +135,9 @@ static struct path2node_res path2node(struct vfs_node *parent, const char *path)
         }
 
         new_node = reduce_node(new_node, false);
+        if (!populate(new_node)) {
+            return (struct path2node_res){NULL, NULL, NULL};
+        }
 
         if (last) {
             if (ask_for_dir && !S_ISDIR(new_node->resource->stat.st_mode)) {
