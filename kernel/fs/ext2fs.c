@@ -723,7 +723,7 @@ static bool ext2fs_restruncate(struct resource *_this, struct f_description *des
     this->stat.st_atim = time_realtime;
     this->stat.st_mtim = time_realtime;
     curinode.accesstime = this->stat.st_atim.tv_sec;
-    curinode.modifiedtime = this->stat.st_mtim.tv_sec;  
+    curinode.modifiedtime = this->stat.st_mtim.tv_sec;
 
     if (length > EXT2FS_INODESIZE(&curinode)) {
         ext2fs_inodegrow(&curinode, this->fs, this->stat.st_ino, 0, length); // grow
@@ -1086,7 +1086,6 @@ static inline struct vfs_filesystem *ext2fs_instantiate(void) {
         return NULL;
     }
 
-    new_fs->mount = ext2fs_mount;
     new_fs->create = ext2fs_create;
     new_fs->populate = ext2fs_populate;
     new_fs->symlink = ext2fs_symlink;
@@ -1098,7 +1097,7 @@ static inline struct vfs_filesystem *ext2fs_instantiate(void) {
 static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, struct vfs_node *source) {
 
     struct ext2fs *new_fs = (struct ext2fs *)ext2fs_instantiate();
-    
+
     if (new_fs == NULL) {
         return NULL; // failed to instantiate filesystem
     }
@@ -1160,10 +1159,5 @@ static struct vfs_node *ext2fs_mount(struct vfs_node *parent, const char *name, 
 }
 
 void ext2fs_init(void) {
-    struct vfs_filesystem *new_fs = ext2fs_instantiate();
-    if (new_fs == NULL) {
-        panic(NULL, false, "Failed to instantiate ext2fs");
-    }
-
-    vfs_add_filesystem(new_fs, "ext2fs");
+    vfs_add_filesystem(ext2fs_mount, "ext2fs");
 }

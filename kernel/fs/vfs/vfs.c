@@ -43,12 +43,12 @@ void vfs_create_dotentries(struct vfs_node *node, struct vfs_node *parent) {
     HASHMAP_SINSERT(&node->children, "..", dotdot);
 }
 
-static HASHMAP_TYPE(struct vfs_filesystem *) filesystems;
+static HASHMAP_TYPE(fs_mount_t) filesystems;
 
-void vfs_add_filesystem(struct vfs_filesystem *fs, const char *identifier) {
+void vfs_add_filesystem(fs_mount_t fs_mount, const char *identifier) {
     spinlock_acquire(&vfs_lock);
 
-    HASHMAP_SINSERT(&filesystems, identifier, fs);
+    HASHMAP_SINSERT(&filesystems, identifier, fs_mount);
 
     spinlock_release(&vfs_lock);
 }
@@ -242,8 +242,8 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
     bool ret = false;
     struct path2node_res r = {0};
 
-    struct vfs_filesystem *fs;
-    if (!HASHMAP_SGET(&filesystems, fs, fs_name)) {
+    fs_mount_t fs_mount;
+    if (!HASHMAP_SGET(&filesystems, fs_mount, fs_name)) {
         errno = ENODEV;
         goto cleanup;
     }
@@ -278,7 +278,7 @@ bool vfs_mount(struct vfs_node *parent, const char *source, const char *target,
         goto cleanup;
     }
 
-    struct vfs_node *mount_node = fs->mount(r.target_parent, r.basename, source_node);
+    struct vfs_node *mount_node = fs_mount(r.target_parent, r.basename, source_node);
     if (mount_node == NULL) {
         goto cleanup; // failed to mount
     }
