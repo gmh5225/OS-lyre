@@ -744,8 +744,6 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
     (void)flags;
     struct ext2fs_resource *this = (struct ext2fs_resource *)_this;
 
-    spinlock_acquire(&this->lock);
-
     void *ret = NULL;
 
     ret = pmm_alloc_nozero(1);
@@ -756,7 +754,6 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
     this->read(_this, NULL, (void *)((uint64_t)ret + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE);
 
 cleanup:
-    spinlock_release(&this->lock);
     return ret;
 }
 
