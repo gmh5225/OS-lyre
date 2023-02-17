@@ -48,6 +48,10 @@ jobs:
           mkdir ../mlibc-headers
           DESTDIR=`realpath ../mlibc-headers` ninja install
 
+      - name: Fetch limine.h
+        run: |
+          curl -o mlibc-headers/include/limine.h https://raw.githubusercontent.com/limine-bootloader/limine/trunk/limine.h
+
       - name: Attempt to build the Lyre kernel (debug)
         run: |
           cd kernel
