@@ -56,8 +56,10 @@ override CROSS_CFLAGS += \
     -Wshadow \
     -MMD \
     -Ddebug=$(LYRE_DEBUG) \
+    -DPRINTF_DISABLE_SUPPORT_FLOAT \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
-    -I'$(call SHESCAPE,$(SRCDIR))'
+    -I'$(call SHESCAPE,$(SRCDIR))' \
+    -I'$(call SHESCAPE,$(SRCDIR))/contrib/mpaland-printf'
 
 # Internal linker flags that should not be changed by the user.
 override CROSS_LDFLAGS += \

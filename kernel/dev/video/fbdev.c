@@ -10,6 +10,7 @@
 #include <lib/resource.h>
 #include <mm/vmm.h>
 #include <linux/fb.h>
+#include <printf.h>
 
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST,
@@ -151,10 +152,10 @@ void fbdev_init(void) {
         device->variable.width = -1;
         device->variable.height = -1;
 
-        snprint(device->fixed.id, sizeof(device->fixed.id), "limine-fb%lu", i);
+        snprintf(device->fixed.id, sizeof(device->fixed.id), "limine-fb%lu", i);
 
         char device_name[32];
-        snprint(device_name, sizeof(device_name) - 1, "fb%lu", i);
+        snprintf(device_name, sizeof(device_name) - 1, "fb%lu", i);
         devtmpfs_add_device((struct resource *)device, device_name);
     }
 }

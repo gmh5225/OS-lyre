@@ -2,6 +2,7 @@
 #include <fs/devtmpfs.h>
 #include <lib/libc.h>
 #include <lib/print.h>
+#include <printf.h>
 
 struct mbr_entry {
     uint8_t status;
@@ -130,7 +131,7 @@ void partition_enum(struct resource *root, const char *rootname, uint16_t blocks
         part_res->read = readpart;
         part_res->ioctl = resource_default_ioctl;
         char partname[64];
-        snprint(partname, sizeof(partname) - 1, convention, rootname, i + 1);
+        snprintf(partname, sizeof(partname) - 1, convention, rootname, i + 1);
         devtmpfs_add_device((struct resource *)part_res, partname);
     }
     return;
@@ -167,7 +168,7 @@ mbr:
         part_res->read = readpart;
         part_res->ioctl = resource_default_ioctl;
         char partname[64];
-        snprint(partname, sizeof(partname) - 1, convention, rootname, i + 1);
+        snprintf(partname, sizeof(partname) - 1, convention, rootname, i + 1);
         devtmpfs_add_device((struct resource *)part_res, partname);
     }
 }

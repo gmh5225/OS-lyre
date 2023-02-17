@@ -6,6 +6,7 @@
 #include <lib/print.h>
 #include <lib/resource.h>
 #include <mm/vmm.h>
+#include <printf.h>
 
 // capabilities for the nvme controller
 struct nvme_id {
@@ -238,7 +239,7 @@ struct nvme_bar {
 struct nvme_queue {
     volatile struct nvme_cmd *submit;
     volatile struct nvme_cmdcomp *completion;
-    volatile uint32_t *submitdb;  
+    volatile uint32_t *submitdb;
     volatile uint32_t *completedb;
     uint16_t elements; // elements in queue
     uint16_t cqvec;
@@ -285,7 +286,7 @@ struct nvme_nsdevice {
     size_t maxphysrpgs;
     size_t overwritten;
     size_t cacheblocksize;
-    struct cachedblock *cache; 
+    struct cachedblock *cache;
 };
 
 static size_t nvme_devcount = 0;
@@ -340,7 +341,7 @@ static uint16_t nvme_awaitsubmitcmd(struct nvme_queue *queue, struct nvme_cmd cm
     uint16_t phase = queue->cqphase;
     cmd.common.cid = queue->cmdid++;
     nvme_submitcmd(queue, cmd);
-    uint16_t status = 0; 
+    uint16_t status = 0;
 
     while (true) {
         status = queue->completion[queue->cqhead].status;
@@ -446,7 +447,7 @@ static ssize_t nvme_nsid(struct nvme_nsdevice *ns, struct nvme_nsid *nsid) {
     cmd.identify.prp1 = (uint64_t)nsid - VMM_HIGHER_HALF;
     uint16_t status = nvme_awaitsubmitcmd(&ns->controller->adminqueue, cmd);
     if (status != 0) {
-        return -1; 
+        return -1;
     }
     return 0;
 }
@@ -544,7 +545,7 @@ static ssize_t nvme_read(struct resource *_this, struct f_description *descripti
     (void)description;
     spinlock_acquire(&_this->lock);
     struct nvme_nsdevice *this = (struct nvme_nsdevice *)_this;
-    
+
     for (size_t progress = 0; progress < count;) {
         uint64_t sector = (loc + progress) / this->cacheblocksize;
         int slot = nvme_findblock(this, sector); // find a cache associated with this block
@@ -619,7 +620,7 @@ static void nvme_initnamespace(size_t id, struct nvme_device *controller) {
     nsdev_res->maxphysrpgs = (maxlbas * (1 << lbashift)) / PAGE_SIZE;
 
     ASSERT_MSG(!nvme_createqueues(controller, nsdev_res, id), "nvme: failed to create IO queues");
- 
+
     nsdev_res->cache = alloc(sizeof(struct cachedblock) * 512); // set up our cache
     nsdev_res->lbasize = 1 << nsid->lbaf[formattedlba].ds;
     nsdev_res->cacheblocksize = nsdev_res->lbasize * 4; // cache disk blocks in each cache block (less time spent dealing with block reads from disk and overwrites)
@@ -638,7 +639,7 @@ static void nvme_initnamespace(size_t id, struct nvme_device *controller) {
     nsdev_res->stat.st_mode = 0666 | S_IFBLK;
 
     char devname[32];
-    snprint(devname, sizeof(devname) - 1, "nvme%lun%lu", nvme_devcount, id);
+    snprintf(devname, sizeof(devname) - 1, "nvme%lun%lu", nvme_devcount, id);
     devtmpfs_add_device((struct resource *)nsdev_res, devname);
 
     kernel_print("nvme: attempting to enumerate partitions on /dev/%s\n", devname);
@@ -657,7 +658,7 @@ static void nvme_initcontroller(struct pci_device *device) {
 
     controller_res->bar = (struct nvme_bar *)(bar.base);
     pci_set_privl(device, PCI_PRIV_MMIO | PCI_PRIV_BUSMASTER);
-    
+
     uint32_t conf = controller_res->bar->conf;
     if (conf & (1 << 0)) { // controller enabled?
         conf &= ~(1 << 0); // disable controller
@@ -665,7 +666,7 @@ static void nvme_initcontroller(struct pci_device *device) {
     }
 
     while ((controller_res->bar->status) & (1 << 0)); // await controller ready
-    
+
     controller_res->stride = NVME_CAPSTRIDE(controller_res->bar->capabilities);
     controller_res->queueslots = NVME_CAPMQES(controller_res->bar->capabilities);
     nvme_createaqueue(controller_res, &controller_res->adminqueue, controller_res->queueslots, 0); // intialise first queue
@@ -688,7 +689,7 @@ static void nvme_initcontroller(struct pci_device *device) {
 
     struct nvme_id *id = (struct nvme_id *)alloc(sizeof(struct nvme_id));
     ASSERT_MSG(!nvme_identify(controller_res, id), "nvme: failed to idenfity NVMe controller");
-    
+
     uint32_t *nsids = alloc(DIV_ROUNDUP(id->nn * 4, PAGE_SIZE));
 
     struct nvme_cmd getns = { 0 };
@@ -713,14 +714,14 @@ static void nvme_initcontroller(struct pci_device *device) {
     controller_res->write = NULL;
     controller_res->ioctl = resource_default_ioctl;
     char devname[32];
-    snprint(devname, 32, "nvme%lu", nvme_devcount);
+    snprintf(devname, 32, "nvme%lu", nvme_devcount);
     devtmpfs_add_device((struct resource *)controller_res, devname);
 
     nvme_devcount++; // keep track for device name purposes (officially done with this controller)
 }
 
 static struct pci_driver nvme_driver = {
-    .name = "nvme", 
+    .name = "nvme",
     .match = PCI_MATCH_CLASS | PCI_MATCH_SUBCLASS | PCI_MATCH_PROG_IF,
     .init = nvme_initcontroller,
     .pci_class = 0x01,

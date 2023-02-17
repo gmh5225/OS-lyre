@@ -10,6 +10,7 @@ cd "$srcdir"
 [ -d cross-detect ] || git clone https://github.com/mintsuki/cross-detect.git
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
+[ -d contrib/mpaland-printf ] || git clone https://github.com/mpaland/printf.git contrib/mpaland-printf
 
 automake_libdir="$(automake --print-libdir)"
 
