@@ -962,8 +962,7 @@ static void ext2fs_populate(struct vfs_filesystem *_this, struct vfs_node *node)
         strncpy(namebuf, direntry->name, direntry->namelen);
 
         if (direntry->inodeidx == 0) {
-            free(namebuf);
-            goto cleanup;
+            goto next;
         }
 
         if (!strcmp(namebuf, ".") || !strcmp(namebuf, "..")) {
@@ -1028,11 +1027,12 @@ static void ext2fs_populate(struct vfs_filesystem *_this, struct vfs_node *node)
             free(linkbuffer); // free current context
         }
 
+next:
+        free(namebuf);
         i += direntry->entsize;
     }
 
     node->populated = true; // we already populated this node with all existing files
-cleanup:
     free(buf);
     return;
 }
