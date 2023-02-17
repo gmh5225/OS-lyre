@@ -9,6 +9,7 @@
 /lyre.iso
 /initramfs.tar
 /.vscode
+/.jinx-cache
 /ovmf
 *.hdd
 *.elf
