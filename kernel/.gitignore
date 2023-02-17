@@ -5,7 +5,6 @@
 *.hdd
 *.iso
 /compile_commands.json
-/limine.h
 /cross-detect
 /cross-files
 /freestanding-headers

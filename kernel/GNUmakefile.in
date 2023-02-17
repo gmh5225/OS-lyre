@@ -130,7 +130,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries cross-detect limine.h configure build-aux *'~' autom4te.cache
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries cross-detect configure build-aux *'~' autom4te.cache
 
 .PHONY: install
 install:
