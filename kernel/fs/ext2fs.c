@@ -760,6 +760,14 @@ cleanup:
     return ret;
 }
 
+static bool ext2fs_resmsync(struct resource *_this, size_t file_page, void *phys, int flags) {
+    (void)_this;
+    (void)file_page;
+    (void)phys;
+    (void)flags;
+    panic(NULL, true, "unimplemented");
+}
+
 static bool ext2fs_resunref(struct resource *_this, struct f_description *description) {
     struct ext2fs_resource *this = (struct ext2fs_resource *)_this;
 
@@ -832,6 +840,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
     resource->write = ext2fs_reswrite;
     resource->truncate = ext2fs_restruncate;
     resource->mmap = ext2fs_resmmap;
+    resource->msync = ext2fs_resmsync;
     resource->unref = ext2fs_resunref;
 
     resource->stat.st_size = 0;

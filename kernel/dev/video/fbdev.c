@@ -96,6 +96,14 @@ static void *fbdev_mmap(struct resource *this_, size_t file_page, int flags) {
     return (this->framebuffer->address + offset) - VMM_HIGHER_HALF;
 }
 
+static bool fbdev_msync(struct resource *_this, size_t file_page, void *phys, int flags) {
+    (void)_this;
+    (void)file_page;
+    (void)phys;
+    (void)flags;
+    return true;
+}
+
 void fbdev_init(void) {
     struct limine_framebuffer_response *framebuffer_response = framebuffer_request.response;
     if (framebuffer_response == NULL || framebuffer_response->framebuffer_count == 0) {
@@ -116,6 +124,7 @@ void fbdev_init(void) {
         device->write = fbdev_write;
         device->ioctl = fbdev_ioctl;
         device->mmap = fbdev_mmap;
+        device->msync = fbdev_msync;
         device->framebuffer = framebuffer;
 
         device->stat.st_size = 0;

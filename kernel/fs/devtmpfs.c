@@ -111,6 +111,21 @@ cleanup:
     return ret;
 }
 
+static bool devtmpfs_resource_msync(struct resource *_this, size_t file_page, void *phys, int flags) {
+    if ((flags & MAP_SHARED) != 0) {
+        return true;
+    }
+
+    struct devtmpfs_resource *this = (struct devtmpfs_resource *)_this;
+
+    spinlock_acquire(&this->lock);
+
+    memcpy(this->data + file_page * PAGE_SIZE, phys + VMM_HIGHER_HALF, PAGE_SIZE);
+
+    spinlock_release(&this->lock);
+    return true;
+}
+
 static bool devtmpfs_truncate(struct resource *this_, struct f_description *description, size_t length) {
     (void)description;
 
@@ -159,6 +174,7 @@ static inline struct devtmpfs_resource *create_devtmpfs_resource(struct devtmpfs
     resource->read = devtmpfs_resource_read;
     resource->write = devtmpfs_resource_write;
     resource->mmap = devtmpfs_resource_mmap;
+    resource->msync = devtmpfs_resource_msync;
     resource->truncate = devtmpfs_truncate;
 
     resource->stat.st_size = 0;

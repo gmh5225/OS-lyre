@@ -108,6 +108,21 @@ cleanup:
     return ret;
 }
 
+static bool tmpfs_resource_msync(struct resource *_this, size_t file_page, void *phys, int flags) {
+    if ((flags & MAP_SHARED) != 0) {
+        return true;
+    }
+
+    struct tmpfs_resource *this = (struct tmpfs_resource *)_this;
+
+    spinlock_acquire(&this->lock);
+
+    memcpy(this->data + file_page * PAGE_SIZE, phys + VMM_HIGHER_HALF, PAGE_SIZE);
+
+    spinlock_release(&this->lock);
+    return true;
+}
+
 static bool tmpfs_truncate(struct resource *this_, struct f_description *description, size_t length) {
     (void)description;
 
@@ -156,6 +171,7 @@ static inline struct tmpfs_resource *create_tmpfs_resource(struct tmpfs *this, i
     resource->read = tmpfs_resource_read;
     resource->write = tmpfs_resource_write;
     resource->mmap = tmpfs_resource_mmap;
+    resource->msync = tmpfs_resource_msync;
     resource->truncate = tmpfs_truncate;
 
     resource->stat.st_size = 0;
