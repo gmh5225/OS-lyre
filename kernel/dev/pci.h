@@ -20,6 +20,8 @@ struct pci_device {
 
     bool msi_supported, msix_supported;
     uint16_t msi_offset, msix_offset;
+    bool pcie_supported;
+    uint16_t pcie_offset; 
 };
 
 struct pci_bar {
@@ -35,13 +37,16 @@ struct pci_driver {
     void (*init)(struct pci_device *);
 
     uint8_t pci_class, subclass, prog_if;
-    uint16_t vendor, device;
+    uint16_t vendor;
+    uint8_t devcount;
+    uint16_t devices[];
 };
 
 #define PCI_MATCH_CLASS (1 << 0)
 #define PCI_MATCH_SUBCLASS (1 << 1)
 #define PCI_MATCH_PROG_IF (1 << 2)
 #define PCI_MATCH_DEVICE (1 << 3)
+#define PCI_MATCH_VENDOR (1 << 4)
 
 #define PCI_PRIV_PIO 0x1
 #define PCI_PRIV_MMIO 0x2

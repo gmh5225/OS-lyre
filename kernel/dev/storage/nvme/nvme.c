@@ -728,7 +728,8 @@ static struct pci_driver nvme_driver = {
     .subclass = 0x08,
     .prog_if = 0x02,
     .vendor = 0,
-    .device = 0
+    .devices = { },
+    .devcount = 0
 };
 
 EXPORT_PCI_DRIVER(nvme_driver);

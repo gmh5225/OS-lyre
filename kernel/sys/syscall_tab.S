@@ -47,6 +47,7 @@ syscall_table:
     .quad syscall_recvmsg     // 42
     .quad syscall_new_thread  // 43
     .quad syscall_exit_thread // 44
+    .quad syscall_sendmsg     // 45
 syscall_table_end:
 
 .global syscall_count

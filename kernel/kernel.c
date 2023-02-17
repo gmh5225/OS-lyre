@@ -3,6 +3,7 @@
 #include <dev/char/serial.h>
 #include <dev/lapic.h>
 #include <dev/dev.h>
+#include <dev/net/net.h>
 #include <lib/elf.h>
 #include <lib/print.h>
 #include <lib/random.h>
@@ -56,6 +57,7 @@ void kmain_thread(void) {
     vfs_create(vfs_root, "/mnt", 0755 | S_IFDIR);
     dev_init();
     vfs_mount(vfs_root, "/dev/nvme0n1", "/mnt", "ext2fs");
+    net_init();
     initramfs_init();
 
     struct pagemap *init_vm = vmm_new_pagemap();
