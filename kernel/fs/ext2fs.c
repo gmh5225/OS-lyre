@@ -661,6 +661,24 @@ static ssize_t ext2fs_inodewriteentry(struct ext2fs_inode *inode, struct ext2fs 
     return 0;
 }
 
+static bool ext2fs_reschmod(struct resource *_this, mode_t mode) {
+    struct ext2fs_resource *this = (struct ext2fs_resource *)_this;
+    spinlock_acquire(&this->lock);
+
+    struct ext2fs_inode curinode = { 0 };
+    ext2fs_inodereadentry(&curinode, this->fs, this->stat.st_ino);
+
+    curinode.perms = mode & 0777;
+
+    ext2fs_inodewriteentry(&curinode, this->fs, this->stat.st_ino);
+
+    this->stat.st_mode &= ~0777;
+    this->stat.st_mode |= mode & 0777;
+
+    spinlock_release(&this->lock);
+    return true;
+}
+
 static ssize_t ext2fs_resread(struct resource *_this, struct f_description *description, void *buf, off_t loc, size_t count) {
     (void)description;
     struct ext2fs_resource *this = (struct ext2fs_resource *)_this;
@@ -744,8 +762,6 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
     (void)flags;
     struct ext2fs_resource *this = (struct ext2fs_resource *)_this;
 
-    spinlock_acquire(&this->lock);
-
     void *ret = NULL;
 
     ret = pmm_alloc_nozero(1);
@@ -756,7 +772,6 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
     this->read(_this, NULL, (void *)((uint64_t)ret + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE);
 
 cleanup:
-    spinlock_release(&this->lock);
     return ret;
 }
 
@@ -841,6 +856,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
     resource->truncate = ext2fs_restruncate;
     resource->mmap = ext2fs_resmmap;
     resource->msync = ext2fs_resmsync;
+    resource->chmod = ext2fs_reschmod;
     resource->unref = ext2fs_resunref;
 
     resource->stat.st_size = 0;
@@ -1002,6 +1018,8 @@ static void ext2fs_populate(struct vfs_filesystem *_this, struct vfs_node *node)
         fres->write = ext2fs_reswrite;
         fres->truncate = ext2fs_restruncate;
         fres->mmap = ext2fs_resmmap;
+        fres->msync = ext2fs_resmsync;
+        fres->chmod = ext2fs_reschmod;
         fres->unref = ext2fs_resunref;
 
         fres->stat.st_uid = inode.uid;

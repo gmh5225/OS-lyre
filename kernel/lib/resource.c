@@ -59,7 +59,23 @@ static void *stub_mmap(struct resource *this, size_t file_page, int flags) {
     (void)this;
     (void)file_page;
     (void)flags;
+    errno = ENOSYS;
     return NULL;
+}
+
+static bool stub_msync(struct resource *this, size_t file_page, void *phys, int flags) {
+    (void)this;
+    (void)file_page;
+    (void)phys;
+    (void)flags;
+    errno = ENOSYS;
+    return false;
+}
+
+static bool stub_chmod(struct resource *this, mode_t mode) {
+    this->stat.st_mode &= ~0777;
+    this->stat.st_mode |= mode & 0777;
+    return true;
 }
 
 static bool stub_ref(struct resource *this, struct f_description *description) {
@@ -94,6 +110,8 @@ void *resource_create(size_t size) {
     res->write = stub_write;
     res->ioctl = resource_default_ioctl;
     res->mmap = stub_mmap;
+    res->msync = stub_msync;
+    res->chmod = stub_chmod;
     res->ref = stub_ref;
     res->unref = stub_unref;
     res->truncate = stub_truncate;
@@ -539,9 +557,7 @@ int syscall_fchmodat(void *_, int dir_fdnum, const char *path, mode_t mode, int 
         target = parent;
     }
 
-    target->resource->stat.st_mode &= ~0777;
-    target->resource->stat.st_mode |= mode & 0777;
-    ret = 0;
+    ret = target->resource->chmod(target->resource, mode) ? 0 : -1;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
