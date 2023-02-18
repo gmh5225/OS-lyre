@@ -1,5 +1,6 @@
 #include <dev/net/net.h>
 #include <ipc/socket.h>
+#include <ipc/socket/udp.h>
 #include <lib/bitmap.h>
 #include <lib/errno.h>
 #include <lib/event.h>
@@ -346,7 +347,7 @@ static void net_oninet(struct net_adapter *adapter, void *data, size_t length) {
         case NET_IPPROTOTCP: // TCP
             break;
         case NET_IPPROTOUDP: // UDP
-            net_onudp(adapter, header, length - sizeof(struct net_inetheader));
+            udp_onudp(adapter, header, length - sizeof(struct net_inetheader));
             break;
     }
 }

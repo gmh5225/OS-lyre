@@ -392,7 +392,7 @@ static void udp_netpacket(struct udp_socket *_this, struct net_inetaddr src, be_
     event_trigger(&_this->event, false);
 }
 
-void net_onudp(struct net_adapter *adapter, struct net_inetheader *inetheader, size_t length) {
+void udp_onudp(struct net_adapter *adapter, struct net_inetheader *inetheader, size_t length) {
     (void)adapter;
 
     if (length < sizeof(struct net_udpheader)) {
