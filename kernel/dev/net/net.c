@@ -346,7 +346,6 @@ static void net_oninet(struct net_adapter *adapter, void *data, size_t length) {
             net_onicmp(adapter, header, length - sizeof(struct net_inetheader));
             break;
         case NET_IPPROTOTCP: // TCP
-            tcp_ontcp(adapter, header, length - sizeof(struct net_inetheader));
             break;
         case NET_IPPROTOUDP: // UDP
             udp_onudp(adapter, header, length - sizeof(struct net_inetheader));
