@@ -610,8 +610,8 @@ int syscall_getcwd(void *_, char *buffer, size_t len) {
     struct thread *thread = sched_current_thread();
     struct process *proc = thread->process;
 
-    char path_buffer[PATH_MAX] = {0};
-    if (vfs_pathname(proc->cwd, path_buffer, PATH_MAX) >= len) {
+    char path_buffer[4096] = {0};
+    if (vfs_pathname(proc->cwd, path_buffer, 4096) >= len) {
         errno = ERANGE;
         goto cleanup;
     }
