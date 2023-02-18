@@ -1,7 +1,6 @@
 #include <dev/net/loopback.h>
 #include <dev/net/net.h>
 #include <ipc/socket.h>
-#include <ipc/socket/tcp.h>
 #include <ipc/socket/udp.h>
 #include <lib/bitmap.h>
 #include <lib/errno.h>

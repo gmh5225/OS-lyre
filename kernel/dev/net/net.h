@@ -126,7 +126,6 @@ struct net_adapter {
     size_t index;
     size_t mtu;
     VECTOR_TYPE(struct net_inethwpair *) addrcache; // keep a record (per adapter as they may be connected to different networks) of IP-to-MAC records (from the ARP cache)
-    struct event addrcacheupdate;
     spinlock_t addrcachelock;
     VECTOR_TYPE(struct net_packet *) cache;
     spinlock_t cachelock; // not the same as the char device lock
