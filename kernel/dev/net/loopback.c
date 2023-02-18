@@ -3,7 +3,7 @@
 #include <lib/print.h>
 #include <sched/sched.h>
 
-void loopback_transmitpacket(struct net_adapter *device, const void *data, size_t length) {
+static void loopback_transmitpacket(struct net_adapter *device, const void *data, size_t length) {
     struct net_packet *packet = alloc(sizeof(struct net_packet));
     packet->len = length;
     packet->data = alloc(length);
