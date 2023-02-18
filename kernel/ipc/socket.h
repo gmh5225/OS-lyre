@@ -7,6 +7,7 @@
 #include <lib/event.h>
 #include <lib/resource.h>
 #include <abi-bits/socket.h>
+#include <dev/net/net.h>
 
 enum socket_state {
     SOCKET_CREATED,
@@ -38,10 +39,20 @@ struct socket {
     bool (*listen)(struct socket *this, struct f_description *description, int backlog);
     struct socket *(*accept)(struct socket *this, struct f_description *description, struct socket *other, void *addr, socklen_t *len);
     ssize_t (*recvmsg)(struct socket *this, struct f_description *description, struct msghdr *msg, int flags);
+    ssize_t (*sendmsg)(struct socket *this, struct f_description *description, const struct msghdr *msg, int flags);
+};
+
+struct inetsocket {
+    struct socket;
+    struct net_adapter *adapter;
+
+    be_uint16_t port; // redundancy
+    be_uint16_t destport; // redundancy
+    struct sockaddr_storage peeraddr;
+    bool localbound;
 };
 
 void *socket_create(int family, int type, int protocol, int size);
-struct socket *socket_create_unix(int type, int protocol);
 bool socket_add_to_backlog(struct socket *sock, struct socket *other);
 
 #endif

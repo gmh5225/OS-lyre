@@ -189,7 +189,7 @@ static void scan_function(uint8_t bus, uint8_t slot, uint8_t func) {
 
     uint16_t sreg = PCI_READW(dev, 6);
     if (sreg & (1 << 4)) {
-        // Traverse the caps list, looking for MSI/MSI-X
+        // Traverse the caps list, looking for PCI capabilities
         uint8_t next_off = PCI_READB(dev, 0x34);
 
         while (next_off) {
@@ -199,6 +199,10 @@ static void scan_function(uint8_t bus, uint8_t slot, uint8_t func) {
                 case 5: // MSI compatible
                     dev->msi_supported = true;
                     dev->msi_offset = next_off;
+                    break;
+                case 16: // PCIe compatible
+                    dev->pcie_supported = true;
+                    dev->pcie_offset = next_off;
                     break;
                 case 17: // MSI-X compatible
                     dev->msix_supported = true;
@@ -258,7 +262,24 @@ static void dispatch_drivers(void) {
             struct pci_device *d = *device; 
       
             if (p->match & PCI_MATCH_DEVICE) {
-                if ((d->vendor_id != p->vendor) || (d->device_id != p->device)) {
+                // XXX: Terrible way to do this
+                if (d->vendor_id != p->vendor) {
+                    continue;
+                }
+                bool v = false;
+                for (size_t i = 0; i < p->devcount; i++) {
+                    if ((d->device_id == p->devices[i])) {
+                        v = true;
+                    }
+                }
+
+                if (!v) {
+                    continue;
+                }
+
+                p->init(d);
+            } else if (p->match & PCI_MATCH_VENDOR) {
+                if ((d->vendor_id != p->vendor)) {
                     continue;
                 }
 

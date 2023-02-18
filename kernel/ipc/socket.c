@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <ipc/socket.h>
+#include <ipc/socket/udp.h>
+#include <ipc/socket/unix.h>
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/panic.h>
@@ -11,6 +13,7 @@
 #include <sched/sched.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/poll.h>
+#include <netinet/in.h>
 
 static bool stub_bind(struct socket *this, struct f_description *description, void *addr, socklen_t len) {
     (void)this;
@@ -66,6 +69,15 @@ static ssize_t stub_recvmsg(struct socket *this, struct f_description *descripti
     return -1;
 }
 
+static ssize_t stub_sendmsg(struct socket *this, struct f_description *description, const struct msghdr *msg, int flags) {
+    (void)this;
+    (void)description;
+    (void)msg;
+    (void)flags;
+    errno = ENOSYS;
+    return -1;
+}
+
 void *socket_create(int family, int type, int protocol, int size) {
     struct socket *sock = resource_create(size);
     if (sock == NULL) {
@@ -91,6 +103,7 @@ void *socket_create(int family, int type, int protocol, int size) {
     sock->listen = stub_listen;
     sock->accept = stub_accept;
     sock->recvmsg = stub_recvmsg;
+    sock->sendmsg = stub_sendmsg;
 
     return (struct socket *)sock;
 
@@ -115,6 +128,22 @@ int syscall_socket(void *_, int family, int type, int protocol) {
     switch (family) {
         case AF_UNIX:
             sock = socket_create_unix(type, protocol);
+            break;
+        case AF_INET:
+            if (type == SOCK_STREAM) {
+                if (protocol == 0) {
+                    protocol = IPPROTO_TCP;
+                }
+                sock = NULL;
+            } else if (type == SOCK_DGRAM) {
+                if (protocol == 0) {
+                    protocol = IPPROTO_UDP;
+                }
+                sock = socket_create_udp(type, protocol);
+            } else {
+                errno = EINVAL;
+                goto cleanup;
+            }
             break;
         default:
             errno = EINVAL;
@@ -173,7 +202,7 @@ int syscall_bind(void *_, int fdnum, void *addr, socklen_t len) {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
@@ -211,7 +240,7 @@ int syscall_connect(void *_, int fdnum, void *addr, socklen_t len) {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
@@ -249,7 +278,7 @@ int syscall_listen(void *_, int fdnum, int backlog) {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
@@ -277,12 +306,12 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
 
         if (sock->state != SOCKET_LISTENING) {
             errno = EINVAL;
-        } else {
+        } else if (sock->family == AF_UNIX) { // UNIX domain sockets act differently (we know and can modify sockets on both sides, rather than just one end)
             spinlock_acquire(&sock->lock);
 
             while (sock->backlog_i == 0) {
                 sock->status &= ~POLLIN;
-                if ((desc->flags & O_NONBLOCK) != 0) {
+                if ((desc->flags & O_NONBLOCK) != 0) {      
                     errno = EWOULDBLOCK;
                     goto cleanup1;
                 }
@@ -330,12 +359,24 @@ int syscall_accept(void *_, int fdnum, void *addr, socklen_t *len) {
 
 cleanup1:
             spinlock_release(&sock->lock);
+        } else if (sock->family == AF_INET) { // INET sockets
+            spinlock_acquire(&sock->lock);
+
+            // rely on the socket implementation to await connections and such
+            struct socket *connection_socket = sock->accept(sock, desc, NULL, addr, len);
+            if (connection_socket == NULL) {
+                goto cleanup2;
+            }
+
+            ret = fdnum_create_from_resource(proc, (struct resource *)connection_socket, 0, 0, false);
+cleanup2:
+            spinlock_release(&sock->lock);
         }
     } else {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
@@ -370,8 +411,42 @@ int syscall_getpeername(void *_, int fdnum, void *addr, socklen_t *len) {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
+cleanup:
+    DEBUG_SYSCALL_LEAVE("%d", ret);
+    return ret;
+}
+
+ssize_t syscall_sendmsg(void *_, int fdnum, const struct msghdr *msg, int flags) {
+    (void)_;
+
+    DEBUG_SYSCALL_ENTER("sendmsg(%d, %lx, %d)", fdnum, msg, flags);
+
+    ssize_t ret = -1;
+
+    struct thread *thread = sched_current_thread();
+    struct process *proc = thread->process;
+
+    struct f_descriptor *fd = fd_from_fdnum(proc, fdnum);
+    if (fd == NULL) {
+        goto cleanup;
+    }
+
+    struct f_description *desc = fd->description;
+    if (S_ISSOCK(desc->res->stat.st_mode)) {
+        struct socket *sock = (struct socket *)desc->res;
+
+        if (sock->state != SOCKET_CONNECTED && sock->type != SOCK_DGRAM) {
+            errno = ENOTCONN;
+        } else {
+            ret = sock->sendmsg(sock, desc, msg, flags);
+        }
+    } else {
+        errno = ENOTSOCK;
+    }
+
+    desc->refcount--;
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
     return ret;
@@ -396,7 +471,7 @@ ssize_t syscall_recvmsg(void *_, int fdnum, struct msghdr *msg, int flags) {
     if (S_ISSOCK(desc->res->stat.st_mode)) {
         struct socket *sock = (struct socket *)desc->res;
 
-        if (sock->state != SOCKET_CONNECTED) {
+        if (sock->state != SOCKET_CONNECTED && sock->type != SOCK_DGRAM) { // if not connected *and* a type that supports connections
             errno = ENOTCONN;
         } else {
             ret = sock->recvmsg(sock, desc, msg, flags);
@@ -405,7 +480,7 @@ ssize_t syscall_recvmsg(void *_, int fdnum, struct msghdr *msg, int flags) {
         errno = ENOTSOCK;
     }
 
-    desc->res->unref(desc->res, desc);
+    desc->refcount--;
 
 cleanup:
     DEBUG_SYSCALL_LEAVE("%d", ret);
