@@ -21,7 +21,7 @@ struct udp_socket {
 };
 
 // should we validate checksums on UDP?
-//#define UDP_DOCSUM 1
+// #define UDP_DOCSUM
 
 static spinlock_t udp_socketslock = SPINLOCK_INIT;
 static VECTOR_TYPE(struct udp_socket *) udp_sockets; // keep a reference of all UDP sockets
@@ -376,7 +376,7 @@ static bool udp_bind(struct socket *_this, struct f_description *description, vo
     return udp_acquireport(this, __builtin_bswap16(this->port.value)); // final state success depends on the ability to attain access to this port
 }
 
-void udp_netpacket(struct udp_socket *_this, struct net_inetaddr src, be_uint16_t srcport, void *buf, size_t length) {
+static void udp_netpacket(struct udp_socket *_this, struct net_inetaddr src, be_uint16_t srcport, void *buf, size_t length) {
     struct udp_packet *packet = alloc(sizeof(struct udp_packet));
     packet->srcip = src;
     packet->srcport = srcport;

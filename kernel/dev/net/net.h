@@ -204,6 +204,7 @@ enum {
 
 int net_sockioctl(struct resource *_this, struct f_description *description, uint64_t request, uint64_t arg);
 int net_ifioctl(struct resource *_this, struct f_description *description, uint64_t request, uint64_t arg);
+void net_onudp(struct net_adapter *adapter, struct net_inetheader *inetheader, size_t length);
 
 be_uint16_t net_checksum(void *data, size_t length);
 ssize_t net_sendinet(struct net_adapter *adapter, struct net_inetaddr src, struct net_inetaddr dest, uint8_t protocol, void *data, size_t length);
