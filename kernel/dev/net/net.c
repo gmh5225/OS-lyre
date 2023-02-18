@@ -346,7 +346,6 @@ static void net_oninet(struct net_adapter *adapter, void *data, size_t length) {
         case NET_IPPROTOTCP: // TCP
             break;
         case NET_IPPROTOUDP: // UDP
-            void net_onudp(struct net_adapter *, struct net_inetheader *, size_t);
             net_onudp(adapter, header, length - sizeof(struct net_inetheader));
             break;
     }
