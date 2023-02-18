@@ -397,7 +397,6 @@ static void net_onarp(struct net_adapter *adapter, void *data, size_t length) {
     pair->inet = header->srcpr;
     pair->hw = header->srchw;
     spinlock_acquire(&adapter->addrcachelock);
-    event_trigger(&adapter->addrcacheupdate, false);
     VECTOR_PUSH_BACK(&adapter->addrcache, pair); // cache the ip-hw correlation from this ARP packet for later use (reduces the need for ip lookups)
     spinlock_release(&adapter->addrcachelock);
 }
