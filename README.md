@@ -37,16 +37,16 @@ The following is a distro-agnostic list of packages needed to build Lyre.
 
 Skip to a paragraph for your host distro if there is any.
 
-`GNU make`, `curl`, `git`, `bsdtar`, `xorriso`, and `qemu` to test it.
+`GNU make`, `diffutils`, `curl`, `git`, `bsdtar`, `xorriso`, and `qemu` to test it.
 
 ### Build prerequisites for Ubuntu, Debian, and derivatives
 ```bash
-sudo apt install make curl git libarchive-tools xorriso qemu-system-x86
+sudo apt install make diffutils curl git libarchive-tools xorriso qemu-system-x86
 ```
 
 ### Build prerequisites for Arch Linux and derivatives
 ```bash
-sudo pacman -S --needed make curl git libarchive xorriso qemu
+sudo pacman -S --needed make diffutils curl git libarchive xorriso qemu
 ```
 
 ### Building the distro
