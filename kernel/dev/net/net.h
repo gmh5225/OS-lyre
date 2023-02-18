@@ -104,57 +104,6 @@ struct net_arpheader {
     struct net_inetaddr destpr;
 } __attribute__((packed));
 
-enum {
-    NET_TCPFIN = 0x001,
-    NET_TCPSYN = 0x002,
-    NET_TCPRST = 0x004,
-    NET_TCPPSH = 0x008,
-    NET_TCPACK = 0x010,
-    NET_TCPURG = 0x020,
-    NET_TCPECE = 0x040,
-    NET_TCPCWR = 0x080,
-    NET_TCPNS = 0x100,
-    NET_TCPMASK = 0x1ff
-};
-
-struct net_tcpflags {
-    union {
-        be_uint16_t flags;
-        struct { // since we need the data offset we may as well include these flags
-            uint8_t ns : 1;
-            uint8_t rsvd : 3;
-            uint8_t doff : 4;
-            uint8_t fin : 1;
-            uint8_t syn : 1;
-            uint8_t rst : 1;
-            uint8_t psh : 1;
-            uint8_t ack : 1;
-            uint8_t urg : 1;
-            uint8_t ece : 1;
-            uint8_t cwr : 1;
-        };
-    };
-};
-
-struct net_tcpheader {
-    be_uint16_t srcport;
-    be_uint16_t destport;
-    be_uint32_t sequence;
-    be_uint32_t acknumber;
-    struct net_tcpflags; 
-    be_uint16_t winsize;
-    be_uint16_t csum;
-    be_uint16_t urgent;
-} __attribute__((packed));
-
-struct net_udpheader {
-    be_uint16_t srcport;
-    be_uint16_t destport;
-    be_uint16_t length;
-    be_uint16_t csum;
-    uint8_t data[];
-} __attribute__((packed));
-
 struct net_packet { // high-level kernel interface for packets
     size_t len;
     uint8_t *data;
@@ -217,7 +166,5 @@ ssize_t net_lookup(struct net_adapter *adapter, struct net_inetaddr ip, struct n
 ssize_t net_route(struct net_adapter **adapter, struct net_inetaddr local, struct net_inetaddr remote, struct net_macaddr *mac);
 void net_register(struct net_adapter *adapter);
 void net_init(void);
-
-void loopback_init(void);
 
 #endif

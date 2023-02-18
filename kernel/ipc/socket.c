@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <ipc/socket.h>
+#include <ipc/socket/udp.h>
+#include <ipc/socket/unix.h>
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/panic.h>
@@ -132,7 +134,6 @@ int syscall_socket(void *_, int family, int type, int protocol) {
                 if (protocol == 0) {
                     protocol = IPPROTO_TCP;
                 }
-                // sock = socket_create_tcp(type, protocol);
                 sock = NULL;
             } else if (type == SOCK_DGRAM) {
                 if (protocol == 0) {

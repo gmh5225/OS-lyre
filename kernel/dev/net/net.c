@@ -1,5 +1,7 @@
+#include <dev/net/loopback.h>
 #include <dev/net/net.h>
 #include <ipc/socket.h>
+#include <ipc/socket/tcp.h>
 #include <ipc/socket/udp.h>
 #include <lib/bitmap.h>
 #include <lib/errno.h>
@@ -345,6 +347,7 @@ static void net_oninet(struct net_adapter *adapter, void *data, size_t length) {
             net_onicmp(adapter, header, length - sizeof(struct net_inetheader));
             break;
         case NET_IPPROTOTCP: // TCP
+            tcp_ontcp(adapter, header, length - sizeof(struct net_inetheader));
             break;
         case NET_IPPROTOUDP: // UDP
             udp_onudp(adapter, header, length - sizeof(struct net_inetheader));
@@ -362,8 +365,6 @@ static void net_onarp(struct net_adapter *adapter, void *data, size_t length) {
 
     if (__builtin_bswap16(header->opcode.value) == 0x01) { // request
         struct net_adapter *arpadapter = net_findadapterbyip(header->destpr);
-
-        // XXX: DHCP client/Static config so we can stop pretending to be every single device on the network
 
         if (arpadapter) {
             debug_print(0, "net: ARP request for %d.%d.%d.%d from %d.%d.%d.%d, it is local adapter %s with %02x:%02x:%02x:%02x:%02x:%02x\n", NET_PRINTIP(header->destpr), NET_PRINTIP(header->srcpr), arpadapter->ifname, NET_PRINTMAC(arpadapter->mac));

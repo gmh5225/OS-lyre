@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <fs/vfs/vfs.h>
 #include <ipc/socket.h>
+#include <ipc/socket/unix.h>
 #include <lib/alloc.h>
 #include <lib/errno.h>
 #include <lib/print.h>

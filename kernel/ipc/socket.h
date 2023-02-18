@@ -53,9 +53,6 @@ struct inetsocket {
 };
 
 void *socket_create(int family, int type, int protocol, int size);
-struct socket *socket_create_unix(int type, int protocol);
-struct socket *socket_create_udp(int type, int protocol);
-struct socket *socket_create_tcp(int type, int protocol);
 bool socket_add_to_backlog(struct socket *sock, struct socket *other);
 
 #endif

@@ -7,6 +7,14 @@
 
 // XXX: Poll events may not be correct
 
+struct udp_header {
+    be_uint16_t srcport;
+    be_uint16_t destport;
+    be_uint16_t length;
+    be_uint16_t csum;
+    uint8_t data[];
+} __attribute__((packed));
+
 struct udp_packet {
     struct net_inetaddr srcip;
     be_uint16_t srcport;
@@ -99,11 +107,11 @@ static ssize_t udp_sendpacket(struct net_adapter *adapter, struct net_inetaddr s
 
     uint8_t *buffer = alloc(adapter->mtu);
 
-    struct net_udpheader *header = (struct net_udpheader *)buffer;
+    struct udp_header *header = (struct udp_header *)buffer;
 
     header->destport = destport;
     header->srcport = srcport;
-    header->length.value = __builtin_bswap16(sizeof(struct net_udpheader) + len);
+    header->length.value = __builtin_bswap16(sizeof(struct udp_header) + len);
     header->csum.value = 0; // XXX: Checksum
     memcpy(header->data, buf, len);
 
@@ -395,12 +403,12 @@ static void udp_netpacket(struct udp_socket *_this, struct net_inetaddr src, be_
 void udp_onudp(struct net_adapter *adapter, struct net_inetheader *inetheader, size_t length) {
     (void)adapter;
 
-    if (length < sizeof(struct net_udpheader)) {
+    if (length < sizeof(struct udp_header)) {
         debug_print(0, "net: Discarded [too] short UDP packet (len: %d)\n", length);
         return;
     }
 
-    struct net_udpheader *header = (struct net_udpheader *)inetheader->data;
+    struct udp_header *header = (struct udp_header *)inetheader->data;
     if (__builtin_bswap16(header->length.value) > length) {
         debug_print(0, "net: Discarded [too] long UDP packet (len: %d)\n", length);
         return;
