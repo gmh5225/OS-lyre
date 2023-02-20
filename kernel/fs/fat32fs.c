@@ -6,6 +6,8 @@
 #include <time/time.h>
 #include <bits/posix/stat.h>
 #include <printf.h>
+#include <mm/vmm.h>
+#include <mm/pmm.h>
 
 typedef uint32_t cluster_t;
 
@@ -411,6 +413,35 @@ cleanup:
     return count;
 }
 
+static void *fat32fs_resmmap(struct resource *_this, size_t file_page, int flags) {
+    (void)flags;
+    struct fat32fs_resource *this = (struct fat32fs_resource *)_this;
+
+    void *ret = NULL;
+
+    ret = pmm_alloc_nozero(1);
+    if (ret == NULL) {
+        return NULL;
+    }
+
+    if (this->read(_this, NULL, (void *)((uintptr_t)ret + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE) == -1) {
+        pmm_free(ret, 1);
+        return NULL;
+    }
+
+    return ret;
+}
+
+static bool fat32fs_resmsync(struct resource *this, size_t file_page, void *phys, int flags) {
+    (void)flags;
+
+    if (this->write(this, NULL, (void *)((uintptr_t)phys + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE) == -1) {
+        return false;
+    }
+
+    return true;
+}
+
 static bool fat32fs_resunref(struct resource *_this, struct f_description *description) {
     (void)description;
     struct fat32fs_resource *this = (struct fat32fs_resource *)_this;
@@ -669,6 +700,8 @@ static struct vfs_node *fat32fs_create(struct vfs_filesystem *_this, struct vfs_
     res->write = fat32fs_reswrite;
     res->truncate = fat32fs_restruncate;
     res->unref = fat32fs_resunref;
+    res->mmap = fat32fs_resmmap;
+    res->msync = fat32fs_resmsync;
 
     res->stat.st_uid = 0;
     res->stat.st_gid = 0;
@@ -849,6 +882,8 @@ static void fat32fs_populate(struct vfs_filesystem *_this, struct vfs_node *node
         res->truncate = fat32fs_restruncate;
         res->write = fat32fs_reswrite;
         res->unref = fat32fs_resunref;
+        res->mmap = fat32fs_resmmap;
+        res->msync = fat32fs_resmsync;
 
         res->cluster = DENT_GETCLUSTER(entry);
 
