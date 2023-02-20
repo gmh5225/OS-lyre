@@ -17,6 +17,7 @@
 #include <fs/vfs/vfs.h>
 #include <limine.h>
 #include <fs/ext2fs.h>
+#include <fs/fat32fs.h>
 #include <fs/initramfs.h>
 #include <fs/tmpfs.h>
 #include <fs/devtmpfs.h>
@@ -48,6 +49,7 @@ void _start(void) {
 void kmain_thread(void) {
     random_init();
     vfs_init();
+    fat32fs_init();
     ext2fs_init();
     tmpfs_init();
     devtmpfs_init();

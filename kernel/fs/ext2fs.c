@@ -775,12 +775,14 @@ cleanup:
     return ret;
 }
 
-static bool ext2fs_resmsync(struct resource *_this, size_t file_page, void *phys, int flags) {
-    (void)_this;
-    (void)file_page;
-    (void)phys;
+static bool ext2fs_resmsync(struct resource *this, size_t file_page, void *phys, int flags) {
     (void)flags;
-    panic(NULL, true, "unimplemented");
+
+    if (this->write(this, NULL, (void *)((uintptr_t)phys + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE) == -1) {
+        return false;
+    }
+
+    return true;
 }
 
 static bool ext2fs_resunref(struct resource *_this, struct f_description *description) {
