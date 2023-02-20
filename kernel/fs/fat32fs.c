@@ -746,7 +746,7 @@ static struct vfs_node *fat32fs_create(struct vfs_filesystem *_this, struct vfs_
 
     res->diroffset = insertdent(parentres, &entry, name);
 
-    if(res->diroffset == -1) {
+    if (res->diroffset == -1) {
         goto fail;
     }
 
@@ -921,7 +921,7 @@ cleanup:
     free(buffer);
 }
 
-static struct fat32fs *fat32fs_new(){
+static struct fat32fs *fat32fs_new(void) {
     struct fat32fs *new_fs = alloc(sizeof(struct fat32fs));
     if (new_fs == NULL) {
         return NULL;
@@ -1025,5 +1025,5 @@ fail:
 }
 
 void fat32fs_init(void) {
-    vfs_add_filesystem(fat32fs_mount, "fat32fs");
+    vfs_add_filesystem(fat32fs_mount, "fat32");
 }
