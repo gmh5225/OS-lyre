@@ -5,7 +5,7 @@ override BUILDDIR := @BUILDDIR@
 override CROSS_FILE := @CROSS_FILE@
 override MKDIR_P := @MKDIR_P@
 override INSTALL := @INSTALL@
-override PREFIX := @prefix@
+override prefix := @prefix@
 LYRE_DEBUG ?= @LYRE_DEBUG@
 
 override GREP := @GREP@
@@ -30,7 +30,7 @@ OBJESCAPE = $(subst .a ,.a' ',$(subst .o ,.o' ',$(call SHESCAPE,$(1))))
 include $(call MKESCAPE,$(CROSS_FILE))
 
 # User controllable CFLAGS.
-CROSS_CFLAGS ?= @CROSS_CFLAGS@ @WERROR@
+CROSS_CFLAGS ?= @CROSS_CFLAGS@
 
 # User controllable CPPFLAGS.
 CROSS_CPPFLAGS ?= @CROSS_CPPFLAGS@
@@ -135,12 +135,10 @@ maintainer-clean: distclean
 	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries cross-detect configure build-aux *'~' autom4te.cache
 
 .PHONY: install
-install:
-	$(INSTALL) -d $(DESTDIR)$(PREFIX)/boot
-	$(INSTALL) $(KERNEL) $(DESTDIR)$(PREFIX)/boot/
+install: all
+	$(INSTALL) -d '$(call SHESCAPE,$(DESTDIR)$(prefix))/boot'
+	$(INSTALL) $(KERNEL) '$(call SHESCAPE,$(DESTDIR)$(prefix))/boot/'
 
 .PHONY: install-strip
-install-strip:
-	$(INSTALL) -d $(DESTDIR)$(PREFIX)/boot
-	$(INSTALL) $(KERNEL) $(DESTDIR)$(PREFIX)/boot/
-	$(CROSS_STRIP) $(DESTDIR)$(PREFIX)/boot/$(KERNEL)
+install-strip: install
+	$(CROSS_STRIP) '$(call SHESCAPE,$(DESTDIR)$(prefix))/boot/$(KERNEL)'
