@@ -1,7 +1,7 @@
 name=bpkg
-version=1.09r2
+version=1.09r4
 tarball_url="https://nishi.e3t.cc/pub/dist/bpkg/bpkg-${version}.tar.gz"
-tarball_blake2b="de949a7490f31c5870dc1c8d1663ffcf33a23bb63a1dc4bfb6c405e51cedfa1b33f527dfbd4bf51d0e045388886a226d7c75e566ba1e27df1158e25e2b3e49dd"
+tarball_blake2b="6876096d282ca1dfa9ab2171e4f1020ef07e498c0e94135e89528c332f4348ec983c8d48fecee0bd46d3218d55719971c158ef91cc2b23db0c0d406408a77370"
 hostdeps="automake autoconf libtool pkg-config"
 
 regenerate() {
