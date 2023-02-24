@@ -7,9 +7,9 @@ allow_network="yes"
 
 regenerate() {
     ./contrib/download_prerequisites
-    libtoolize -cfvi && autoreconf -fvi -I$(realpath ./config)
     ( cd libiberty && libtoolize -cfvi && autoreconf -fvi -I$(realpath ./config) -I$(realpath ../config) )
     ( cd intl && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
+    ( cd zlib/contrib/minizip && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../../config) )
     ( cd zlib && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd c++tools && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd fixincludes && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
@@ -33,9 +33,11 @@ regenerate() {
     ( cd lto-plugin && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libgomp && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libitm && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
+    ( cd liboffloadmic/plugin && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../../config) )
     ( cd liboffloadmic && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libsanitizer && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libssp && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libvtv && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd libstdc++-v3 && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
+    libtoolize -cfvi && autoreconf -fvi -I$(realpath ./config)
 }
