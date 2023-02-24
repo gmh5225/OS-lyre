@@ -6,7 +6,7 @@
 #include <lib/print.h>
 #include <lib/resource.h>
 #include <mm/vmm.h>
-#include <printf.h>
+#include <printf/printf.h>
 
 // capabilities for the nvme controller
 struct nvme_id {

@@ -8,10 +8,10 @@
 #include <lib/debug.h>
 #include <sched/sched.h>
 #include <sys/cpu.h>
-#include <printf.h>
+#include <printf/printf.h>
 
-// Needed for mpaland printf
-void _putchar(char _) {
+// Needed for eyalroz printf
+void putchar_(char _) {
     (void)_;
 }
 

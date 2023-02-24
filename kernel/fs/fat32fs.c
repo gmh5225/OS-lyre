@@ -5,7 +5,7 @@
 #include <lib/debug.h>
 #include <time/time.h>
 #include <bits/posix/stat.h>
-#include <printf.h>
+#include <printf/printf.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
 
@@ -633,7 +633,7 @@ static off_t insertdent(struct fat32fs_resource *dir, struct fat_direntry *entry
     // are just the index of the entry into the directory
     // for example, the entry at offset 320 is named 00000000.010
     char shortnamebuf[12];
-    snprintf(shortnamebuf, 12, "%011u", diroffset / sizeof(struct fat_direntry));
+    snprintf(shortnamebuf, 12, "%011lu", diroffset / sizeof(struct fat_direntry));
     memcpy(entry->name, shortnamebuf, 11);
 
     if (dir->write((struct resource *)dir, NULL, entry, diroffset, sizeof(struct fat_direntry)) == -1) {

@@ -56,10 +56,12 @@ override CROSS_CFLAGS += \
     -Wshadow \
     -MMD \
     -Ddebug=$(LYRE_DEBUG) \
-    -DPRINTF_DISABLE_SUPPORT_FLOAT \
+    -DPRINTF_ALIAS_STANDARD_FUNCTION_NAMES=1 \
+    -DPRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD=1 \
+    -DPRINTF_SUPPORT_DECIMAL_SPECIFIERS=0 \
+    -DPRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS=0 \
     -I'$(call SHESCAPE,$(SRCDIR))/freestanding-headers' \
-    -I'$(call SHESCAPE,$(SRCDIR))' \
-    -I'$(call SHESCAPE,$(SRCDIR))/contrib/mpaland-printf'
+    -I'$(call SHESCAPE,$(SRCDIR))'
 
 # Internal linker flags that should not be changed by the user.
 override CROSS_LDFLAGS += \
@@ -132,7 +134,7 @@ distclean: clean
 
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf freestanding-headers libgcc-binaries cross-detect configure build-aux *'~' autom4te.cache
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf printf freestanding-headers libgcc-binaries cross-detect configure build-aux *'~' autom4te.cache
 
 .PHONY: install
 install: all
