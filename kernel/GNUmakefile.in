@@ -107,7 +107,7 @@ all: $(KERNEL)
 $(KERNEL): $(OBJ) $(call MKESCAPE,$(SRCDIR))/libgcc-binaries/libgcc-$(LIBGCC).a
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' $(CROSS_LDFLAGS) -o $@
 	'$(call SHESCAPE,$(SRCDIR))/gensyms.sh' $@ > symtab.map
-	$(CROSS_CC) $(CROSS_CPPFLAGS) $(CROSS_CFLAGS) -x c -c symtab.map -o symtab.o
+	$(CROSS_CC) $(CROSS_CFLAGS) $(CROSS_CPPFLAGS) -x c -c symtab.map -o symtab.o
 	$(CROSS_LD) '$(call OBJESCAPE,$^)' symtab.o $(CROSS_LDFLAGS) -o $@
 
 # Include header dependencies.
