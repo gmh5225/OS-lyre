@@ -47,7 +47,6 @@ jobs:
           ninja
           mkdir ../mlibc-headers
           DESTDIR=`realpath ../mlibc-headers` ninja install
-          rm -f ../mlibc-headers/include/printf.h
 
       - name: Fetch limine.h
         run: |
@@ -58,13 +57,13 @@ jobs:
           cd kernel
           ./bootstrap
           ./configure --enable-werror CROSS_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
-          make PROD=false
+          make
           make maintainer-clean
 
       - name: Attempt to build the Lyre kernel (prod)
         run: |
           cd kernel
           ./bootstrap
-          ./configure --enable-werror CROSS_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
-          make PROD=true
+          ./configure --enable-werror LYRE_DEBUG=1 CROSS_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
+          make
           make maintainer-clean
