@@ -14,6 +14,7 @@ configure() {
         --disable-nls                 \
         --disable-werror              \
         --disable-dependency-tracking \
+        --enable-colored-disassembly \
         --with-system-zlib            \
         --with-gmp=${sysroot_dir}/usr \
         --enable-shared               \
@@ -21,6 +22,7 @@ configure() {
 }
 
 build() {
+        SFRAME_LIB_PATH="-L$(pwd -P)/libsframe/.libs" \
     make -j${parallelism} all
 }
 
