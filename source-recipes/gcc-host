@@ -9,7 +9,7 @@ regenerate() {
     ./contrib/download_prerequisites
     ( cd libiberty && libtoolize -cfvi && autoreconf -fvi -I$(realpath ./config) -I$(realpath ../config) )
     ( cd intl && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
-    ( cd zlib/contrib/minizip && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../../config) )
+    ( cd zlib/contrib/minizip && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../../../config) )
     ( cd zlib && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd c++tools && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
     ( cd fixincludes && libtoolize -cfvi && autoreconf -fvi -I$(realpath ../config) )
