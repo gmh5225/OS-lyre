@@ -4,6 +4,9 @@
 *.elf
 *.hdd
 *.iso
+*.tar.gz
+*.tar.xz
+/bin
 /compile_commands.json
 /cross-detect
 /cross-files

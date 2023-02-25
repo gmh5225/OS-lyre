@@ -162,6 +162,7 @@ dist:
 	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/freestanding-headers/.git
 	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/cross-detect/.git
 	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/cross-detect/.gitignore
+	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/cross-detect/autom4te.cache
 	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/libgcc-binaries/.git
 	rm -rf "$(PACKAGE_TARNAME)-$(PACKAGE_VERSION)"/libgcc-binaries/.gitignore
 
@@ -198,4 +199,4 @@ install-strip: install
 # Uninstall previously installed files and executables.
 .PHONY: uninstall
 uninstall:
-	rm -f '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/$(PACKAGE_TARNAME)'/"$$(basename '$(OUTPUT)')"
+	rm -rf '$(call SHESCAPE,$(DESTDIR)$(datarootdir))/$(PACKAGE_TARNAME)'
