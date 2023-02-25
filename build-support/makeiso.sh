@@ -13,7 +13,7 @@ rm -rf sysroot
 # Prepare the iso and boot directories.
 rm -rf iso_root
 mkdir -pv iso_root/boot
-cp -r sysroot/boot/lyre.elf iso_root/boot/
+cp -r sysroot/usr/share/lyre/lyre iso_root/boot/lyre.elf
 cp -r initramfs.tar iso_root/boot/
 cp -r build-support/limine.cfg iso_root/boot/
 

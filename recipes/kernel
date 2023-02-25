@@ -5,7 +5,9 @@ deps="core-libs limine"
 hostdeps="gcc binutils"
 
 configure() {
-    ${source_dir}/configure CROSS_TOOLCHAIN=x86_64-lyre
+    ${source_dir}/configure \
+        CROSS_TOOLCHAIN=x86_64-lyre \
+        --prefix=${prefix}
 }
 
 build() {
