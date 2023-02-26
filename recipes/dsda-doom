@@ -3,7 +3,7 @@ from_source=dsda-doom
 revision=1
 imagedeps="ninja git"
 hostdeps="gcc cmake pkg-config rdatawad"
-deps="core-libs zlib pcre sdl2 glu"
+deps="core-libs zlib sdl2 glu"
 
 configure() {
     cmake \
