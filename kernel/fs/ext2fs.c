@@ -668,7 +668,8 @@ static bool ext2fs_reschmod(struct resource *_this, mode_t mode) {
     struct ext2fs_inode curinode = { 0 };
     ext2fs_inodereadentry(&curinode, this->fs, this->stat.st_ino);
 
-    curinode.perms = mode & 0777;
+    curinode.perms &= ~0777;
+    curinode.perms |= mode & 0777;
 
     ext2fs_inodewriteentry(&curinode, this->fs, this->stat.st_ino);
 
