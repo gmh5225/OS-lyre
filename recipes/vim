@@ -7,8 +7,6 @@ deps="core-libs ncurses"
 configure() {
     cp -rp "${source_dir}"/. ./
 
-    cd src
-
         STRIP=x86_64-lyre-strip \
         ac_cv_small_wchar_t=no \
         ac_cv_func_sigsetjmp=no \
@@ -29,6 +27,7 @@ configure() {
         --localstatedir=/var \
         --disable-gtktest \
         --disable-icon-cache-update \
+        --disable-desktop-database-update \
         --disable-canberra \
         --disable-selinux \
         --disable-xsmp \
@@ -42,8 +41,6 @@ configure() {
         --with-tlib=tinfo \
         --enable-gui=no \
         --without-x
-
-    cd ..
 }
 
 build() {
