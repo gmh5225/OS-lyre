@@ -47,7 +47,7 @@ index 765ba73..16ca01f 100644
    i386-*-beos*)				fmt=elf ;;
    i386-*-elfiamcu)			fmt=elf arch=iamcu ;;
    i386-*-elf*)				fmt=elf ;;
-+  i386-*-lyre*)				fmt=elf ;;
++  i386-*-lyre*)				fmt=elf em=gnu ;;
    i386-*-fuchsia*)			fmt=elf ;;
    i386-*-haiku*)			fmt=elf em=haiku ;;
    i386-*-genode*)			fmt=elf ;;
