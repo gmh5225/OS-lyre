@@ -444,8 +444,8 @@ static void ext2fs_inodeassignblocks(struct ext2fs_inode *inode, uint32_t inodei
 }
 
 static ssize_t ext2fs_inodegrow(struct ext2fs_inode *inode, struct ext2fs *fs, uint32_t inodeidx, size_t start, size_t count) {
-    size_t boffset = DIV_ROUNDUP(start, fs->blksize);
-    size_t bcount = DIV_ROUNDUP(count, fs->blksize);
+    size_t boffset = (start & ~(fs->blksize - 1)) >> (10 + fs->sb.blksize);
+    size_t bcount = ((start & (fs->blksize - 1)) + count + (fs->blksize - 1)) >> (10 + fs->sb.blksize);
 
     ext2fs_inodeassignblocks(inode, inodeidx, fs, boffset, bcount);
     return 0;
