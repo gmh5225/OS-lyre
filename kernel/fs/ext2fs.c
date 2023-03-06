@@ -194,7 +194,7 @@ static void ext2fs_freeblock(struct ext2fs *fs, size_t blockidx) {
     fs->backing->resource->write(fs->backing->resource, NULL, bitmap, bgd.addrblockbmp * fs->blksize, fs->blksize);
 
     bgd.unallocb++; // new block!
-    fs->sb.unallocb++; // ditto 
+    fs->sb.unallocb++; // ditto
 
     ext2fs_bgdwriteentry(&bgd, fs, bgdidx);
     ext2fs_writesuperblock(fs);
