@@ -178,6 +178,8 @@ static size_t ext2fs_allocblock(struct ext2fs *fs, struct ext2fs_inode *inode, u
     return 0;
 }
 
+static ssize_t ext2fs_inodesetblock(struct ext2fs_inode *inode, struct ext2fs *fs, uint32_t inodeidx, uint32_t iblock, uint32_t dblock);
+
 static void ext2fs_freeblock(struct ext2fs *fs, size_t blockidx) {
     size_t bgdidx = blockidx / fs->sb.blockspergroup;
     struct ext2fs_blockgroupdesc bgd = { 0 };
@@ -221,6 +223,8 @@ static void ext2fs_freeblocklist(struct ext2fs *fs, size_t blockidx, size_t indi
             ext2fs_freeblock(fs, buf[i]);
         }
     }
+    memset(buf, 0, fs->blksize);
+    fs->backing->resource->write(fs->backing->resource, NULL, buf, blockidx * fs->blksize, fs->blksize);
 
     ext2fs_freeblock(fs, blockidx); // release top-most block
     free(buf);
@@ -428,14 +432,12 @@ static ssize_t ext2fs_inodesetblock(struct ext2fs_inode *inode, struct ext2fs *f
 }
 
 static void ext2fs_inodeassignblocks(struct ext2fs_inode *inode, uint32_t inodeidx, struct ext2fs *fs, size_t start, size_t blocks) {
-    for (size_t i = 0; i < blocks;) {
+    for (size_t i = 0; i < blocks; i++) {
         if (ext2fs_inodegetblock(inode, fs, start + i)) {
-            i++;
             continue; // ignore any already allocated block ranges
         }
         size_t dblock = ext2fs_allocblock(fs, inode, inodeidx);
         ext2fs_inodesetblock(inode, fs, inodeidx, start + i, dblock); // set a new block
-        i++;
     }
 
     ext2fs_inodewriteentry(inode, fs, inodeidx);
@@ -592,11 +594,15 @@ static bool ext2fs_removedirentry(struct ext2fs *fs, struct ext2fs_inode *parent
                     }
 
                     ext2fs_freeblock(fs, inode.blocks[j]);
+                    inode.blocks[j] = 0;
                 }
 
                 ext2fs_freeblocklist(fs, inode.blocks[12], 0); // single indirect
+                inode.blocks[12] = 0;
                 ext2fs_freeblocklist(fs, inode.blocks[13], 1); // double indirect
+                inode.blocks[13] = 0;
                 ext2fs_freeblocklist(fs, inode.blocks[14], 2); // triple indirect
+                inode.blocks[14] = 0;
 
                 ext2fs_inodewriteentry(&inode, fs, inodeidx); // update (for deletion time)
 
@@ -767,10 +773,15 @@ static void *ext2fs_resmmap(struct resource *_this, size_t file_page, int flags)
 
     ret = pmm_alloc_nozero(1);
     if (ret == NULL) {
+        ret = ((void *)-1); // MAP_FAILED
         goto cleanup;
     }
 
-    this->read(_this, NULL, (void *)((uint64_t)ret + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE);
+    if(this->read(_this, NULL, (void *)((uintptr_t)ret + VMM_HIGHER_HALF), file_page * PAGE_SIZE, PAGE_SIZE) == -1) {
+        pmm_free(ret, 1);
+        ret = ((void *)-1); // MAP_FAILED
+        goto cleanup;
+    }
 
 cleanup:
     return ret;
@@ -791,8 +802,6 @@ static bool ext2fs_resunref(struct resource *_this, struct f_description *descri
 
     bool ret = false;
 
-    // XXX: Files not properly deferenced when using `echo data > file` (fault unrelated to ext2fs driver)
-    // XXX: Large deletion operations are screwed over by spinlocks (lock.h:15)
     // XXX: Unref is broken due to underlying vfs issues
     this->refcount--;
     if (this->refcount == 0) {
@@ -896,7 +905,7 @@ static struct vfs_node *ext2fs_create(struct vfs_filesystem *_this, struct vfs_n
         .sectors = 0,
         .flags = 0,
         .osd1 = 0,
-        .blocks = {},
+        .blocks = { 0 },
         .gennum = random_generate(),
         .eab = 0,
         .sizehi = 0,
