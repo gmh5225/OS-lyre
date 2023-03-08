@@ -1,0 +1,9 @@
+name=cglm
+version=0.8.9
+tarball_url="https://github.com/recp/cglm/archive/refs/tags/v${version}.tar.gz"
+tarball_blake2b="17f6f8d379aa81ee9327315b121cc7629fcc394fe032c1e1540e5153b2d3b0a2129f27eb46a8ae4323aa826b2bfff310b9039f78953d52d0bd994ba493fcdbd9"
+hostdeps="automake autoconf libtool pkg-config"
+
+regenerate() {
+    libtoolize -cfvi && autoreconf -fvi
+}
