@@ -3,7 +3,7 @@ from_source=libzip
 revision=1
 imagedeps="gcc ninja python git"
 hostdeps="gcc cmake pkg-config"
-deps="core-libs zlib bzip2 xz-utils zstd nettle openssl"
+deps="core-libs zlib bzip2 xz-utils zstd openssl"
 
 configure() {
     cmake \
