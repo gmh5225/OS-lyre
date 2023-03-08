@@ -67,3 +67,5 @@ distclean: jinx
 	cd kernel && ./bootstrap && ./configure && make maintainer-clean
 	./jinx clean
 	rm -rf iso_root sysroot lyre.iso initramfs.tar jinx ovmf
+	chmod -R 777 .jinx-cache
+	rm -rf .jinx-cache
