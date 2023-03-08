@@ -31,7 +31,7 @@ jobs:
           rm usr/include/linux/libc-compat.h
 
       - name: Clone mlibc
-        run: git clone https://github.com/managarm/mlibc.git
+        run: git clone https://github.com/mintsuki/mlibc.git
 
       - name: Checkout and patch mlibc
         run: |
