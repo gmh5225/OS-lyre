@@ -3,7 +3,7 @@ from_source=sdl2
 revision=1
 imagedeps="gcc ninja git"
 hostdeps="gcc cmake pkg-config"
-deps="core-libs libx11 libxext libxcursor libxi libxfixes libxrandr libxrender libxxf86vm"
+deps="core-libs libx11 libxext libxcursor libxi libxfixes libxrandr libxrender libxxf86vm mesa"
 
 configure() {
     cmake \
