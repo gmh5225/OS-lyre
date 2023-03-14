@@ -8,8 +8,8 @@
 *.tar.xz
 /bin
 /compile_commands.json
-/cross-detect
-/cross-files
+/freestanding-toolchain
+/toolchain-files
 /freestanding-headers
 /libgcc-binaries
 /build

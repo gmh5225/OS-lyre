@@ -7,7 +7,7 @@ test -z "$srcdir" && srcdir=.
 
 cd "$srcdir"
 
-[ -d cross-detect ] || git clone https://github.com/mintsuki/cross-detect.git
+[ -f freestanding-toolchain ] || ( curl -Lo freestanding-toolchain https://github.com/mintsuki/freestanding-toolchain/raw/trunk/freestanding-toolchain && chmod +x freestanding-toolchain )
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git
 if ! [ -d printf ]; then
@@ -16,9 +16,4 @@ if ! [ -d printf ]; then
     curl -Lo printf/printf.h https://github.com/eyalroz/printf/raw/master/src/printf/printf.h
 fi
 
-automake_libdir="$(automake --print-libdir)"
-
-mkdir -p build-aux
-cp "${automake_libdir}/install-sh" build-aux
-
-autoreconf -fvi
+autoreconf -fvi -Wall
