@@ -56,7 +56,7 @@ jobs:
         run: |
           cd kernel
           ./bootstrap
-          ./configure --enable-werror CROSS_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
+          ./configure --enable-werror FREESTANDING_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
           make
           make maintainer-clean
 
@@ -64,6 +64,6 @@ jobs:
         run: |
           cd kernel
           ./bootstrap
-          ./configure --enable-werror LYRE_DEBUG=1 CROSS_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
+          ./configure --enable-werror LYRE_DEBUG=1 FREESTANDING_CPPFLAGS="-nostdinc -I`realpath ../mlibc-headers/include` -I`realpath ../linux/usr/include`"
           make
           make maintainer-clean
