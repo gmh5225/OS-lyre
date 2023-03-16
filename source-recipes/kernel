@@ -7,5 +7,4 @@ allow_network="yes"
 
 regenerate() {
     ./bootstrap
-    libtoolize -cfvi && autoreconf -fvi
 }

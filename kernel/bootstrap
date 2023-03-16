@@ -16,4 +16,9 @@ if ! [ -d printf ]; then
     curl -Lo printf/printf.h https://github.com/eyalroz/printf/raw/master/src/printf/printf.h
 fi
 
-autoreconf -fvi -Wall
+automake_libdir="$(automake --print-libdir)"
+
+mkdir -p build-aux
+cp "${automake_libdir}/install-sh" build-aux
+
+autoreconf -fvi
