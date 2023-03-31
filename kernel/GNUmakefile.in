@@ -85,7 +85,8 @@ override CPPFLAGS := \
     -DPRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD=1 \
     -DPRINTF_SUPPORT_DECIMAL_SPECIFIERS=0 \
     -DPRINTF_SUPPORT_EXPONENTIAL_SPECIFIERS=0 \
-    -MMD
+    -MMD \
+    -MP
 
 # Internal linker flags that should not be changed by the user.
 override LDFLAGS += \
@@ -117,9 +118,10 @@ else
     $(error Architecture $(ARCH) not supported)
 endif
 
-# Use find to glob all *.c, *.S, and *.asm files in the directory and extract the object names.
-override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.c')
-override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find . -type f -name '*.S')
+# Use "find" to glob all *.c, *.S, and *.asm files in the tree and obtain the
+# object and header dependency file names.
+override CFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find -L . -type f -name '*.c')
+override ASFILES := $(shell cd '$(call SHESCAPE,$(SRCDIR))' && find -L . -type f -name '*.S')
 override OBJ := $(addprefix $(call MKESCAPE,$(BUILDDIR))/,$(CFILES:.c=.o) $(ASFILES:.S=.o))
 override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
 
