@@ -37,7 +37,7 @@ struct console {
 
 static spinlock_t read_lock = SPINLOCK_INIT;
 static spinlock_t terminal_lock = SPINLOCK_INIT;
-static struct flanterm_context *term_context;
+static struct flanterm_context *term_context = NULL;
 static struct event console_event;
 static struct console *console_res = NULL;
 
