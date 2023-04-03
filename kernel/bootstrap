@@ -10,6 +10,7 @@ cd "$srcdir"
 [ -f freestanding-toolchain ] || ( curl -Lo freestanding-toolchain https://github.com/mintsuki/freestanding-toolchain/raw/trunk/freestanding-toolchain && chmod +x freestanding-toolchain )
 [ -d freestanding-headers ] || git clone https://github.com/mintsuki/freestanding-headers.git --depth=1
 [ -d libgcc-binaries ] || git clone https://github.com/mintsuki/libgcc-binaries.git --depth=1
+[ -d flanterm ] || git clone https://github.com/mintsuki/flanterm.git --depth=1
 if ! [ -d printf ]; then
     mkdir printf
     curl -Lo printf/printf.c https://github.com/eyalroz/printf/raw/master/src/printf/printf.c

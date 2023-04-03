@@ -193,7 +193,7 @@ dist:
 # Remove ALL generated files.
 .PHONY: maintainer-clean
 maintainer-clean: distclean
-	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf printf freestanding-headers libgcc-binaries freestanding-toolchain configure build-aux *'~' autom4te.cache
+	cd '$(call SHESCAPE,$(SRCDIR))' && rm -rf printf flanterm freestanding-headers libgcc-binaries freestanding-toolchain configure build-aux *'~' autom4te.cache
 
 # Install files and executables to the final locations.
 .PHONY: install
