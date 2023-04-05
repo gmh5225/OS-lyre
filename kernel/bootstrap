@@ -33,20 +33,28 @@ if ! [ -d linux-headers ]; then
     rm -rf linux.tar.xz linux-src
 fi
 
-MLIBC_VERSION=4af0f858e9ad791e74e40f6a0dd825c378e39f1f
+MLIBC_VERSION=3ddf10feb048bba031d144315541034cd373d6ff
 
 if ! [ -d mlibc-headers ]; then
-    git clone https://github.com/managarm/mlibc.git
-    cd mlibc
-    git checkout ${MLIBC_VERSION}
-    mkdir ../mlibc-build
-    cd ../mlibc-build
-    meson setup --cross-file ../cross_file.txt --prefix=/ -Dheaders_only=true -Dlinux_kernel_headers=../linux-headers ../mlibc
+    curl -Lo mlibc.tar.gz https://github.com/managarm/mlibc/archive/${MLIBC_VERSION}.tar.gz
+    tar -xf mlibc.tar.gz
+    mkdir mlibc-build
+    cd mlibc-build
+    meson setup \
+        --cross-file ../cross_file.txt \
+        --prefix=/ \
+        -Dheaders_only=true \
+        -Ddisable_crypt_option=true \
+        -Ddisable_iconv_option=true \
+        -Ddisable_intl_option=true \
+        -Dlinux_kernel_headers=../linux-headers \
+        ../mlibc-${MLIBC_VERSION}
     ninja
-    DESTDIR=$(realpath ../mlibc-headers-out) ninja install
+    mkdir ../mlibc-headers-out
+    DESTDIR="$(cd ../mlibc-headers-out && pwd -P)" ninja install
     cd ..
     mv mlibc-headers-out/include mlibc-headers
-    rm -rf mlibc mlibc-build mlibc-headers-out
+    rm -rf mlibc.tar.gz mlibc-${MLIBC_VERSION} mlibc-build mlibc-headers-out
 fi
 
 mkdir -p build-aux
