@@ -13,30 +13,6 @@ index bb5b6ef..8d66fe8 100644
  #define IPPORT_RESERVED 1024
  
  #define IPPROTO_IP       0
-diff --git mlibc-clean/meson.build mlibc-workdir/meson.build
-index 2261926..bee1bf8 100644
---- mlibc-clean/meson.build
-+++ mlibc-workdir/meson.build
-@@ -315,19 +315,6 @@ subdir('options/bsd')
- rtlib_deps = []
- 
- if not headers_only
--	libgcc = meson.get_compiler('c').find_library('gcc', required: false)
--
--	compiler_rt_name = 'libclang_rt.builtins-' + host_machine.cpu_family()
--	compiler_rt = meson.get_compiler('c').find_library(compiler_rt_name, required: false)
--
--	if libgcc.found()
--		rtlib_deps += libgcc
--	elif compiler_rt.found()
--		rtlib_deps += compiler_rt
--	else
--		error('neither libgcc nor ' + compiler_rt_name + ' was found')
--	endif
--
- 	ld_cpp_args = [
- 		'-fvisibility=hidden',
- 		'-fno-stack-protector',
 diff --git mlibc-clean/options/glibc/generic/execinfo.cpp mlibc-workdir/options/glibc/generic/execinfo.cpp
 index 3474615..e034881 100644
 --- mlibc-clean/options/glibc/generic/execinfo.cpp
