@@ -33,7 +33,7 @@ if ! [ -d linux-headers ]; then
     rm -rf linux.tar.xz linux-src
 fi
 
-MLIBC_VERSION=3b1423b363826a6a1f40b81e2e8dfa50162934c1
+MLIBC_VERSION=a4768cba91acded6256a9ffcc32e0075942a1c4e
 
 if ! [ -d mlibc-headers ]; then
     curl -Lo mlibc.tar.gz https://github.com/managarm/mlibc/archive/${MLIBC_VERSION}.tar.gz
