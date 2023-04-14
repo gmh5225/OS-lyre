@@ -1,14 +1,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <dev/video/fbdev.h>
-#include <fs/devtmpfs.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/misc.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <mm/vmm.h>
+#include <dev/video/fbdev.k.h>
+#include <fs/devtmpfs.k.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <mm/vmm.k.h>
 #include <linux/fb.h>
 #include <printf/printf.h>
 

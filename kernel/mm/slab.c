@@ -2,12 +2,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <lib/libc.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <mm/pmm.h>
-#include <mm/slab.h>
-#include <mm/vmm.h>
+#include <lib/libc.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <mm/pmm.k.h>
+#include <mm/slab.k.h>
+#include <mm/vmm.k.h>
 
 struct slab {
     spinlock_t lock;

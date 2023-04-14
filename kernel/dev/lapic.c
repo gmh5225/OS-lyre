@@ -1,12 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <dev/lapic.h>
-#include <sys/idt.h>
-#include <sys/cpu.h>
-#include <lib/print.h>
-#include <lib/misc.h>
-#include <dev/pit.h>
-#include <mm/vmm.h>
+#include <dev/lapic.k.h>
+#include <sys/idt.k.h>
+#include <sys/cpu.k.h>
+#include <lib/print.k.h>
+#include <lib/misc.k.h>
+#include <dev/pit.k.h>
+#include <mm/vmm.k.h>
 
 #define LAPIC_REG_ID 0x20 // LAPIC ID
 #define LAPIC_REG_EOI 0x0b0 // End of interrupt

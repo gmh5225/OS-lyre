@@ -1,12 +1,12 @@
 #include <abi-bits/poll.h>
-#include <dev/net/net.h>
-#include <lib/errno.h>
-#include <lib/print.h>
+#include <dev/net/net.k.h>
+#include <lib/errno.k.h>
+#include <lib/print.k.h>
 #include <linux/sockios.h>
-#include <ipc/socket.h>
+#include <ipc/socket.k.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
-#include <time/time.h>
+#include <time/time.k.h>
 
 // XXX: Poll events may not be correct
 

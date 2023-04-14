@@ -1,17 +1,17 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <lib/vector.h>
-#include <lib/debug.h>
-#include <time/time.h>
-#include <dev/pit.h>
-#include <sched/sched.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <lib/vector.k.h>
+#include <lib/debug.k.h>
+#include <time/time.k.h>
+#include <dev/pit.k.h>
+#include <sched/sched.k.h>
 
 static volatile struct limine_boot_time_request boot_time_request = {
     .id = LIMINE_BOOT_TIME_REQUEST,

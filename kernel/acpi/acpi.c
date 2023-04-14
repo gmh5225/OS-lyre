@@ -2,12 +2,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <lib/libc.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <mm/vmm.h>
-#include <acpi/acpi.h>
-#include <acpi/madt.h>
+#include <lib/libc.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <mm/vmm.k.h>
+#include <acpi/acpi.k.h>
+#include <acpi/madt.k.h>
 
 static volatile struct limine_rsdp_request rsdp_request = {
     .id = LIMINE_RSDP_REQUEST,

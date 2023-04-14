@@ -1,20 +1,20 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
-#include <lib/errno.h>
-#include <lib/print.h>
-#include <lib/misc.h>
-#include <lib/alloc.h>
-#include <lib/vector.h>
-#include <lib/resource.h>
-#include <lib/debug.h>
-#include <sched/sched.h>
-#include <dev/lapic.h>
-#include <sys/cpu.h>
-#include <sys/idt.h>
-#include <mm/mmap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
-#include <fs/vfs/vfs.h>
+#include <lib/errno.k.h>
+#include <lib/print.k.h>
+#include <lib/misc.k.h>
+#include <lib/alloc.k.h>
+#include <lib/vector.k.h>
+#include <lib/resource.k.h>
+#include <lib/debug.k.h>
+#include <sched/sched.k.h>
+#include <dev/lapic.k.h>
+#include <sys/cpu.k.h>
+#include <sys/idt.k.h>
+#include <mm/mmap.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
+#include <fs/vfs/vfs.k.h>
 #include <abi-bits/wait.h>
 
 struct process *kernel_process;

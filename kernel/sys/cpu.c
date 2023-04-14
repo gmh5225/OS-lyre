@@ -1,18 +1,18 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/cpu.h>
-#include <sys/gdt.h>
-#include <sys/idt.h>
-#include <sys/syscall.h>
-#include <dev/lapic.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
-#include <lib/print.h>
-#include <lib/panic.h>
-#include <lib/misc.h>
-#include <lib/lock.h>
-#include <sched/sched.h>
+#include <sys/cpu.k.h>
+#include <sys/gdt.k.h>
+#include <sys/idt.k.h>
+#include <sys/syscall.k.h>
+#include <dev/lapic.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
+#include <lib/print.k.h>
+#include <lib/panic.k.h>
+#include <lib/misc.k.h>
+#include <lib/lock.k.h>
+#include <sched/sched.k.h>
 #include <limine.h>
 
 bool sysenter = false;

@@ -2,18 +2,18 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <lib/panic.h>
-#include <lib/resource.h>
-#include <lib/vector.h>
-#include <mm/pmm.h>
-#include <mm/mmap.h>
-#include <mm/vmm.h>
-#include <sys/idt.h>
-#include <dev/lapic.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <lib/panic.k.h>
+#include <lib/resource.k.h>
+#include <lib/vector.k.h>
+#include <mm/pmm.k.h>
+#include <mm/mmap.k.h>
+#include <mm/vmm.k.h>
+#include <sys/idt.k.h>
+#include <dev/lapic.k.h>
 
 volatile struct limine_hhdm_request hhdm_request = {
     .id = LIMINE_HHDM_REQUEST,

@@ -1,21 +1,21 @@
-#include <dev/dev.h>
-#include <dev/net/intel/e1000.h>
-#include <dev/ioapic.h>
-#include <dev/lapic.h>
-#include <dev/net/net.h>
-#include <dev/pci.h>
-#include <lib/errno.h>
-#include <fs/devtmpfs.h>
-#include <lib/print.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <dev/dev.k.h>
+#include <dev/net/intel/e1000.k.h>
+#include <dev/ioapic.k.h>
+#include <dev/lapic.k.h>
+#include <dev/net/net.k.h>
+#include <dev/pci.k.h>
+#include <lib/errno.k.h>
+#include <fs/devtmpfs.k.h>
+#include <lib/print.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
 #include <netinet/in.h>
-#include <sched/sched.h>
-#include <sys/idt.h>
-#include <sys/int_events.h>
-#include <sys/port.h>
+#include <sched/sched.k.h>
+#include <sys/idt.k.h>
+#include <sys/int_events.k.h>
+#include <sys/port.k.h>
 #include <sys/socket.h>
-#include <time/time.h>
+#include <time/time.k.h>
 
 struct e8254x_rxdesc {
     uint64_t addr;

@@ -1,18 +1,18 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <sys/port.h>
-#include <sched/sched.h>
-#include <lib/event.h>
-#include <sys/int_events.h>
-#include <time/time.h>
-#include <sys/idt.h>
-#include <dev/ioapic.h>
-#include <dev/lapic.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <lib/errno.h>
+#include <sys/port.k.h>
+#include <sched/sched.k.h>
+#include <lib/event.k.h>
+#include <sys/int_events.k.h>
+#include <time/time.k.h>
+#include <sys/idt.k.h>
+#include <dev/ioapic.k.h>
+#include <dev/lapic.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <lib/errno.k.h>
 #include <abi-bits/poll.h>
-#include <fs/devtmpfs.h>
+#include <fs/devtmpfs.k.h>
 
 // mouse code primarily from https://github.com/mintsuki/MeME/blob/master/test/src/main.c
 

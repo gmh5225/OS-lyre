@@ -1,19 +1,19 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <fs/devtmpfs.h>
-#include <fs/vfs/vfs.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <mm/mmap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <fs/devtmpfs.k.h>
+#include <fs/vfs/vfs.k.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <mm/mmap.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
 #include <bits/posix/stat.h>
-#include <time/time.h>
+#include <time/time.k.h>
 
 struct devtmpfs_resource {
     struct resource;

@@ -1,16 +1,16 @@
 #include <bits/posix/stat.h>
-#include <fs/ext2fs.h>
-#include <fs/vfs/vfs.h>
-#include <lib/bitmap.h>
-#include <lib/errno.h>
-#include <lib/print.h>
-#include <lib/random.h>
-#include <lib/resource.h>
-#include <lib/vector.h>
-#include <mm/mmap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
-#include <time/time.h>
+#include <fs/ext2fs.k.h>
+#include <fs/vfs/vfs.k.h>
+#include <lib/bitmap.k.h>
+#include <lib/errno.k.h>
+#include <lib/print.k.h>
+#include <lib/random.k.h>
+#include <lib/resource.k.h>
+#include <lib/vector.k.h>
+#include <mm/mmap.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
+#include <time/time.k.h>
 
 struct ext2fs_superblock {
     uint32_t inodecnt;

@@ -1,13 +1,13 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <dev/char/serial.h>
-#include <dev/char/console.h>
-#include <lib/libc.h>
-#include <lib/lock.h>
-#include <lib/print.h>
-#include <lib/debug.h>
-#include <sched/sched.h>
-#include <sys/cpu.h>
+#include <dev/char/serial.k.h>
+#include <dev/char/console.k.h>
+#include <lib/libc.k.h>
+#include <lib/lock.k.h>
+#include <lib/print.k.h>
+#include <lib/debug.k.h>
+#include <sched/sched.k.h>
+#include <sys/cpu.k.h>
 #include <printf/printf.h>
 
 // Needed for eyalroz printf

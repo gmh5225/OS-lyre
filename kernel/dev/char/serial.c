@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include <dev/char/serial.h>
-#include <lib/lock.h>
-#include <sys/port.h>
+#include <dev/char/serial.k.h>
+#include <lib/lock.k.h>
+#include <sys/port.k.h>
 
 static const uint16_t com1_port = 0x3f8;
 static const uint16_t com_ports[4] = {com1_port, 0x2f8, 0x3e8, 0x2e8};

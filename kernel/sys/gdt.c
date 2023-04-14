@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include <sys/gdt.h>
-#include <sys/cpu.h>
-#include <lib/lock.h>
+#include <sys/gdt.k.h>
+#include <sys/cpu.k.h>
+#include <lib/lock.k.h>
 
 struct gdt_descriptor {
     uint16_t limit;

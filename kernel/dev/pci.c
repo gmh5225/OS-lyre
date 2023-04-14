@@ -1,14 +1,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <dev/pci.h>
-#include <dev/dev.h>
-#include <acpi/acpi.h>
-#include <mm/vmm.h>
-#include <lib/vector.h>
-#include <lib/print.h>
-#include <sys/cpu.h>
-#include <sys/port.h>
+#include <dev/pci.k.h>
+#include <dev/dev.k.h>
+#include <acpi/acpi.k.h>
+#include <mm/vmm.k.h>
+#include <lib/vector.k.h>
+#include <lib/print.k.h>
+#include <sys/cpu.k.h>
+#include <sys/port.k.h>
 
 struct mcfg_entry {
     uint64_t mmio_base;

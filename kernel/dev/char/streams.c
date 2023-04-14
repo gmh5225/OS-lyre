@@ -1,11 +1,11 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/errno.h>
-#include <lib/libc.h>
-#include <lib/random.h>
-#include <lib/resource.h>
-#include <fs/devtmpfs.h>
-#include <dev/char/streams.h>
+#include <lib/errno.k.h>
+#include <lib/libc.k.h>
+#include <lib/random.k.h>
+#include <lib/resource.k.h>
+#include <fs/devtmpfs.k.h>
+#include <dev/char/streams.k.h>
 
 static ssize_t null_read(struct resource *this, struct f_description *description, void *buf, off_t offset, size_t count) {
     (void)this;

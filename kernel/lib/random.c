@@ -1,11 +1,11 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/lock.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <lib/random.h>
-#include <time/time.h>
-#include <sys/cpu.h>
+#include <lib/lock.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <lib/random.k.h>
+#include <time/time.k.h>
+#include <sys/cpu.k.h>
 
 // Default parameters as per https://en.wikipedia.org/wiki/Mersenne_Twister
 // Implemenation inspired by the pseudo code found on the linked page.

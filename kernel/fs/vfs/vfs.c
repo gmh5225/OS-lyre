@@ -1,16 +1,16 @@
 #include <stdbool.h>
-#include <fs/vfs/vfs.h>
-#include <lib/alloc.h>
-#include <lib/hashmap.h>
-#include <lib/lock.h>
-#include <lib/errno.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <lib/debug.h>
-#include <sched/proc.h>
+#include <fs/vfs/vfs.k.h>
+#include <lib/alloc.k.h>
+#include <lib/hashmap.k.h>
+#include <lib/lock.k.h>
+#include <lib/errno.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <lib/debug.k.h>
+#include <sched/proc.k.h>
 #include <bits/posix/stat.h>
 #include <abi-bits/fcntl.h>
-#include <dirent.h> // XXX this unfortunately brings in some libc function declarations, be careful
+#include <dirent.h>
 #include <limits.h>
 
 spinlock_t vfs_lock = SPINLOCK_INIT;

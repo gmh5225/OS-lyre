@@ -3,12 +3,12 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdnoreturn.h>
-#include <dev/lapic.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <lib/trace.h>
-#include <sys/cpu.h>
-#include <sys/idt.h>
+#include <dev/lapic.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <lib/trace.k.h>
+#include <sys/cpu.k.h>
+#include <sys/idt.k.h>
 
 static spinlock_t panic_lock = SPINLOCK_INIT;
 

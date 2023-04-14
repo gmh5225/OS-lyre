@@ -1,13 +1,13 @@
-#include <fs/vfs/vfs.h>
-#include <fs/fat32fs.h>
+#include <fs/vfs/vfs.k.h>
+#include <fs/fat32fs.k.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/debug.h>
-#include <time/time.h>
+#include <lib/debug.k.h>
+#include <time/time.k.h>
 #include <bits/posix/stat.h>
 #include <printf/printf.h>
-#include <mm/vmm.h>
-#include <mm/pmm.h>
+#include <mm/vmm.k.h>
+#include <mm/pmm.k.h>
 
 typedef uint32_t cluster_t;
 

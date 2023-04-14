@@ -1,14 +1,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <fs/initramfs.h>
-#include <fs/vfs/vfs.h>
-#include <lib/libc.h>
-#include <lib/misc.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <fs/initramfs.k.h>
+#include <fs/vfs/vfs.k.h>
+#include <lib/libc.k.h>
+#include <lib/misc.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
 
 static volatile struct limine_module_request module_request = {
     .id = LIMINE_MODULE_REQUEST,

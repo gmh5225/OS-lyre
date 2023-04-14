@@ -1,12 +1,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/resource.h>
-#include <lib/print.h>
-#include <lib/debug.h>
-#include <sched/proc.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/resource.k.h>
+#include <lib/print.k.h>
+#include <lib/debug.k.h>
+#include <sched/proc.k.h>
 #include <abi-bits/fcntl.h>
 #include <abi-bits/seek-whence.h>
 #include <abi-bits/stat.h>
@@ -14,8 +14,8 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <sys/resource.h>
-#include <fs/vfs/vfs.h>
-#include <time/time.h>
+#include <fs/vfs/vfs.k.h>
+#include <time/time.k.h>
 
 int resource_default_ioctl(struct resource *this, struct f_description *description, uint64_t request, uint64_t arg) {
     (void)this;

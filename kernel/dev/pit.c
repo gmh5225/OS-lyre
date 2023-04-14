@@ -1,12 +1,12 @@
 #include <stdint.h>
-#include <lib/print.h>
-#include <dev/pit.h>
-#include <dev/lapic.h>
-#include <dev/ioapic.h>
-#include <sys/cpu.h>
-#include <sys/idt.h>
-#include <sys/port.h>
-#include <time/time.h>
+#include <lib/print.k.h>
+#include <dev/pit.k.h>
+#include <dev/lapic.k.h>
+#include <dev/ioapic.k.h>
+#include <sys/cpu.k.h>
+#include <sys/idt.k.h>
+#include <sys/port.k.h>
+#include <time/time.k.h>
 
 uint16_t pit_get_current_count(void) {
     outb(0x43, 0x00);

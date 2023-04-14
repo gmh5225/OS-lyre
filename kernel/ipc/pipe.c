@@ -1,14 +1,14 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/event.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <lib/debug.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/event.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <lib/debug.k.h>
 #include <abi-bits/stat.h>
 #include <abi-bits/poll.h>
-#include <mm/vmm.h>
+#include <mm/vmm.k.h>
 
 #define PIPE_BUF (PAGE_SIZE * 16)
 

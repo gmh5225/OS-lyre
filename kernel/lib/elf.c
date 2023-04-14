@@ -2,14 +2,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <elf.h>
-#include <lib/elf.h>
-#include <lib/errno.h>
-#include <lib/libc.h>
-#include <lib/misc.h>
-#include <lib/print.h>
-#include <mm/mmap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <lib/elf.k.h>
+#include <lib/errno.k.h>
+#include <lib/libc.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
+#include <mm/mmap.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
 
 bool elf_load(struct pagemap *pagemap, struct resource *res, uint64_t load_base,
               struct auxval *auxv, const char **ld_path) {

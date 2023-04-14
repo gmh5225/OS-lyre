@@ -2,12 +2,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <lib/event.h>
-#include <lib/lock.h>
-#include <lib/panic.h>
-#include <sys/cpu.h>
-#include <sched/proc.h>
-#include <sched/sched.h>
+#include <lib/event.k.h>
+#include <lib/lock.k.h>
+#include <lib/panic.k.h>
+#include <sys/cpu.k.h>
+#include <sched/proc.k.h>
+#include <sched/sched.k.h>
 
 static ssize_t check_for_pending(struct event **events, size_t num_events) {
     for (size_t i = 0; i < num_events; i++) {

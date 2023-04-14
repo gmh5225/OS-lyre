@@ -1,10 +1,10 @@
 #include <stdint.h>
-#include <dev/ps2.h>
-#include <dev/lapic.h>
-#include <dev/ioapic.h>
-#include <sys/idt.h>
-#include <sys/port.h>
-#include <sys/cpu.h>
+#include <dev/ps2.k.h>
+#include <dev/lapic.k.h>
+#include <dev/ioapic.k.h>
+#include <sys/idt.k.h>
+#include <sys/port.k.h>
+#include <sys/cpu.k.h>
 
 uint8_t ps2_keyboard_vector = 0;
 

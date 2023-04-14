@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <lib/alloc.h>
-#include <lib/libc.h>
+#include <lib/alloc.k.h>
+#include <lib/libc.k.h>
 
 int toupper(int c) {
     if (c >= 'a' && c <= 'z') {

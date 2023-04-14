@@ -2,13 +2,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <limine.h>
-#include <lib/bitmap.h>
-#include <lib/libc.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <lib/print.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <lib/bitmap.k.h>
+#include <lib/libc.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
 
 volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,

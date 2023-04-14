@@ -1,9 +1,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <lib/trace.h>
-#include <lib/misc.h>
-#include <lib/print.h>
+#include <lib/trace.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
 
 bool trace_address(uintptr_t address, size_t *offset, struct symbol *sym) {
     struct symbol prev_sym = symbol_table[0];

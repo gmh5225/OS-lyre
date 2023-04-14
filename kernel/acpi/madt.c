@@ -1,11 +1,11 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/print.h>
-#include <lib/panic.h>
-#include <lib/misc.h>
-#include <lib/vector.h>
-#include <acpi/acpi.h>
-#include <acpi/madt.h>
+#include <lib/print.k.h>
+#include <lib/panic.k.h>
+#include <lib/misc.k.h>
+#include <lib/vector.k.h>
+#include <acpi/acpi.k.h>
+#include <acpi/madt.k.h>
 
 typeof(madt_lapics) madt_lapics = (typeof(madt_lapics))VECTOR_INIT;
 typeof(madt_io_apics) madt_io_apics = (typeof(madt_io_apics))VECTOR_INIT;

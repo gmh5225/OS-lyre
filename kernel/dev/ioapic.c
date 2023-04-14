@@ -1,11 +1,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <mm/vmm.h>
-#include <acpi/madt.h>
-#include <dev/ioapic.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <mm/vmm.k.h>
+#include <acpi/madt.k.h>
+#include <dev/ioapic.k.h>
 
 static uint32_t io_apic_read(struct madt_io_apic *io_apic, uint32_t reg) {
     uint64_t base = (uint64_t)io_apic->address + VMM_HIGHER_HALF;

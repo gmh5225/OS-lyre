@@ -1,7 +1,7 @@
-#include <dev/storage/partition.h>
-#include <fs/devtmpfs.h>
-#include <lib/libc.h>
-#include <lib/print.h>
+#include <dev/storage/partition.k.h>
+#include <fs/devtmpfs.k.h>
+#include <lib/libc.k.h>
+#include <lib/print.k.h>
 #include <printf/printf.h>
 
 struct mbr_entry {

@@ -33,7 +33,7 @@ trap "rm -f '$TMP1' '$TMP2' '$TMP3'; trap - EXIT; exit" EXIT INT TERM QUIT HUP
 
 cat <<EOF
 #include <stdint.h>
-#include <lib/trace.h>
+#include <lib/trace.k.h>
 
 struct symbol symbol_table[] = {
 EOF

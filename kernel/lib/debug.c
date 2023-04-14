@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include <lib/debug.h>
-#include <lib/lock.h>
-#include <lib/errno.h>
+#include <lib/debug.k.h>
+#include <lib/lock.k.h>
+#include <lib/errno.k.h>
 
 uint64_t debug_get_syscall_id(void) {
     static spinlock_t lock = SPINLOCK_INIT;

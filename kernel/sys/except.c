@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <mm/mmap.h>
-#include <sys/except.h>
-#include <sys/idt.h>
-#include <lib/misc.h>
-#include <lib/print.h>
-#include <lib/panic.h>
+#include <mm/mmap.k.h>
+#include <sys/except.k.h>
+#include <sys/idt.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
+#include <lib/panic.k.h>
 
 static const char *exceptions[] = {
     "Division exception",

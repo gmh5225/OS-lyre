@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <sys/idt.h>
-#include <lib/lock.h>
-#include <lib/panic.h>
-#include <lib/print.h>
+#include <sys/idt.k.h>
+#include <lib/lock.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
 
 struct idt_entry {
     uint16_t offset_low;

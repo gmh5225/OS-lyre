@@ -1,7 +1,7 @@
-#include <dev/net/net.h>
-#include <fs/devtmpfs.h>
-#include <lib/print.h>
-#include <sched/sched.h>
+#include <dev/net/net.k.h>
+#include <fs/devtmpfs.k.h>
+#include <lib/print.k.h>
+#include <sched/sched.k.h>
 
 void net_inlineifhandler(struct net_adapter *adapter, struct net_packet *packet);
 

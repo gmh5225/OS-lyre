@@ -1,5 +1,5 @@
-#include <lib/lock.h>
-#include <lib/panic.h>
+#include <lib/lock.k.h>
+#include <lib/panic.k.h>
 
 __attribute__((noinline)) void spinlock_acquire(spinlock_t *lock) {
     volatile size_t deadlock_counter = 0;

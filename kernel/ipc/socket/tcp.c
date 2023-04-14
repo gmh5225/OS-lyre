@@ -1,16 +1,16 @@
 #include <abi-bits/poll.h>
-#include <dev/net/net.h>
-#include <ipc/socket.h>
-#include <ipc/socket/tcp.h>
-#include <lib/errno.h>
-#include <lib/print.h>
-#include <lib/random.h>
+#include <dev/net/net.k.h>
+#include <ipc/socket.k.h>
+#include <ipc/socket/tcp.k.h>
+#include <lib/errno.k.h>
+#include <lib/print.k.h>
+#include <lib/random.k.h>
 #include <linux/tcp.h>
 #include <linux/sockios.h>
 #include <netinet/in.h>
-#include <sched/sched.h>
+#include <sched/sched.k.h>
 #include <sys/ioctl.h>
-#include <time/time.h>
+#include <time/time.k.h>
 
 // XXX: Poll events may not be correct
 

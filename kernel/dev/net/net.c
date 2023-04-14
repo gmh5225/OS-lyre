@@ -1,22 +1,22 @@
-#include <dev/net/loopback.h>
-#include <dev/net/net.h>
-#include <fs/devtmpfs.h>
-#include <fs/vfs/vfs.h>
-#include <ipc/socket.h>
-#include <ipc/socket/tcp.h>
-#include <ipc/socket/udp.h>
-#include <lib/bitmap.h>
-#include <lib/errno.h>
-#include <lib/event.h>
-#include <lib/lock.h>
-#include <lib/print.h>
+#include <dev/net/loopback.k.h>
+#include <dev/net/net.k.h>
+#include <fs/devtmpfs.k.h>
+#include <fs/vfs/vfs.k.h>
+#include <ipc/socket.k.h>
+#include <ipc/socket/tcp.k.h>
+#include <ipc/socket/udp.k.h>
+#include <lib/bitmap.k.h>
+#include <lib/errno.k.h>
+#include <lib/event.k.h>
+#include <lib/lock.k.h>
+#include <lib/print.k.h>
 #include <linux/sockios.h>
 #include <net/if.h>
 #include <linux/route.h>
 #include <netinet/in.h>
 #include <printf/printf.h>
-#include <sched/sched.h>
-#include <time/time.h>
+#include <sched/sched.k.h>
+#include <time/time.k.h>
 
 static int net_ethcount = 0;
 static VECTOR_TYPE(struct net_adapter *) net_adapters = VECTOR_INIT;

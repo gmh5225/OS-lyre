@@ -2,26 +2,26 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdnoreturn.h>
-#include <lib/libc.h>
-#include <lib/resource.h>
-#include <lib/panic.h>
-#include <lib/print.h>
-#include <lib/lock.h>
-#include <lib/event.h>
-#include <lib/errno.h>
-#include <mm/vmm.h>
-#include <dev/char/console.h>
-#include <dev/ps2.h>
-#include <fs/devtmpfs.h>
-#include <sys/cpu.h>
-#include <sys/int_events.h>
-#include <sched/sched.h>
+#include <lib/libc.k.h>
+#include <lib/resource.k.h>
+#include <lib/panic.k.h>
+#include <lib/print.k.h>
+#include <lib/lock.k.h>
+#include <lib/event.k.h>
+#include <lib/errno.k.h>
+#include <mm/vmm.k.h>
+#include <dev/char/console.k.h>
+#include <dev/ps2.k.h>
+#include <fs/devtmpfs.k.h>
+#include <sys/cpu.k.h>
+#include <sys/int_events.k.h>
+#include <sched/sched.k.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/ttydefaults.h>
 #include <abi-bits/poll.h>
 #include <flanterm/backends/fb.h>
-#include <dev/video/fbdev.h>
+#include <dev/video/fbdev.k.h>
 
 static bool is_printable(uint8_t c) {
     return c >= 0x20 && c <= 0x7e;

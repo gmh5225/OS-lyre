@@ -2,19 +2,19 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <abi-bits/vm-flags.h>
-#include <lib/alloc.h>
-#include <lib/errno.h>
-#include <lib/lock.h>
-#include <lib/misc.h>
-#include <lib/print.h>
-#include <lib/resource.h>
-#include <lib/vector.h>
-#include <lib/debug.h>
-#include <mm/mmap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
-#include <sched/proc.h>
-#include <sys/cpu.h>
+#include <lib/alloc.k.h>
+#include <lib/errno.k.h>
+#include <lib/lock.k.h>
+#include <lib/misc.k.h>
+#include <lib/print.k.h>
+#include <lib/resource.k.h>
+#include <lib/vector.k.h>
+#include <lib/debug.k.h>
+#include <mm/mmap.k.h>
+#include <mm/pmm.k.h>
+#include <mm/vmm.k.h>
+#include <sched/proc.k.h>
+#include <sys/cpu.k.h>
 
 struct addr2range {
     struct mmap_range_local *range;

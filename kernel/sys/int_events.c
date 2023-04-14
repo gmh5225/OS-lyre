@@ -1,9 +1,9 @@
 #include <stdint.h>
-#include <sys/int_events.h>
-#include <sys/idt.h>
-#include <sys/cpu.h>
-#include <lib/event.h>
-#include <dev/lapic.h>
+#include <sys/int_events.k.h>
+#include <sys/idt.k.h>
+#include <sys/cpu.k.h>
+#include <lib/event.k.h>
+#include <dev/lapic.k.h>
 
 struct event int_events[256];
 
