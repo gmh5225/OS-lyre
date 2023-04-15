@@ -15,7 +15,7 @@
 #include <mm/pmm.k.h>
 #include <mm/vmm.k.h>
 #include <fs/vfs/vfs.k.h>
-#include <abi-bits/wait.h>
+#include <sys/wait.h>
 
 struct process *kernel_process;
 

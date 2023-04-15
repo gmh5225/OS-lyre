@@ -6,8 +6,8 @@
 #include <stdint.h>
 #include <lib/lock.k.h>
 #include <lib/event.k.h>
-#include <abi-bits/fcntl.h>
-#include <abi-bits/stat.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 struct process;

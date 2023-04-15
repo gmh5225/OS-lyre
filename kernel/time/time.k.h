@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <lib/event.k.h>
-#include <bits/ansi/timespec.h>
+#include <sys/time.h>
 
 #define TIMER_FREQ 1000
 

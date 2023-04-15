@@ -19,7 +19,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/ttydefaults.h>
-#include <abi-bits/poll.h>
+#include <poll.h>
 #include <flanterm/backends/fb.h>
 #include <dev/video/fbdev.k.h>
 

@@ -1,4 +1,4 @@
-#include <abi-bits/errno.h>
+#include <errno.h>
 
 .macro THUNK
     swapgs

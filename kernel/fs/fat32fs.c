@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <lib/debug.k.h>
 #include <time/time.k.h>
-#include <bits/posix/stat.h>
+#include <sys/stat.h>
 #include <printf/printf.h>
 #include <mm/vmm.k.h>
 #include <mm/pmm.k.h>

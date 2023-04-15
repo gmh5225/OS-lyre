@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <abi-bits/vm-flags.h>
+#include <sys/mman.h>
 #include <lib/alloc.k.h>
 #include <lib/errno.k.h>
 #include <lib/lock.k.h>

@@ -8,8 +8,8 @@
 #include <lib/resource.k.h>
 #include <lib/debug.k.h>
 #include <sched/proc.k.h>
-#include <bits/posix/stat.h>
-#include <abi-bits/fcntl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <limits.h>
 

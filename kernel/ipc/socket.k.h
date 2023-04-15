@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <lib/event.k.h>
 #include <lib/resource.k.h>
-#include <abi-bits/socket.h>
+#include <sys/socket.h>
 #include <dev/net/net.k.h>
 
 enum socket_state {

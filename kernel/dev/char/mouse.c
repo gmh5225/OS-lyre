@@ -11,7 +11,7 @@
 #include <lib/print.k.h>
 #include <lib/resource.k.h>
 #include <lib/errno.k.h>
-#include <abi-bits/poll.h>
+#include <poll.h>
 #include <fs/devtmpfs.k.h>
 
 // mouse code primarily from https://github.com/mintsuki/MeME/blob/master/test/src/main.c

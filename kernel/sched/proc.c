@@ -7,7 +7,7 @@
 #include <lib/debug.k.h>
 #include <mm/vmm.k.h>
 #include <sched/proc.k.h>
-#include <abi-bits/utsname.h>
+#include <sys/utsname.h>
 
 static spinlock_t futex_lock = SPINLOCK_INIT;
 static HASHMAP_TYPE(struct event *) futex_hashmap = HASHMAP_INIT(256);

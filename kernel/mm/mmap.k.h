@@ -7,8 +7,8 @@
 #include <lib/vector.k.h>
 #include <mm/vmm.k.h>
 #include <sys/cpu.k.h>
-#include <abi-bits/vm-flags.h>
-#include <bits/off_t.h>
+#include <sys/mman.h>
+#include <sys/types.h>
 
 struct mmap_range_global {
     struct pagemap *shadow_pagemap;

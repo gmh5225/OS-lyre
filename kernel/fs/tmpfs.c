@@ -12,7 +12,7 @@
 #include <mm/mmap.k.h>
 #include <mm/pmm.k.h>
 #include <mm/vmm.k.h>
-#include <bits/posix/stat.h>
+#include <sys/stat.h>
 #include <time/time.k.h>
 
 struct tmpfs_resource {

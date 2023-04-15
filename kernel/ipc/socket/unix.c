@@ -8,8 +8,8 @@
 #include <lib/print.k.h>
 #include <sched/sched.k.h>
 #include <sys/un.h>
-#include <abi-bits/poll.h>
-#include <bits/posix/stat.h>
+#include <poll.h>
+#include <sys/stat.h>
 
 #define SOCK_BUFFER_SIZE 0x4000
 

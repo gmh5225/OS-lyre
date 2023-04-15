@@ -12,8 +12,8 @@
 #include <lib/resource.k.h>
 #include <lib/debug.k.h>
 #include <sched/sched.k.h>
-#include <bits/posix/stat.h>
-#include <abi-bits/poll.h>
+#include <sys/stat.h>
+#include <poll.h>
 #include <netinet/in.h>
 
 static bool stub_bind(struct socket *this, struct f_description *description, void *addr, socklen_t len) {

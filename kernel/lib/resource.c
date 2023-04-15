@@ -7,10 +7,9 @@
 #include <lib/print.k.h>
 #include <lib/debug.k.h>
 #include <sched/proc.k.h>
-#include <abi-bits/fcntl.h>
-#include <abi-bits/seek-whence.h>
-#include <abi-bits/stat.h>
-#include <abi-bits/signal.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <sys/resource.h>

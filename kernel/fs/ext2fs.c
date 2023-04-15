@@ -1,4 +1,4 @@
-#include <bits/posix/stat.h>
+#include <sys/stat.h>
 #include <fs/ext2fs.k.h>
 #include <fs/vfs/vfs.k.h>
 #include <lib/bitmap.k.h>

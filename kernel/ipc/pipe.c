@@ -6,8 +6,7 @@
 #include <lib/print.k.h>
 #include <lib/resource.k.h>
 #include <lib/debug.k.h>
-#include <abi-bits/stat.h>
-#include <abi-bits/poll.h>
+#include <poll.h>
 #include <mm/vmm.k.h>
 
 #define PIPE_BUF (PAGE_SIZE * 16)
