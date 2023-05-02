@@ -16,7 +16,7 @@ configure() {
         --target=x86_64-lyre               \
         --with-sysroot=/                    \
         --with-build-sysroot=${sysroot_dir} \
-        --enable-languages=c,c++            \
+        --enable-languages=c,c++,lto            \
         --enable-initfini-array             \
         --disable-multilib                  \
         --disable-nls                       \
