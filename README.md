@@ -2,6 +2,8 @@
 
 Lyre is an effort to write a modern, fast, and useful operating system.
 
+<h1>Lyre is still pre-alpha software not meant for daily or production usage!</h1>
+
 Join the [Discord chat](https://discord.gg/2kdk3CbADg).
 
 ## What is Lyre all about?
@@ -13,8 +15,6 @@ virtual machines.
 - Targetting modern 64-bit architectures, CPU features, and multi-core computing.
 - Maintaining good source-level compatibility with Linux to allow to easily port programs over.
 - Having fun.
-
-**Note: Lyre is still pre-alpha software not meant for daily or production usage!**
 
 ![Screenshot 0](/screenshot0.png?raw=true "Screenshot 0")
 ![Screenshot 0](/screenshot1.png?raw=true "Screenshot 1")
