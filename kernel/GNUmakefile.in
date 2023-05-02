@@ -20,6 +20,9 @@ override PACKAGE_TARNAME := @PACKAGE_TARNAME@
 override OUTPUT := bin/$(PACKAGE_TARNAME)
 override TOOLCHAIN_FILE := @TOOLCHAIN_FILE@
 override WERROR_FLAG := @WERROR_FLAG@
+override DEFAULT_CFLAGS := @CFLAGS@
+override DEFAULT_CPPFLAGS := @CPPFLAGS@
+override DEFAULT_LDFLAGS := @LDFLAGS@
 
 LYRE_DEBUG ?= @LYRE_DEBUG@
 
@@ -51,13 +54,13 @@ include $(call MKESCAPE,$(TOOLCHAIN_FILE))
 export OBJDUMP
 
 # User controllable CFLAGS.
-$(eval $(call DEFAULT_VAR,CFLAGS,@CFLAGS@))
+$(eval $(call DEFAULT_VAR,CFLAGS,$(DEFAULT_CFLAGS)))
 
 # User controllable CPPFLAGS.
-$(eval $(call DEFAULT_VAR,CPPFLAGS,@CPPFLAGS@))
+$(eval $(call DEFAULT_VAR,CPPFLAGS,$(DEFAULT_CPPFLAGS)))
 
 # User controllable linker flags.
-$(eval $(call DEFAULT_VAR,LDFLAGS,@LDFLAGS@))
+$(eval $(call DEFAULT_VAR,LDFLAGS,$(DEFAULT_LDFLAGS)))
 
 # Internal C flags that should not be changed by the user.
 override CFLAGS += \
